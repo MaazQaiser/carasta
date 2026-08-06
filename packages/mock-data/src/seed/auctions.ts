@@ -1,0 +1,285 @@
+import type { Auction } from "@carasta/types";
+import { MOCK_VEHICLES } from "./vehicles";
+import { MOCK_USERS } from "./users";
+
+const now = new Date();
+
+function hoursFromNow(h: number): string {
+  return new Date(now.getTime() + h * 3600000).toISOString();
+}
+
+function hoursAgo(h: number): string {
+  return new Date(now.getTime() - h * 3600000).toISOString();
+}
+
+const v001 = MOCK_VEHICLES[0]!;
+const v002 = MOCK_VEHICLES[1]!;
+const v003 = MOCK_VEHICLES[2]!;
+const v004 = MOCK_VEHICLES[3]!;
+const v006 = MOCK_VEHICLES[5]!;
+const v008 = MOCK_VEHICLES[7]!;
+const v009 = MOCK_VEHICLES[8]!;
+const v011 = MOCK_VEHICLES[10]!;
+const v014 = MOCK_VEHICLES[13]!;
+const v015 = MOCK_VEHICLES[14]!;
+
+const u1 = MOCK_USERS[0]!;
+const u2 = MOCK_USERS[1]!;
+const u3 = MOCK_USERS[2]!;
+const u4 = MOCK_USERS[3]!;
+
+export const MOCK_AUCTIONS: Auction[] = [
+  {
+    id: "a-001",
+    vehicle: v001,
+    status: "live",
+    startingBid: 75000,
+    currentBid: 89500,
+    bidCount: 23,
+    reserveMet: false,
+    reservePrice: 98000,
+    minimumBidIncrement: 500,
+    startTime: hoursAgo(4),
+    endTime: hoursFromNow(2),
+    participantCount: 47,
+    watcherCount: 142,
+    bids: [
+      { id: "b-1-1", auctionId: "a-001", bidder: u2, amount: 89500, isAutoBid: false, createdAt: hoursAgo(0.1) },
+      { id: "b-1-2", auctionId: "a-001", bidder: u4, amount: 89000, isAutoBid: true, createdAt: hoursAgo(0.3) },
+      { id: "b-1-3", auctionId: "a-001", bidder: u2, amount: 88500, isAutoBid: false, createdAt: hoursAgo(0.5) },
+      { id: "b-1-4", auctionId: "a-001", bidder: u4, amount: 87500, isAutoBid: false, createdAt: hoursAgo(1) },
+      { id: "b-1-5", auctionId: "a-001", bidder: u2, amount: 86000, isAutoBid: true, createdAt: hoursAgo(1.5) },
+    ],
+    leadingBidder: u2,
+    autoShipping: true,
+    createdAt: hoursAgo(5),
+  },
+  {
+    id: "a-002",
+    vehicle: v002,
+    status: "live",
+    startingBid: 240000,
+    currentBid: 268000,
+    bidCount: 18,
+    reserveMet: false,
+    reservePrice: 285000,
+    minimumBidIncrement: 2000,
+    startTime: hoursAgo(6),
+    endTime: hoursFromNow(1),
+    participantCount: 89,
+    watcherCount: 389,
+    bids: [
+      { id: "b-2-1", auctionId: "a-002", bidder: u4, amount: 268000, isAutoBid: false, createdAt: hoursAgo(0.2) },
+      { id: "b-2-2", auctionId: "a-002", bidder: u1, amount: 266000, isAutoBid: true, createdAt: hoursAgo(0.4) },
+      { id: "b-2-3", auctionId: "a-002", bidder: u4, amount: 264000, isAutoBid: false, createdAt: hoursAgo(0.8) },
+    ],
+    leadingBidder: u4,
+    autoShipping: false,
+    createdAt: hoursAgo(7),
+  },
+  {
+    id: "a-003",
+    vehicle: v003,
+    status: "live",
+    startingBid: 110000,
+    currentBid: 127000,
+    bidCount: 31,
+    reserveMet: false,
+    reservePrice: 145000,
+    minimumBidIncrement: 1000,
+    startTime: hoursAgo(8),
+    endTime: hoursFromNow(0.5),
+    participantCount: 62,
+    watcherCount: 201,
+    bids: [
+      { id: "b-3-1", auctionId: "a-003", bidder: u1, amount: 127000, isAutoBid: false, createdAt: hoursAgo(0.05) },
+      { id: "b-3-2", auctionId: "a-003", bidder: u2, amount: 126000, isAutoBid: true, createdAt: hoursAgo(0.1) },
+    ],
+    leadingBidder: u1,
+    autoShipping: true,
+    createdAt: hoursAgo(9),
+  },
+  {
+    id: "a-004",
+    vehicle: v004,
+    status: "ending-soon",
+    startingBid: 68000,
+    currentBid: 77500,
+    bidCount: 14,
+    reserveMet: false,
+    reservePrice: 82000,
+    minimumBidIncrement: 500,
+    startTime: hoursAgo(48),
+    endTime: hoursFromNow(3),
+    participantCount: 28,
+    watcherCount: 98,
+    bids: [
+      { id: "b-4-1", auctionId: "a-004", bidder: u3, amount: 77500, isAutoBid: false, createdAt: hoursAgo(1) },
+    ],
+    leadingBidder: u3,
+    autoShipping: true,
+    createdAt: hoursAgo(50),
+  },
+  {
+    id: "a-005",
+    vehicle: v006,
+    status: "live",
+    startingBid: 155000,
+    currentBid: 167000,
+    bidCount: 8,
+    reserveMet: false,
+    reservePrice: 175000,
+    minimumBidIncrement: 1000,
+    startTime: hoursAgo(2),
+    endTime: hoursFromNow(4),
+    participantCount: 34,
+    watcherCount: 267,
+    bids: [
+      { id: "b-5-1", auctionId: "a-005", bidder: u1, amount: 167000, isAutoBid: false, createdAt: hoursAgo(0.3) },
+    ],
+    leadingBidder: u1,
+    autoShipping: false,
+    createdAt: hoursAgo(3),
+  },
+  {
+    id: "a-006",
+    vehicle: v008,
+    status: "ending-soon",
+    startingBid: 72000,
+    currentBid: 84000,
+    bidCount: 19,
+    reserveMet: false,
+    reservePrice: 89000,
+    minimumBidIncrement: 500,
+    startTime: hoursAgo(96),
+    endTime: hoursFromNow(2.5),
+    participantCount: 41,
+    watcherCount: 156,
+    bids: [
+      { id: "b-6-1", auctionId: "a-006", bidder: u2, amount: 84000, isAutoBid: false, createdAt: hoursAgo(0.5) },
+    ],
+    leadingBidder: u2,
+    autoShipping: false,
+    createdAt: hoursAgo(100),
+  },
+  {
+    id: "a-007",
+    vehicle: v009,
+    status: "upcoming",
+    startingBid: 15000000,
+    currentBid: 15000000,
+    bidCount: 0,
+    reserveMet: false,
+    reservePrice: 18000000,
+    minimumBidIncrement: 100000,
+    startTime: hoursFromNow(48),
+    endTime: hoursFromNow(120),
+    participantCount: 0,
+    watcherCount: 4120,
+    bids: [],
+    autoShipping: false,
+    createdAt: hoursAgo(12),
+  },
+  {
+    id: "a-008",
+    vehicle: v011,
+    status: "live",
+    startingBid: 95000,
+    currentBid: 108000,
+    bidCount: 22,
+    reserveMet: false,
+    reservePrice: 118000,
+    minimumBidIncrement: 1000,
+    startTime: hoursAgo(3),
+    endTime: hoursFromNow(5),
+    participantCount: 38,
+    watcherCount: 178,
+    bids: [
+      { id: "b-8-1", auctionId: "a-008", bidder: u3, amount: 108000, isAutoBid: true, createdAt: hoursAgo(0.2) },
+    ],
+    leadingBidder: u3,
+    autoShipping: true,
+    createdAt: hoursAgo(4),
+  },
+  {
+    id: "a-009",
+    vehicle: v014,
+    status: "live",
+    startingBid: 92000,
+    currentBid: 101500,
+    bidCount: 16,
+    reserveMet: false,
+    reservePrice: 112000,
+    minimumBidIncrement: 500,
+    startTime: hoursAgo(5),
+    endTime: hoursFromNow(3.5),
+    participantCount: 29,
+    watcherCount: 134,
+    bids: [
+      { id: "b-9-1", auctionId: "a-009", bidder: u4, amount: 101500, isAutoBid: false, createdAt: hoursAgo(0.4) },
+    ],
+    leadingBidder: u4,
+    autoShipping: true,
+    createdAt: hoursAgo(6),
+  },
+  {
+    id: "a-010",
+    vehicle: v015,
+    status: "upcoming",
+    startingBid: 160000,
+    currentBid: 160000,
+    bidCount: 0,
+    reserveMet: false,
+    reservePrice: 185000,
+    minimumBidIncrement: 1000,
+    startTime: hoursFromNow(24),
+    endTime: hoursFromNow(96),
+    participantCount: 0,
+    watcherCount: 520,
+    bids: [],
+    autoShipping: false,
+    createdAt: hoursAgo(8),
+  },
+  {
+    id: "a-011",
+    vehicle: MOCK_VEHICLES[3]!,
+    status: "completed",
+    startingBid: 62000,
+    currentBid: 91000,
+    bidCount: 47,
+    reserveMet: true,
+    minimumBidIncrement: 500,
+    startTime: hoursAgo(168),
+    endTime: hoursAgo(72),
+    participantCount: 84,
+    watcherCount: 312,
+    bids: [],
+    winner: u2,
+    finalPrice: 91000,
+    autoShipping: true,
+    createdAt: hoursAgo(172),
+  },
+  {
+    id: "a-012",
+    vehicle: MOCK_VEHICLES[6]!,
+    status: "completed",
+    startingBid: 42000,
+    currentBid: 56500,
+    bidCount: 29,
+    reserveMet: true,
+    minimumBidIncrement: 500,
+    startTime: hoursAgo(120),
+    endTime: hoursAgo(48),
+    participantCount: 31,
+    watcherCount: 89,
+    bids: [],
+    winner: u4,
+    finalPrice: 56500,
+    autoShipping: true,
+    createdAt: hoursAgo(124),
+  },
+];
+
+export function getMockAuction(id: string): Auction | undefined {
+  return MOCK_AUCTIONS.find((a) => a.id === id);
+}

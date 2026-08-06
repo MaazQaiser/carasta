@@ -1,0 +1,8 @@
+export { auctionService, BidError } from "./auction-service";
+export { vehicleService } from "./vehicle-service";
+export { userService } from "./user-service";
+export { postService } from "./post-service";
+export { messageService } from "./message-service";
+export { notificationService } from "./notification-service";
+export { merchService } from "./merch-service";
+export { garageService } from "./garage-service";

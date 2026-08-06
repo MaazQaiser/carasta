@@ -1,0 +1,109 @@
+/* Carasta — MUI is the primary design system.
+   Several pages still use Tailwind + shadcn/ui, so the Tailwind pipeline stays wired.
+
+   IMPORTANT: Do NOT wrap `@tailwind` directives inside `@layer { ... }` blocks.
+   Nesting them (e.g. `@layer base { @tailwind base; }`) causes PostCSS/Next to
+   drop the generated rules, which leaves Tailwind pages completely unstyled.
+
+   MUI CSS layers are disabled in ThemeRegistry — Next emits Tailwind preflight
+   unlayered, so layered MUI styles were losing (e.g. contained button text). */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Contained MUI buttons rendered as <a> (Next Link) — beat Tailwind `a { color: inherit }` */
+a.MuiButton-contained,
+a.MuiButton-containedPrimary,
+a.MuiButton-containedSecondary {
+  color: #ffffff;
+}
+a.MuiButton-contained:hover,
+a.MuiButton-containedPrimary:hover,
+a.MuiButton-containedSecondary:hover {
+  color: #ffffff;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+
+    --primary: 0 0% 8%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 8%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 43%;
+
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 8%;
+
+    --destructive: 0 94% 39%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 89%;
+    --input: 0 0% 89%;
+    --ring: 0 0% 8%;
+
+    --bid: 0 94% 39%;
+    --bid-foreground: 0 0% 100%;
+    --bid-hover: 0 94% 29%;
+
+    --chart-1: 0 94% 39%;
+    --chart-2: 0 0% 8%;
+    --chart-3: 0 0% 43%;
+    --chart-4: 0 0% 65%;
+    --chart-5: 0 0% 89%;
+
+    --radius: 0.875rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: #ffffff;
+}
+
+/* Header offset: floating bar (18+64) + 24px gap */
+.site-main {
+  min-height: 100vh;
+  padding-top: 106px;
+  background-color: #f9fafb;
+  padding-bottom: 72px;
+}
+
+@media (min-width: 600px) {
+  .site-main {
+    padding-bottom: 0;
+  }
+}
+
+@media (min-width: 900px) {
+  .site-main {
+    padding-top: 106px;
+  }
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

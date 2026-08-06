@@ -1,0 +1,185 @@
+import type { Post, Story, Club } from "@carasta/types";
+import { MOCK_USERS } from "./users";
+import { MOCK_VEHICLES } from "./vehicles";
+
+const u1 = MOCK_USERS[0]!;
+const u2 = MOCK_USERS[1]!;
+const u3 = MOCK_USERS[2]!;
+const u4 = MOCK_USERS[3]!;
+
+export const MOCK_POSTS: Post[] = [
+  {
+    id: "p-001",
+    author: u1,
+    type: "photo",
+    caption: "Took the Boss 429 up Mulholland at sunrise. Nothing sounds like a big-block cammed V8 echoing off the canyon walls. 🌅",
+    images: [
+      { id: "p001-1", url: "https://images.unsplash.com/photo-1572011440385-cf32f4fc7d02?w=800&auto=format&fit=crop", alt: "1969 Mustang Boss 429 canyon", isPrimary: true },
+      { id: "p001-2", url: "https://images.unsplash.com/photo-1584345274849-e9596d6ea12d?w=800&auto=format&fit=crop", alt: "Muscle car on the road" },
+    ],
+    linkedVehicle: MOCK_VEHICLES[0],
+    hashtags: ["mustang", "boss429", "musclecar", "mulholland", "sundaymorning"],
+    likes: 847,
+    isLiked: false,
+    comments: [
+      { id: "c-001-1", author: u2, content: "Absolutely gorgeous! That Candyapple Red is perfect in the morning light.", likes: 24, createdAt: new Date(Date.now() - 3600000).toISOString() },
+      { id: "c-001-2", author: u3, content: "The sound of a Boss 429 is unmatched. Enjoy every mile!", likes: 12, createdAt: new Date(Date.now() - 7200000).toISOString() },
+    ],
+    commentCount: 38,
+    shares: 45,
+    views: 12400,
+    createdAt: new Date(Date.now() - 14400000).toISOString(),
+  },
+  {
+    id: "p-002",
+    author: u3,
+    type: "photo",
+    caption: "The E-Type came home today. Enzo called it the most beautiful car ever made, and standing next to it, it's hard to argue.",
+    images: [
+      { id: "p002-1", url: "https://images.unsplash.com/photo-1750957823101-87ec89cf6862?w=800&auto=format&fit=crop", alt: "Jaguar E-Type delivery", isPrimary: true },
+    ],
+    linkedVehicle: MOCK_VEHICLES[1],
+    hashtags: ["jaguar", "etype", "classiccars", "britishclassic", "concours"],
+    likes: 2340,
+    isLiked: true,
+    comments: [
+      { id: "c-002-1", author: u1, content: "Congrats Marco! A Series 1 is the one to have. Let's do a photoshoot.", likes: 67, createdAt: new Date(Date.now() - 1800000).toISOString() },
+    ],
+    commentCount: 124,
+    shares: 198,
+    views: 48200,
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: "p-003",
+    author: u4,
+    type: "build",
+    caption: "Two years of rotisserie restoration and she's finally done. Genuine LS6 Chevelle SS 454 back from the dead. Thread 🧵👇",
+    images: [
+      { id: "p003-1", url: "https://images.unsplash.com/photo-1584345274849-e9596d6ea12d?w=800&auto=format&fit=crop", alt: "Chevelle SS restored front", isPrimary: true },
+      { id: "p003-2", url: "https://images.unsplash.com/photo-1698326456873-3f748646b8c3?w=800&auto=format&fit=crop", alt: "Chevelle SS profile" },
+      { id: "p003-3", url: "https://images.unsplash.com/photo-1569679614220-975786cbaca7?w=800&auto=format&fit=crop", alt: "Muscle car detail" },
+    ],
+    linkedVehicle: MOCK_VEHICLES[2],
+    hashtags: ["chevelless", "ls6", "restoration", "classiccars", "musclecar"],
+    likes: 1890,
+    isLiked: false,
+    comments: [
+      { id: "c-003-1", author: u2, content: "This is the most beautiful thing I've ever seen on this platform.", likes: 89, createdAt: new Date(Date.now() - 3600000).toISOString() },
+      { id: "c-003-2", author: u3, content: "Incredible work Mike. What shop did the rotisserie restoration?", likes: 34, createdAt: new Date(Date.now() - 5400000).toISOString() },
+    ],
+    commentCount: 203,
+    shares: 312,
+    views: 67800,
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+  },
+  {
+    id: "p-004",
+    author: u2,
+    type: "photo",
+    caption: "Barn-find season is open. Pulled this numbers-matching Corvette Sting Ray out of a 30-year slumber. The hunt continues.",
+    images: [
+      { id: "p004-1", url: "https://images.unsplash.com/photo-1581238159361-765c3090e72a?w=800&auto=format&fit=crop", alt: "Corvette Sting Ray barn find", isPrimary: true },
+    ],
+    hashtags: ["corvette", "stingray", "barnfind", "classiccars", "c2"],
+    likes: 634,
+    isLiked: true,
+    comments: [
+      { id: "c-004-1", author: u1, content: "Is this the one on Carasta? I've been watching it for weeks!", likes: 45, createdAt: new Date(Date.now() - 900000).toISOString() },
+    ],
+    commentCount: 67,
+    shares: 23,
+    views: 9800,
+    createdAt: new Date(Date.now() - 259200000).toISOString(),
+  },
+  {
+    id: "p-005",
+    author: u1,
+    type: "photo",
+    caption: "Cars & Coffee this morning. What a turnout! Spotted a stunning Aston Martin DB5 in Silver Birch.",
+    images: [
+      { id: "p005-1", url: "https://images.unsplash.com/photo-1641035854263-797cec88bb8f?w=800&auto=format&fit=crop", alt: "Aston Martin DB5 at Cars and Coffee", isPrimary: true },
+      { id: "p005-2", url: "https://images.unsplash.com/photo-1655207297101-74aadf311205?w=800&auto=format&fit=crop", alt: "Jaguar E-Type spotted" },
+    ],
+    hashtags: ["carsandcoffee", "astonmartin", "db5", "carevents", "carspotting"],
+    likes: 1120,
+    isLiked: false,
+    comments: [],
+    commentCount: 89,
+    shares: 67,
+    views: 18900,
+    createdAt: new Date(Date.now() - 345600000).toISOString(),
+  },
+  {
+    id: "p-006",
+    author: u3,
+    type: "video",
+    caption: "Took the Pagoda out with the hardtop off for a coastal cruise. That fuel-injected straight-six is pure silk.",
+    images: [{ id: "p006-1", url: "https://images.unsplash.com/photo-1662282925500-ddd13acb4fef?w=800&auto=format&fit=crop", alt: "Mercedes 280 SL Pagoda thumbnail", isPrimary: true }],
+    videoUrl: "https://example.com/video/pagoda-drive",
+    thumbnailUrl: "https://images.unsplash.com/photo-1662282925500-ddd13acb4fef?w=800&auto=format&fit=crop",
+    linkedVehicle: MOCK_VEHICLES[5],
+    hashtags: ["mercedes", "pagoda", "280sl", "classiccars", "opentop"],
+    likes: 4230,
+    isLiked: false,
+    comments: [],
+    commentCount: 287,
+    shares: 445,
+    views: 124000,
+    createdAt: new Date(Date.now() - 432000000).toISOString(),
+  },
+];
+
+export const MOCK_CLUBS: Club[] = [
+  {
+    id: "club-1",
+    name: "Jaguar E-Type Register",
+    description: "A home for the world's most beautiful car. Series 1, 2 and 3 owners welcome.",
+    coverImage: { id: "club1-cover", url: "https://images.unsplash.com/photo-1750957823101-87ec89cf6862?w=800&auto=format&fit=crop", alt: "Jaguar E-Type Club" },
+    memberCount: 8420,
+    postCount: 12400,
+    tags: ["jaguar", "etype", "britishclassic", "concours"],
+    isJoined: true,
+    createdAt: "2020-01-15T00:00:00Z",
+  },
+  {
+    id: "club-2",
+    name: "Pre-War & Vintage",
+    description: "Celebrating the pioneers — coachbuilt classics, roadsters, and rolling history.",
+    coverImage: { id: "club2-cover", url: "https://images.unsplash.com/photo-1641035854263-797cec88bb8f?w=800&auto=format&fit=crop", alt: "Vintage Car Club" },
+    memberCount: 15600,
+    postCount: 31200,
+    tags: ["vintage", "prewar", "coachbuilt", "roadster"],
+    isJoined: false,
+    createdAt: "2019-06-01T00:00:00Z",
+  },
+  {
+    id: "club-3",
+    name: "American Muscle Brotherhood",
+    description: "Chevelles, Mustangs, Challengers, Corvettes. The sound of America.",
+    coverImage: { id: "club3-cover", url: "https://images.unsplash.com/photo-1584345274849-e9596d6ea12d?w=800&auto=format&fit=crop", alt: "Muscle Car Club" },
+    memberCount: 22100,
+    postCount: 48000,
+    tags: ["musclecar", "mustang", "chevelle", "challenger", "corvette"],
+    isJoined: false,
+    createdAt: "2018-03-10T00:00:00Z",
+  },
+  {
+    id: "club-4",
+    name: "Aircooled & Classic VW",
+    description: "Beetles, Buses, and everything aircooled. Slow car, fast friends.",
+    coverImage: { id: "club4-cover", url: "https://images.unsplash.com/photo-1768713533995-82ba685c1bc3?w=800&auto=format&fit=crop", alt: "Aircooled VW Club" },
+    memberCount: 6800,
+    postCount: 9200,
+    tags: ["volkswagen", "beetle", "aircooled", "vintage"],
+    isJoined: true,
+    createdAt: "2021-01-01T00:00:00Z",
+  },
+];
+
+export const MOCK_STORIES: Story[] = [
+  { id: "s-1", author: u1, mediaUrl: "https://images.unsplash.com/photo-1572011440385-cf32f4fc7d02?w=400&auto=format&fit=crop", mediaType: "image", duration: 5, views: 420, createdAt: new Date(Date.now() - 7200000).toISOString(), expiresAt: new Date(Date.now() + 79200000).toISOString() },
+  { id: "s-2", author: u3, mediaUrl: "https://images.unsplash.com/photo-1750957823101-87ec89cf6862?w=400&auto=format&fit=crop", mediaType: "image", duration: 5, views: 1890, createdAt: new Date(Date.now() - 3600000).toISOString(), expiresAt: new Date(Date.now() + 82800000).toISOString() },
+  { id: "s-3", author: u2, mediaUrl: "https://images.unsplash.com/photo-1581238159361-765c3090e72a?w=400&auto=format&fit=crop", mediaType: "image", duration: 5, views: 234, createdAt: new Date(Date.now() - 1800000).toISOString(), expiresAt: new Date(Date.now() + 84600000).toISOString() },
+  { id: "s-4", author: u4, mediaUrl: "https://images.unsplash.com/photo-1584345274849-e9596d6ea12d?w=400&auto=format&fit=crop", mediaType: "image", duration: 5, views: 567, createdAt: new Date(Date.now() - 900000).toISOString(), expiresAt: new Date(Date.now() + 85500000).toISOString() },
+];
