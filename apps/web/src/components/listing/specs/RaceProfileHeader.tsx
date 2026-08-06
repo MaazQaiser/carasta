@@ -147,7 +147,7 @@ export function RaceProfileHeader({
     });
 
   return (
-    <div className="rounded-2xl border bg-card p-5 space-y-5">
+    <div className="rounded-2xl border bg-card p-3 sm:p-5 space-y-4 sm:space-y-5 min-w-0">
       <SpecsCategoryTabs
         categories={[...PROFILE_TABS]}
         activeCategoryId={activeTab}
@@ -489,21 +489,21 @@ export function RaceProfileHeader({
 
       {activeTab === "history" ? (
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h3 className="font-semibold text-base">Competition History</h3>
             <p className="text-sm text-muted-foreground mt-0.5">
               Add event-by-event results. Editing stays inline on this page.
             </p>
           </div>
-          <Button type="button" onClick={addHistory}>
+          <Button type="button" onClick={addHistory} className="w-full sm:w-auto shrink-0">
             <Plus className="h-4 w-4" />
             Add History Entry
           </Button>
         </div>
 
         {value.historyEntries.length === 0 ? (
-          <div className="rounded-2xl border border-dashed bg-muted/20 px-6 py-10 text-center">
+          <div className="rounded-2xl border border-dashed bg-muted/20 px-4 sm:px-6 py-8 sm:py-10 text-center">
             <p className="text-sm font-medium">No race history entries yet</p>
             <p className="text-sm text-muted-foreground mt-1">
               Capture events, tracks, results, and fastest laps.
@@ -515,10 +515,11 @@ export function RaceProfileHeader({
               const editing = value.editingHistoryId === entry.id;
               return (
                 <div key={entry.id} className="rounded-2xl border bg-muted/10 overflow-hidden">
-                  <div className="px-4 py-3 flex items-start gap-3">
+                  <div className="px-3 sm:px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
                     <button
                       type="button"
-                      className="mt-0.5 text-muted-foreground hover:text-foreground"
+                      className="mt-0.5 text-muted-foreground hover:text-foreground shrink-0"
                       onClick={() => updateHistory(entry.id, { expanded: !entry.expanded })}
                     >
                       {entry.expanded ? (
@@ -539,7 +540,8 @@ export function RaceProfileHeader({
                           "Track / date not set"}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 self-end sm:self-start">
                       <Button
                         type="button"
                         variant="ghost"

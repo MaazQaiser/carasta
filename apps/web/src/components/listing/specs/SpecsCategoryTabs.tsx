@@ -3,6 +3,10 @@
 import { cn } from "@/lib/utils";
 import type { SpecsCategoryDefinition } from "./types";
 
+/**
+ * Category / section tabs.
+ * `vertical` is responsive: horizontal scroll on small screens, vertical list from md up.
+ */
 export function SpecsCategoryTabs({
   categories,
   activeCategoryId,
@@ -23,19 +27,25 @@ export function SpecsCategoryTabs({
   const vertical = orientation === "vertical";
 
   return (
-    <div className={cn("rounded-2xl border bg-card p-1.5 sm:p-2", className)}>
+    <div className={cn("rounded-2xl border bg-card p-1.5 sm:p-2 min-w-0", className)}>
       <nav
         aria-label={ariaLabel}
         className={cn(
-          vertical ? "overflow-y-auto max-h-[min(28rem,70vh)]" : "-mx-0.5 overflow-x-auto scrollbar-hide"
+          "scrollbar-hide",
+          vertical
+            ? "-mx-0.5 overflow-x-auto md:mx-0 md:overflow-x-visible md:overflow-y-auto md:max-h-[min(28rem,70vh)]"
+            : "-mx-0.5 overflow-x-auto"
         )}
       >
         <div
           className={cn(
-            vertical ? "flex flex-col gap-1" : "flex min-w-max gap-1 px-0.5",
+            "gap-1",
+            vertical
+              ? "flex min-w-max px-0.5 snap-x snap-mandatory md:min-w-0 md:flex-col md:px-0 md:snap-none"
+              : "flex min-w-max px-0.5 snap-x snap-mandatory"
           )}
           role="tablist"
-          aria-orientation={orientation}
+          aria-orientation={vertical ? "vertical" : "horizontal"}
         >
           {categories.map((category) => {
             const Icon = category.icon;
@@ -50,8 +60,10 @@ export function SpecsCategoryTabs({
                 aria-selected={active}
                 onClick={() => onSelect(category.id)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors",
-                  vertical ? "w-full justify-between whitespace-normal text-left" : "whitespace-nowrap",
+                  "inline-flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-medium transition-colors snap-start",
+                  vertical
+                    ? "whitespace-nowrap md:w-full md:justify-between md:whitespace-normal md:text-left"
+                    : "whitespace-nowrap",
                   active
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
@@ -59,7 +71,7 @@ export function SpecsCategoryTabs({
               >
                 <span className="inline-flex items-center gap-1.5 min-w-0">
                   {Icon ? <Icon className="h-3.5 w-3.5 shrink-0 opacity-80" /> : null}
-                  <span className={cn(vertical && "truncate")}>{category.label}</span>
+                  <span className={cn(vertical && "md:truncate")}>{category.label}</span>
                 </span>
                 {typeof count === "number" ? (
                   <span

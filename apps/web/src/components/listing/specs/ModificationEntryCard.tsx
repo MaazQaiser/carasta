@@ -65,12 +65,13 @@ export function ModificationEntryCard({
   }
 
   return (
-    <div className="rounded-2xl border bg-card overflow-hidden">
-      <div className="px-4 py-3 flex items-start gap-3">
+    <div className="rounded-2xl border bg-card overflow-hidden min-w-0">
+      <div className="px-3 sm:px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
         <button
           type="button"
           onClick={onToggle}
-          className="mt-0.5 text-muted-foreground hover:text-foreground"
+          className="mt-0.5 text-muted-foreground hover:text-foreground shrink-0"
           aria-label={expanded ? "Collapse entry" : "Expand entry"}
         >
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -130,8 +131,9 @@ export function ModificationEntryCard({
             </div>
           )}
         </div>
+        </div>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0 self-end sm:self-start">
           <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" />
             Edit

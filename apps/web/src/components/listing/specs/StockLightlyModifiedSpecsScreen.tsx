@@ -130,10 +130,12 @@ export function StockLightlyModifiedSpecsScreen() {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-6 items-start">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Specifications & Modifications</h1>
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-4 sm:gap-6 items-start min-w-0">
+      <div className="space-y-4 sm:space-y-6 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+            Specifications & Modifications
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Review auto-filled factory specs, edit anything that looks wrong, and add modifications
             only when this vehicle differs from factory.
@@ -143,7 +145,7 @@ export function StockLightlyModifiedSpecsScreen() {
           </p>
         </div>
 
-        <div className="rounded-2xl border bg-card p-5 sm:p-6 space-y-5">
+        <div className="rounded-2xl border bg-card p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-5 min-w-0">
           <SpecsCategoryTabs
             categories={STOCK_AREA_TABS.map((tab) => ({ id: tab.id, label: tab.label }))}
             activeCategoryId={activeArea}
@@ -156,19 +158,19 @@ export function StockLightlyModifiedSpecsScreen() {
           />
 
           {activeArea === "factory" ? (
-            <section className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="font-semibold text-sm">Factory Specifications</h2>
-                <Badge variant="outline" className="text-[10px] gap-1">
+            <section className="space-y-4 min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-semibold text-sm min-w-0">Factory Specifications</h2>
+                <Badge variant="outline" className="text-[10px] gap-1 shrink-0">
                   <BadgeCheck className="h-3 w-3 text-primary" />
                   Imported from VIN
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)] gap-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-[200px_minmax(0,1fr)] gap-3 sm:gap-4 items-start">
                 <SpecsCategoryTabs
                   orientation="vertical"
-                  className="sm:sticky sm:top-24"
+                  className="md:sticky md:top-24"
                   categories={STOCK_FACTORY_CATEGORIES}
                   activeCategoryId={activeFactorySection?.id ?? activeFactoryId}
                   entryCounts={factoryEntryCounts}
@@ -183,11 +185,13 @@ export function StockLightlyModifiedSpecsScreen() {
                       (factoryEntryCounts[activeFactorySection.id] ?? 0) > 0 && "border-primary/40"
                     )}
                   >
-                    <div className="flex items-center justify-between gap-3 px-4 py-3 border-b bg-muted/20">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-3 border-b bg-muted/20">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-semibold text-sm">{activeFactorySection.label}</span>
+                        <span className="font-semibold text-sm truncate">
+                          {activeFactorySection.label}
+                        </span>
                         {(factoryEntryCounts[activeFactorySection.id] ?? 0) > 0 ? (
-                          <Badge variant="secondary" className="text-[10px]">
+                          <Badge variant="secondary" className="text-[10px] shrink-0">
                             {factoryEntryCounts[activeFactorySection.id]} mod
                             {factoryEntryCounts[activeFactorySection.id] === 1 ? "" : "s"}
                           </Badge>
@@ -197,6 +201,7 @@ export function StockLightlyModifiedSpecsScreen() {
                         type="button"
                         size="sm"
                         variant="outline"
+                        className="w-full sm:w-auto shrink-0"
                         onClick={() => openAddModification(activeFactorySection.id)}
                         disabled={Boolean(editingEntry)}
                       >
@@ -204,7 +209,7 @@ export function StockLightlyModifiedSpecsScreen() {
                         Add Modification
                       </Button>
                     </div>
-                    <div className="p-4 space-y-3">
+                    <div className="p-3 sm:p-4 space-y-3">
                       {activeFactorySection.fields.map((field) => (
                         <div
                           key={field.id}
@@ -226,9 +231,9 @@ export function StockLightlyModifiedSpecsScreen() {
               </div>
             </section>
           ) : (
-            <section className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
+            <section className="space-y-4 min-w-0">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
                   <h2 className="font-semibold text-sm">Modifications</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Add light changes by section — the form stays on this page.
@@ -238,6 +243,7 @@ export function StockLightlyModifiedSpecsScreen() {
                   type="button"
                   size="sm"
                   variant="outline"
+                  className="w-full sm:w-auto shrink-0"
                   onClick={() => openAddModification()}
                   disabled={Boolean(editingEntry)}
                 >
@@ -246,10 +252,10 @@ export function StockLightlyModifiedSpecsScreen() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)] gap-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-[200px_minmax(0,1fr)] gap-3 sm:gap-4 items-start">
                 <SpecsCategoryTabs
                   orientation="vertical"
-                  className="sm:sticky sm:top-24"
+                  className="md:sticky md:top-24"
                   categories={STOCK_MODIFICATION_CATEGORIES}
                   activeCategoryId={activeModCategoryId}
                   entryCounts={STOCK_MODIFICATION_CATEGORIES.reduce<Record<string, number>>(
@@ -338,8 +344,8 @@ export function StockLightlyModifiedSpecsScreen() {
             </section>
           )}
 
-          <div className="flex justify-end pt-2 border-t">
-            <Button asChild>
+          <div className="flex justify-stretch sm:justify-end pt-2 border-t">
+            <Button asChild className="w-full sm:w-auto">
               <Link href="/listing/history">
                 Continue
                 <ChevronRight className="h-4 w-4" />

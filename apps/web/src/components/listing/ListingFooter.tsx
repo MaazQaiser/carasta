@@ -36,10 +36,13 @@ export function ListingFooter({
   const shellClass = cn(
     "flex items-center justify-between gap-2 sm:gap-3",
     inset
-      ? "px-4 sm:px-6 py-3 bg-muted/20"
+      ? [
+          "px-3 sm:px-6 py-3 bg-muted/20",
+          "sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 border-t sm:static",
+        ]
       : [
           "rounded-2xl border bg-card px-3 sm:px-4 py-3",
-          "sticky bottom-[5.5rem] z-20 shadow-lg shadow-black/5 sm:bottom-3 lg:static lg:shadow-none",
+          "sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 shadow-lg shadow-black/5 sm:bottom-3 lg:static lg:shadow-none",
           "supports-[backdrop-filter]:bg-card/95 supports-[backdrop-filter]:backdrop-blur",
         ],
     className
@@ -67,24 +70,24 @@ export function ListingFooter({
   return (
     <div className={shellClass}>
       {previous ? (
-        <Button variant="outline" asChild>
+        <Button variant="outline" asChild className="min-w-0 flex-1 sm:flex-none">
           <Link href={previous.href}>
             <ChevronLeft className="h-4 w-4" />
             Back
           </Link>
         </Button>
       ) : (
-        <span className="w-10" />
+        <span className="w-10 shrink-0" />
       )}
 
       {next ? (
         continueDisabled ? (
-          <Button disabled>
+          <Button disabled className="min-w-0 flex-1 sm:flex-none">
             Continue
             <ChevronRight className="h-4 w-4" />
           </Button>
         ) : (
-          <Button asChild>
+          <Button asChild className="min-w-0 flex-1 sm:flex-none">
             <Link href={next.href}>
               Continue
               <ChevronRight className="h-4 w-4" />
@@ -92,7 +95,7 @@ export function ListingFooter({
           </Button>
         )
       ) : (
-        <span className="w-10" />
+        <span className="w-10 shrink-0" />
       )}
     </div>
   );

@@ -96,7 +96,7 @@ export function RestorationProfileHeader({
   const showFactoryCorrect = value.buildType === "factory-correct-restoration";
 
   return (
-    <div className="rounded-2xl border bg-card p-5 space-y-5">
+    <div className="rounded-2xl border bg-card p-3 sm:p-5 space-y-4 sm:space-y-5 min-w-0">
       <SpecsCategoryTabs
         categories={[...PROFILE_TABS]}
         activeCategoryId={activeTab}

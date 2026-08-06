@@ -46,8 +46,8 @@ export function ModificationEntryForm({
     patch({ [key]: form[key].filter((item) => item.id !== id) });
 
   return (
-    <div className="rounded-2xl border bg-muted/20 p-5 space-y-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="rounded-2xl border bg-muted/20 p-3 sm:p-5 space-y-4 sm:space-y-5 min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div className="sm:col-span-2">
           <FieldLabel htmlFor={`title-${form.id}`}>
             {config.entryTitleLabel ?? "Entry Title"}

@@ -56,8 +56,8 @@ export function SpecsBuildSummary({
     ];
 
   return (
-    <div className={cn("space-y-4 sticky top-20", className)}>
-      <div className="rounded-2xl border bg-card p-5 space-y-4">
+    <div className={cn("space-y-4 lg:sticky lg:top-20 min-w-0", className)}>
+      <div className="rounded-2xl border bg-card p-3 sm:p-5 space-y-3 sm:space-y-4">
         <h3 className="font-semibold text-sm">{title}</h3>
         <div className="space-y-3">
           {rows.map((row) => (

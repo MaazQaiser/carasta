@@ -66,19 +66,19 @@ export function SpecsWorkspace({
   }, {});
 
   return (
-    <div className={cn("space-y-6", className)}>
-      <div>
-        <h2 className="text-xl font-semibold">Specifications & Modifications</h2>
+    <div className={cn("space-y-4 sm:space-y-6 min-w-0", className)}>
+      <div className="min-w-0">
+        <h2 className="text-lg sm:text-xl font-semibold">Specifications & Modifications</h2>
         <p className="text-sm text-muted-foreground mt-1">{config.description}</p>
       </div>
 
       {header}
 
-      <div className="rounded-2xl border bg-card p-4 sm:p-5 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)] gap-4 items-start min-w-0">
+      <div className="rounded-2xl border bg-card p-3 sm:p-5 space-y-4 min-w-0">
+        <div className="grid grid-cols-1 md:grid-cols-[200px_minmax(0,1fr)] gap-3 sm:gap-4 items-start min-w-0">
           <SpecsCategoryTabs
             orientation="vertical"
-            className="sm:sticky sm:top-24 border-0 shadow-none bg-muted/20"
+            className="md:sticky md:top-24 border-0 shadow-none bg-muted/20"
             categories={config.categories}
             activeCategoryId={activeCategory.id}
             entryCounts={entryCounts}
@@ -103,8 +103,8 @@ export function SpecsWorkspace({
           </div>
         </div>
 
-        <div className="flex justify-end pt-2 border-t">
-          <Button asChild>
+        <div className="flex justify-stretch sm:justify-end pt-2 border-t">
+          <Button asChild className="w-full sm:w-auto">
             <Link href={continueHref}>
               Continue
               <ChevronRight className="h-4 w-4" />

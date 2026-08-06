@@ -57,8 +57,8 @@ export function ListingProgress({
         ) : null}
       </div>
 
-      <nav aria-label="Listing progress" className="-mx-1 overflow-x-auto scrollbar-hide">
-        <ol className="flex min-w-max xl:min-w-0 xl:w-full items-start px-1 pb-1">
+      <nav aria-label="Listing progress" className="-mx-1 overflow-x-auto scrollbar-hide scroll-px-2">
+        <ol className="flex min-w-max xl:min-w-0 xl:w-full items-start px-1 pb-1 snap-x snap-mandatory">
           {steps.map((step, index) => {
             const isCurrent = index === currentIndex;
             const isComplete = currentIndex >= 0 && index < currentIndex;
@@ -67,12 +67,12 @@ export function ListingProgress({
             return (
               <li
                 key={step.id}
-                className={cn("flex items-start", !isLast && "xl:flex-1")}
+                className={cn("flex items-start snap-start", !isLast && "xl:flex-1")}
               >
                 <Link
                   href={step.href}
                   className={cn(
-                    "group flex w-[4.5rem] sm:w-[5.25rem] xl:w-auto xl:min-w-0 xl:flex-1 flex-col items-center gap-1.5 text-center outline-none",
+                    "group flex w-[3.75rem] sm:w-[5.25rem] xl:w-auto xl:min-w-0 xl:flex-1 flex-col items-center gap-1.5 text-center outline-none",
                     "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg"
                   )}
                 >

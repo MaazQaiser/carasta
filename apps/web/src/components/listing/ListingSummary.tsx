@@ -61,10 +61,10 @@ export function ListingSummary({
           <li key={issue.id}>
             <Link
               href={issue.href}
-              className="text-sm text-destructive hover:underline inline-flex items-center gap-1.5"
+              className="text-sm text-destructive hover:underline inline-flex items-start gap-1.5 break-words"
             >
-              <AlertCircle className="h-3.5 w-3.5" />
-              {issue.message}
+              <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>{issue.message}</span>
             </Link>
           </li>
         ))}

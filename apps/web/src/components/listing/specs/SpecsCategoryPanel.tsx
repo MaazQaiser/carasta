@@ -33,11 +33,11 @@ export function SpecsCategoryPanel({
   formConfig?: EntryFormConfig;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border bg-card px-5 py-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-base">{category.label}</h3>
-          <p className="text-sm text-muted-foreground mt-0.5">
+    <div className="space-y-3 sm:space-y-4 min-w-0">
+      <div className="rounded-2xl border bg-card px-3 sm:px-5 py-3 sm:py-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-sm sm:text-base">{category.label}</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             {entries.length} {entries.length === 1 ? "entry" : "entries"}
             {category.description ? ` · ${category.description}` : ""}
           </p>
@@ -46,6 +46,7 @@ export function SpecsCategoryPanel({
           type="button"
           onClick={onAddEntry}
           disabled={Boolean(editingEntryId)}
+          className="w-full sm:w-auto shrink-0"
         >
           <Plus className="h-4 w-4" />
           Add Entry
@@ -53,7 +54,7 @@ export function SpecsCategoryPanel({
       </div>
 
       {entries.length === 0 ? (
-        <div className="rounded-2xl border border-dashed bg-muted/20 px-6 py-12 text-center">
+        <div className="rounded-2xl border border-dashed bg-muted/20 px-4 sm:px-6 py-8 sm:py-12 text-center">
           <p className="text-sm font-medium">No entries yet</p>
           <p className="text-sm text-muted-foreground mt-1">
             Add the first modification for {category.label}.

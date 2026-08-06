@@ -12,9 +12,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "play-lh.googleusercontent.com" },
     ],
   },
-  experimental: {
-    typedRoutes: false,
-  },
+  typedRoutes: false,
   async redirects() {
     return [
       // Deep-link aliases from handoff
