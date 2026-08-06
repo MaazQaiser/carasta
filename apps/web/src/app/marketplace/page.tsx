@@ -1,15 +1,17 @@
-import type { Metadata } from "next";
-import { MarketplaceClient } from "./MarketplaceClient";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Marketplace",
-  description: "Browse vehicles for sale — classic cars, supercars, EVs and more from verified sellers.",
-};
-
-export default function MarketplacePage({
+/** /marketplace redirects into the Auctions browse experience. */
+export default async function MarketplacePage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  return <MarketplaceClient />;
+  const params = await searchParams;
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === "string") qs.set(key, value);
+    else if (Array.isArray(value)) value.forEach((v) => qs.append(key, v));
+  }
+  const query = qs.toString();
+  redirect(query ? `/auctions?${query}` : "/auctions");
 }

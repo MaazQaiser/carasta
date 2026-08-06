@@ -186,7 +186,7 @@ export function HomePageClient({
               </Typography>
               <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", mb: 4, maxWidth: 440 }}>
                 <Typography color="text.secondary" sx={{ fontSize: "1rem", lineHeight: 1.65, flex: 1 }}>
-                  A curated marketplace for vintage &amp; collector cars — transparent auctions, documented histories, verified sellers.
+                  A curated auctions platform for vintage &amp; collector cars — transparent bidding, documented histories, verified sellers.
                 </Typography>
                 <Box
                   sx={{
@@ -412,13 +412,13 @@ export function HomePageClient({
               {
                 title: "American muscle",
                 sub: "Big-block legends",
-                href: "/marketplace?make=Chevrolet",
+                href: "/auctions?make=Chevrolet",
                 image: "https://images.unsplash.com/photo-1584345274849-e9596d6ea12d?w=1000&auto=format&fit=crop",
               },
               {
                 title: "European classics",
                 sub: "Timeless grand tourers",
-                href: "/marketplace?make=Jaguar",
+                href: "/auctions?make=Jaguar",
                 image: "https://images.unsplash.com/photo-1655207297101-74aadf311205?w=1000&auto=format&fit=crop",
               },
             ].map((banner) => (
@@ -485,7 +485,7 @@ export function HomePageClient({
                   <Box
                     key={b.name}
                     component={Link}
-                    href={`/marketplace?make=${encodeURIComponent(b.name)}`}
+                    href={`/auctions?make=${encodeURIComponent(b.name)}`}
                     sx={{
                       position: "relative",
                       height: 168,
@@ -537,7 +537,7 @@ export function HomePageClient({
                 direction="row"
                 spacing={1.25}
                 component={Link}
-                href={`/marketplace?make=${encodeURIComponent(b.name)}`}
+                href={`/auctions?make=${encodeURIComponent(b.name)}`}
                 sx={{
                   alignItems: "center",
                   px: 2,

@@ -15,14 +15,18 @@ import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
+import Badge from "@mui/material/Badge";
 import { CarastaLogo } from "@/components/brand/CarastaLogo";
 import { useAuth } from "@/lib/context/auth-context";
+import { useCart } from "@/lib/context/cart-context";
 import { brand } from "@/theme/carastaTheme";
 
 const NAV_LINKS = [
   { href: "/", label: "Home", exact: true },
-  { href: "/auctions", label: "Auctions" },
-  { href: "/marketplace", label: "Marketplace" },
+  { href: "/auctions", label: "Auctions", alsoMatch: ["/marketplace"] },
+  { href: "/shop", label: "Merch", alsoMatch: ["/merch"] },
   { href: "/carmunity", label: "Carmunity" },
 ];
 
@@ -34,10 +38,13 @@ const LOGO_TAB = 94;
 export function TopNav() {
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
+  const { count: cartCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isActive = (href: string, exact?: boolean) =>
-    exact ? pathname === href : pathname.startsWith(href);
+  const isActive = (href: string, exact?: boolean, alsoMatch?: string[]) =>
+    exact
+      ? pathname === href
+      : pathname.startsWith(href) || !!alsoMatch?.some((p) => pathname.startsWith(p));
 
   return (
     <>
@@ -147,7 +154,7 @@ export function TopNav() {
             }}
           >
             {NAV_LINKS.map((link) => {
-              const active = isActive(link.href, link.exact);
+              const active = isActive(link.href, link.exact, link.alsoMatch);
               return (
                 <Button
                   key={link.label}
@@ -176,16 +183,76 @@ export function TopNav() {
             })}
           </Stack>
 
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexShrink: 0 }}>
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", flexShrink: 0 }}>
+            <Button
+              component={Link}
+              href="/listing"
+              variant="text"
+              size="small"
+              sx={{
+                display: { xs: "none", md: "inline-flex" },
+                borderRadius: 999,
+                px: 2.25,
+                py: 1,
+                fontWeight: 700,
+                color: brand.ink,
+                bgcolor: "transparent",
+                whiteSpace: "nowrap",
+                boxShadow: "none",
+                "&:hover": {
+                  color: brand.ink,
+                  bgcolor: "rgba(20,20,20,0.06)",
+                  boxShadow: "none",
+                },
+              }}
+            >
+              Sell Your Vehicle
+            </Button>
+            <IconButton
+              component={Link}
+              href="/shop/cart"
+              aria-label="Cart"
+              sx={{
+                color: pathname.startsWith("/shop/cart") ? brand.primary : brand.ink,
+              }}
+            >
+              <Badge
+                badgeContent={cartCount > 0 ? cartCount : undefined}
+                color="error"
+                overlap="circular"
+                sx={{ "& .MuiBadge-badge": { fontSize: 10, minWidth: 16, height: 16 } }}
+              >
+                <ShoppingBagOutlinedIcon />
+              </Badge>
+            </IconButton>
             {isAuthenticated && user ? (
-              <IconButton component={Link} href="/profile" sx={{ p: 0.25 }}>
-                <Avatar
-                  src={user.avatar?.url}
-                  sx={{ width: 36, height: 36, bgcolor: brand.primary, fontSize: 14, fontWeight: 700 }}
+              <>
+                <IconButton
+                  component={Link}
+                  href="/notifications"
+                  aria-label="Notifications"
+                  sx={{
+                    color: pathname.startsWith("/notifications") ? brand.primary : brand.ink,
+                  }}
                 >
-                  {user.displayName.slice(0, 1)}
-                </Avatar>
-              </IconButton>
+                  <Badge
+                    color="error"
+                    variant="dot"
+                    overlap="circular"
+                    sx={{ "& .MuiBadge-badge": { top: 4, right: 4 } }}
+                  >
+                    <NotificationsNoneOutlinedIcon />
+                  </Badge>
+                </IconButton>
+                <IconButton component={Link} href="/profile" sx={{ p: 0.25 }} aria-label="Profile">
+                  <Avatar
+                    src={user.avatar?.url}
+                    sx={{ width: 36, height: 36, bgcolor: brand.primary, fontSize: 14, fontWeight: 700 }}
+                  >
+                    {user.displayName.slice(0, 1)}
+                  </Avatar>
+                </IconButton>
+              </>
             ) : (
               <Button
                 component={Link}
@@ -225,14 +292,14 @@ export function TopNav() {
                 component={Link}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                selected={isActive(link.href, link.exact)}
+                selected={isActive(link.href, link.exact, link.alsoMatch)}
               >
                 <ListItemText primary={link.label} primaryTypographyProps={{ fontWeight: 600 }} />
               </ListItemButton>
             ))}
-            <ListItemButton component={Link} href="/list/new" onClick={() => setMobileOpen(false)}>
+            <ListItemButton component={Link} href="/listing" onClick={() => setMobileOpen(false)}>
               <ListItemText
-                primary="List your car"
+                primary="Sell Your Vehicle"
                 primaryTypographyProps={{ fontWeight: 700, color: brand.primary }}
               />
             </ListItemButton>

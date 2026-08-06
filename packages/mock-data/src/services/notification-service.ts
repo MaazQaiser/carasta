@@ -1,4 +1,4 @@
-import type { Notification } from "@carasta/types";
+import type { Notification, NotificationType } from "@carasta/types";
 import { MOCK_NOTIFICATIONS } from "../seed/notifications";
 
 function delay(ms = 100): Promise<void> {
@@ -8,7 +8,9 @@ function delay(ms = 100): Promise<void> {
 export const notificationService = {
   async getNotifications(): Promise<Notification[]> {
     await delay();
-    return MOCK_NOTIFICATIONS.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return [...MOCK_NOTIFICATIONS].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   },
 
   async getUnreadCount(): Promise<number> {
@@ -24,6 +26,31 @@ export const notificationService = {
 
   async markAllAsRead(): Promise<void> {
     await delay(120);
-    MOCK_NOTIFICATIONS.forEach((n) => { n.isRead = true; });
+    MOCK_NOTIFICATIONS.forEach((n) => {
+      n.isRead = true;
+    });
+  },
+
+  /** Append a runtime notification (mock inbox). */
+  async create(input: {
+    type: NotificationType;
+    title: string;
+    message: string;
+    actionUrl?: string;
+    metadata?: Notification["metadata"];
+  }): Promise<Notification> {
+    await delay(40);
+    const notification: Notification = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      isRead: false,
+      actionUrl: input.actionUrl,
+      metadata: input.metadata,
+      createdAt: new Date().toISOString(),
+    };
+    MOCK_NOTIFICATIONS.unshift(notification);
+    return notification;
   },
 };

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
-import { SlidersHorizontal, LayoutGrid, List, X, Heart } from "lucide-react";
+import React, { useState, useEffect, useTransition, useMemo } from "react";
+import { SlidersHorizontal, LayoutGrid, List, X, Heart, SearchX } from "lucide-react";
 import type { Auction, AuctionStatus, AuctionSortField, AuctionFilters } from "@carasta/types";
 import { auctionService } from "@carasta/mock-data/services";
 import { AuctionCard } from "@/components/auction/AuctionCard";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { useWatchlist } from "@/lib/context/watchlist-context";
 
 const STATUS_TABS: { value: AuctionStatus | "all"; label: string }[] = [
@@ -32,6 +32,12 @@ interface Props {
   upcomingCount: number;
 }
 
+type FilterChip = {
+  id: string;
+  label: string;
+  clear: () => void;
+};
+
 export function AuctionListClient({ initialStatus, initialMake, liveCount, endingSoonCount, upcomingCount }: Props) {
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [total, setTotal] = useState(0);
@@ -48,6 +54,14 @@ export function AuctionListClient({ initialStatus, initialMake, liveCount, endin
   const [sort, setSort] = useState<AuctionSortField>("ending-soon");
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
+
+  const clearFilters = () => {
+    setMake("All");
+    setTransmission("All");
+    setFuel("All");
+    setPriceMin("");
+    setPriceMax("");
+  };
 
   const loadAuctions = () => {
     startTransition(async () => {
@@ -71,20 +85,49 @@ export function AuctionListClient({ initialStatus, initialMake, liveCount, endin
     ? auctions.filter((a) => watchlist.includes(a.vehicle.id))
     : auctions;
 
-  const activeFilterCount = [
-    make !== "All",
-    transmission !== "All",
-    fuel !== "All",
-    !!priceMin,
-    !!priceMax,
-  ].filter(Boolean).length;
+  const activeFilterChips = useMemo<FilterChip[]>(() => {
+    const chips: FilterChip[] = [];
+    if (make !== "All") chips.push({ id: "make", label: make, clear: () => setMake("All") });
+    if (transmission !== "All") {
+      chips.push({
+        id: "transmission",
+        label: transmission.charAt(0).toUpperCase() + transmission.slice(1),
+        clear: () => setTransmission("All"),
+      });
+    }
+    if (fuel !== "All") {
+      chips.push({
+        id: "fuel",
+        label: fuel.charAt(0).toUpperCase() + fuel.slice(1),
+        clear: () => setFuel("All"),
+      });
+    }
+    if (priceMin) {
+      chips.push({
+        id: "priceMin",
+        label: `From ${formatPrice(parseInt(priceMin, 10) || 0)}`,
+        clear: () => setPriceMin(""),
+      });
+    }
+    if (priceMax) {
+      const max = parseInt(priceMax, 10) || 0;
+      chips.push({
+        id: "priceMax",
+        label: max >= 100000 ? `Under ${formatPrice(max)}` : `Up to ${formatPrice(max)}`,
+        clear: () => setPriceMax(""),
+      });
+    }
+    return chips;
+  }, [make, transmission, fuel, priceMin, priceMax]);
+
+  const activeFilterCount = activeFilterChips.length;
 
   return (
     <div className="mx-auto max-w-screen-2xl px-4 lg:px-6 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Vehicle Auctions</h1>
-        <p className="text-muted-foreground mt-1">{total} auctions available</p>
+        <h1 className="text-3xl font-bold">Auctions</h1>
+        <p className="text-muted-foreground mt-1">{total} vehicles available</p>
       </div>
 
       {/* Status tabs */}
@@ -117,7 +160,7 @@ export function AuctionListClient({ initialStatus, initialMake, liveCount, endin
               <h3 className="font-semibold text-sm">Filters</h3>
               {activeFilterCount > 0 && (
                 <button
-                  onClick={() => { setMake("All"); setTransmission("All"); setFuel("All"); setPriceMin(""); setPriceMax(""); }}
+                  onClick={clearFilters}
                   className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                 >
                   <X className="h-3 w-3" /> Reset
@@ -266,6 +309,30 @@ export function AuctionListClient({ initialStatus, initialMake, liveCount, endin
             </div>
           )}
 
+          {/* Active filter chips */}
+          {activeFilterChips.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {activeFilterChips.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={chip.clear}
+                  className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1 text-sm font-medium text-foreground hover:border-primary/50 transition-colors"
+                >
+                  {chip.label}
+                  <X className="h-3 w-3 text-muted-foreground" />
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-sm text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+              >
+                Clear All
+              </button>
+            </div>
+          ) : null}
+
           {/* Grid / List */}
           {isPending ? (
             <div className={cn(view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6" : "space-y-3")}>
@@ -279,15 +346,22 @@ export function AuctionListClient({ initialStatus, initialMake, liveCount, endin
                 {showFavourites ? (
                   <Heart className="h-7 w-7 text-muted-foreground" />
                 ) : (
-                  <SlidersHorizontal className="h-7 w-7 text-muted-foreground" />
+                  <SearchX className="h-7 w-7 text-muted-foreground" />
                 )}
               </div>
               <h3 className="font-semibold mb-1">
-                {showFavourites ? "No saved auctions" : "No auctions found"}
+                {showFavourites ? "No saved auctions" : "No vehicles found"}
               </h3>
-              <p className="text-sm text-muted-foreground">
-                {showFavourites ? "Save auctions with the heart icon to see them here" : "Try adjusting your filters"}
+              <p className="text-sm text-muted-foreground mb-5 max-w-sm">
+                {showFavourites
+                  ? "Save auctions with the heart icon to see them here"
+                  : "Try adjusting or clearing your filters."}
               </p>
+              {!showFavourites && activeFilterCount > 0 ? (
+                <Button type="button" onClick={clearFilters}>
+                  Clear Filters
+                </Button>
+              ) : null}
             </div>
           ) : view === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">

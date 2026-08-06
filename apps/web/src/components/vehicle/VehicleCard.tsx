@@ -17,6 +17,7 @@ import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import type { Vehicle } from "@carasta/types";
 import { formatPrice, formatMileage } from "@/lib/utils";
+import { listingTypeLabel, saleTypeLabel } from "@/lib/listing-labels";
 import { useWatchlist } from "@/lib/context/watchlist-context";
 import { useCompare } from "@/lib/context/compare-context";
 import { brand } from "@/theme/carastaTheme";
@@ -33,6 +34,10 @@ export function VehicleCard({ vehicle, view = "grid", showCompare = false }: Veh
   const watched = isWatched(vehicle.id);
   const inCompare = isInCompare(vehicle.id);
   const primaryImage = vehicle.images[0];
+  const typeLabel = listingTypeLabel(vehicle.listingType);
+  const saleLabel = saleTypeLabel(vehicle.saleType);
+  const verified =
+    vehicle.vinVerified || vehicle.carastaVerified || vehicle.documentsAvailable;
 
   if (view === "list") {
     return (
@@ -49,8 +54,11 @@ export function VehicleCard({ vehicle, view = "grid", showCompare = false }: Veh
               <Typography variant="body2" color="text.secondary">
                 {formatMileage(vehicle.spec.mileage)} · {vehicle.spec.transmission} · {vehicle.location.city}, {vehicle.location.state}
               </Typography>
-              <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}>
+              <Stack direction="row" spacing={0.75} sx={{ mt: 0.75, flexWrap: "wrap" }}>
                 <Chip size="small" label={vehicle.condition} sx={{ textTransform: "capitalize", height: 22, fontSize: 11 }} />
+                {typeLabel && <Chip size="small" label={typeLabel} variant="outlined" sx={{ height: 22, fontSize: 11 }} />}
+                {saleLabel && <Chip size="small" label={saleLabel} variant="outlined" sx={{ height: 22, fontSize: 11 }} />}
+                {verified && <Chip size="small" label="Verified" color="primary" sx={{ height: 22, fontSize: 11 }} />}
                 {vehicle.spec.fuelType === "electric" && <Chip size="small" label="EV" color="primary" sx={{ height: 22, fontSize: 11 }} />}
               </Stack>
             </Box>
@@ -120,9 +128,16 @@ export function VehicleCard({ vehicle, view = "grid", showCompare = false }: Veh
         >
           {vehicle.title}
         </Typography>
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
           {formatMileage(vehicle.spec.mileage)} · {vehicle.spec.transmission} · {vehicle.location.city}, {vehicle.location.state}
         </Typography>
+        {(typeLabel || saleLabel || verified) && (
+          <Stack direction="row" spacing={0.5} sx={{ mb: 1.5, flexWrap: "wrap", gap: 0.5 }}>
+            {typeLabel && <Chip size="small" label={typeLabel} variant="outlined" sx={{ height: 22, fontSize: 10 }} />}
+            {saleLabel && <Chip size="small" label={saleLabel} variant="outlined" sx={{ height: 22, fontSize: 10 }} />}
+            {verified && <Chip size="small" label="Verified" color="primary" sx={{ height: 22, fontSize: 10 }} />}
+          </Stack>
+        )}
         <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
           <Box>
             <Typography variant="caption" color="text.secondary">

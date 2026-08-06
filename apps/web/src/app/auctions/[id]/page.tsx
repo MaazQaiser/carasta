@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { vehicleService, auctionService } from "@carasta/mock-data/services";
 import { VehicleDetailClient } from "@/app/vehicles/[id]/VehicleDetailClient";
+import { PublishedAuctionFallback } from "./PublishedAuctionFallback";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -10,7 +10,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const vehicle = await vehicleService.getVehicle(id);
-  if (!vehicle) return { title: "Auction Not Found" };
+  if (!vehicle) return { title: "Listing" };
   return {
     title: vehicle.title,
     description: vehicle.description,
@@ -27,7 +27,10 @@ export default async function AuctionDetailPage({ params }: Props) {
     vehicleService.getSimilarVehicles(id, 4),
   ]);
 
-  if (!vehicle) notFound();
+  // Listing Builder publishes client-side; fall back to localStorage records.
+  if (!vehicle) {
+    return <PublishedAuctionFallback id={id} />;
+  }
 
   const allAuctions = await auctionService.getAuctions({ filters: {}, pageSize: 100 });
   const auction = allAuctions.data.find((a) => a.vehicle.id === vehicle.id) ?? null;

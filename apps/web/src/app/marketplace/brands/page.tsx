@@ -12,7 +12,7 @@ export default async function BrandsPage() {
       <p className="text-muted-foreground mb-8">Find vehicles from your favourite manufacturers</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {brands.map((brand) => (
-          <Link key={brand.name} href={`/marketplace?make=${encodeURIComponent(brand.name)}`}>
+          <Link key={brand.name} href={`/auctions?make=${encodeURIComponent(brand.name)}`}>
             <div className="group flex items-center gap-4 p-4 rounded-2xl border bg-card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
               <div className="h-14 w-14 rounded-full overflow-hidden bg-muted shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

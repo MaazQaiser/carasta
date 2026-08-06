@@ -31,8 +31,8 @@ interface SearchDialogProps {
 const QUICK_LINKS = [
   { label: "Live Auctions", href: "/auctions?status=live", icon: <GavelIcon fontSize="small" /> },
   { label: "Ending Soon", href: "/auctions?status=ending-soon", icon: <TrendingUpIcon fontSize="small" /> },
-  { label: "Porsche", href: "/marketplace?make=Porsche", icon: <DirectionsCarIcon fontSize="small" /> },
-  { label: "Ferrari", href: "/marketplace?make=Ferrari", icon: <DirectionsCarIcon fontSize="small" /> },
+  { label: "Porsche", href: "/auctions?make=Porsche", icon: <DirectionsCarIcon fontSize="small" /> },
+  { label: "Ferrari", href: "/auctions?make=Ferrari", icon: <DirectionsCarIcon fontSize="small" /> },
 ];
 
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {

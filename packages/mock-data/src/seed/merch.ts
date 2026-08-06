@@ -12,11 +12,25 @@ export const MOCK_MERCH: MerchProduct[] = [
       { id: "m001-1", url: "https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=800&auto=format&fit=crop", alt: "Carasta Hoodie", isPrimary: true },
       { id: "m001-2", url: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&auto=format&fit=crop", alt: "Carasta Hoodie back" },
     ],
+    videos: [
+      {
+        id: "m001-v1",
+        type: "video",
+        url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+        alt: "Carasta Hoodie lookbook clip",
+        thumbnailUrl:
+          "https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=400&auto=format&fit=crop",
+      },
+    ],
     variants: [
       { id: "mv-s", name: "Size", value: "S", inStock: true },
       { id: "mv-m", name: "Size", value: "M", inStock: true },
       { id: "mv-l", name: "Size", value: "L", inStock: true },
       { id: "mv-xl", name: "Size", value: "XL", inStock: false },
+      { id: "mv-blk", name: "Color", value: "Black", inStock: true },
+      { id: "mv-gry", name: "Color", value: "Heather Grey", inStock: true },
+      { id: "mv-sty-classic", name: "Style", value: "Classic", inStock: true },
+      { id: "mv-sty-race", name: "Style", value: "Race Fit", inStock: false },
     ],
     tags: ["hoodie", "apparel", "racing"],
     inStock: true,

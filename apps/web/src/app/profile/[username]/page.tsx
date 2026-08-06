@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { userService, postService } from "@carasta/mock-data/services";
+import { profileService, userService } from "@carasta/mock-data/services";
 import { ProfileClient } from "../ProfileClient";
 
-interface Props { params: Promise<{ username: string }> }
+interface Props {
+  params: Promise<{ username: string }>;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params;
@@ -16,5 +18,6 @@ export default async function UserProfilePage({ params }: Props) {
   const { username } = await params;
   const user = await userService.getUserByUsername(username);
   if (!user) notFound();
-  return <ProfileClient user={user} isOwn={false} />;
+  const tabs = await profileService.getProfileTabs(user.id);
+  return <ProfileClient user={user} isOwn={false} tabs={tabs} />;
 }

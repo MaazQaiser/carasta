@@ -29,8 +29,10 @@ export function CommunityClient({ initialPosts, clubs, stories, creators }: Prop
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">Community</h1>
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" /> Create Post
+            <Button size="sm" className="gap-1.5" asChild>
+              <Link href="/carmunity?compose=1">
+                <Plus className="h-4 w-4" /> Create Post
+              </Link>
             </Button>
           </div>
 

@@ -19,7 +19,7 @@ export default async function AboutPage() {
           Where enthusiasts buy and sell classic cars
         </h1>
         <p className="text-lg text-muted-foreground mb-8">
-          Carasta is a curated marketplace for vintage and collector vehicles — transparent auctions, documented histories, verified sellers, and a community that truly knows cars.
+          Carasta is a curated auctions platform for vintage and collector vehicles — transparent bidding, documented histories, verified sellers, and a community that truly knows cars.
         </p>
         <div className="flex gap-3 justify-center">
           <Link href="/auctions">

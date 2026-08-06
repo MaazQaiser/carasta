@@ -1,5 +1,11 @@
 import type { User } from "@carasta/types";
 
+const cover = (id: string, photoId: string, alt: string) => ({
+  id,
+  url: `https://images.unsplash.com/photo-${photoId}?w=1600&auto=format&fit=crop`,
+  alt,
+});
+
 export const MOCK_USERS: User[] = [
   {
     id: "user-1",
@@ -7,12 +13,13 @@ export const MOCK_USERS: User[] = [
     displayName: "Alex Carter",
     email: "alex@example.com",
     avatar: { id: "av-1", url: "https://i.pravatar.cc/150?u=alex_motors", alt: "Alex Carter" },
+    coverImage: cover("cover-1", "1492144534655-ae79c964c9d7", "Classic cars on a scenic road"),
     bio: "Classic car enthusiast. Buying and selling since 2010.",
     location: "Los Angeles, CA",
     role: "seller",
     isVerified: true,
     isSeller: true,
-    stats: { totalListings: 42, totalSales: 38, totalPurchases: 5, totalBids: 12, followersCount: 1240, followingCount: 89, garageCount: 7, rating: 4.9, reviewCount: 36 },
+    stats: { totalListings: 42, totalSales: 38, totalPurchases: 5, totalBids: 12, followersCount: 1240, followingCount: 89, garageCount: 7, rating: 4.9, reviewCount: 36, responseRate: 96 },
     joinedAt: "2020-03-15T00:00:00Z",
   },
   {
@@ -21,12 +28,13 @@ export const MOCK_USERS: User[] = [
     displayName: "Priya Singh",
     email: "priya@example.com",
     avatar: { id: "av-2", url: "https://i.pravatar.cc/150?u=priya_wheels", alt: "Priya Singh" },
+    coverImage: cover("cover-2", "1503376780353-7e6692767b70", "Sports car at dusk"),
     bio: "JDM collector. Always hunting for low-mileage gems.",
     location: "Austin, TX",
     role: "buyer",
     isVerified: true,
     isSeller: false,
-    stats: { totalListings: 2, totalSales: 1, totalPurchases: 14, totalBids: 87, followersCount: 420, followingCount: 312, garageCount: 3, rating: 4.7, reviewCount: 8 },
+    stats: { totalListings: 2, totalSales: 1, totalPurchases: 14, totalBids: 87, followersCount: 420, followingCount: 312, garageCount: 3, rating: 4.7, reviewCount: 8, responseRate: 88 },
     joinedAt: "2021-07-20T00:00:00Z",
   },
   {
@@ -35,12 +43,13 @@ export const MOCK_USERS: User[] = [
     displayName: "Marco Rossi",
     email: "marco@example.com",
     avatar: { id: "av-3", url: "https://i.pravatar.cc/150?u=euro_garage", alt: "Marco Rossi" },
+    coverImage: cover("cover-3", "1544636331-e26879cd4d9b", "European sports car garage"),
     bio: "European sports car dealer. Ferrari, Porsche, Lamborghini specialist.",
     location: "Miami, FL",
     role: "seller",
     isVerified: true,
     isSeller: true,
-    stats: { totalListings: 124, totalSales: 118, totalPurchases: 0, totalBids: 3, followersCount: 8900, followingCount: 210, garageCount: 12, rating: 4.8, reviewCount: 112 },
+    stats: { totalListings: 124, totalSales: 118, totalPurchases: 0, totalBids: 3, followersCount: 8900, followingCount: 210, garageCount: 12, rating: 4.8, reviewCount: 112, responseRate: 99 },
     joinedAt: "2019-01-10T00:00:00Z",
   },
   {
@@ -49,12 +58,13 @@ export const MOCK_USERS: User[] = [
     displayName: "Mike Thompson",
     email: "mike@example.com",
     avatar: { id: "av-4", url: "https://i.pravatar.cc/150?u=muscle_mike", alt: "Mike Thompson" },
+    coverImage: cover("cover-4", "1584345274849-e9596d6ea12d", "American muscle car"),
     bio: "American muscle is my religion. Mustangs, Camaros, Challengers.",
     location: "Detroit, MI",
     role: "seller",
     isVerified: false,
     isSeller: true,
-    stats: { totalListings: 18, totalSales: 15, totalPurchases: 22, totalBids: 45, followersCount: 670, followingCount: 145, garageCount: 5, rating: 4.6, reviewCount: 14 },
+    stats: { totalListings: 18, totalSales: 15, totalPurchases: 22, totalBids: 45, followersCount: 670, followingCount: 145, garageCount: 5, rating: 4.6, reviewCount: 14, responseRate: 92 },
     joinedAt: "2022-02-08T00:00:00Z",
   },
   {
@@ -63,6 +73,7 @@ export const MOCK_USERS: User[] = [
     displayName: "Sarah Chen",
     email: "sarah@example.com",
     avatar: { id: "av-5", url: "https://i.pravatar.cc/150?u=sarah_ev_fan", alt: "Sarah Chen" },
+    coverImage: cover("cover-5", "1593941707882-a5bba14938c7", "Electric vehicle charging"),
     bio: "EV enthusiast and Tesla owner. Sustainability-focused car community.",
     location: "San Francisco, CA",
     role: "buyer",
@@ -89,12 +100,13 @@ export const MOCK_USERS: User[] = [
     displayName: "John Walker",
     email: "john@example.com",
     avatar: { id: "av-me", url: "https://i.pravatar.cc/150?u=john_drives", alt: "John Walker" },
+    coverImage: cover("cover-me", "1503376780353-7e6692767b70", "John Walker profile cover"),
     bio: "Car enthusiast. Love attending auctions and finding deals.",
     location: "Chicago, IL",
     role: "buyer",
     isVerified: true,
     isSeller: false,
-    stats: { totalListings: 1, totalSales: 0, totalPurchases: 4, totalBids: 23, followersCount: 89, followingCount: 134, garageCount: 3 },
+    stats: { totalListings: 1, totalSales: 0, totalPurchases: 4, totalBids: 23, followersCount: 89, followingCount: 134, garageCount: 6 },
     joinedAt: "2023-09-15T00:00:00Z",
   },
 ];

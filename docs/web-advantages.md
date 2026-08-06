@@ -4,7 +4,7 @@ This document captures every feature that differentiates the Carasta **web** exp
 
 ## Multi-Column Layouts
 - **Home:** side-by-side "Ending Soon" + "Upcoming" sections on desktop (single-column stack on mobile)
-- **Auctions / Marketplace:** persistent left filter rail on `lg+` screens; drawer on mobile
+- **Auctions:** persistent left filter rail on `lg+` screens; drawer on mobile
 - **Live Auction:** three-panel layout — gallery | bid panel | chat — all visible simultaneously on desktop
 - **Vehicle Detail:** two-column (gallery/tabs + sticky auction panel) on desktop
 

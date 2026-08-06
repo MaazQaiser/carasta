@@ -4,7 +4,7 @@ import { AuctionListClient } from "./AuctionListClient";
 
 export const metadata: Metadata = {
   title: "Auctions",
-  description: "Browse live, upcoming, and recently completed vehicle auctions.",
+  description: "Browse live, upcoming, and recently completed vehicles on Carasta Auctions.",
 };
 
 export default async function AuctionsPage({

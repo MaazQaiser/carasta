@@ -6,7 +6,7 @@ function delay(ms = 120): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-const me = MOCK_USERS[6]!;
+const me = MOCK_USERS.find((u) => u.id === "user-me")!;
 
 const MOCK_GARAGE_ENTRIES: GarageEntry[] = [
   {
@@ -17,8 +17,17 @@ const MOCK_GARAGE_ENTRIES: GarageEntry[] = [
     purchasePrice: 56500,
     purchasedAt: new Date(Date.now() - 2592000000).toISOString(),
     maintenanceHistory: [
-      { id: "mh-1", vehicleId: "v-007", type: "Oil Change", description: "Synthetic oil change + filter", mileageAtService: 21800, cost: 180, performedAt: new Date(Date.now() - 1296000000).toISOString() },
+      {
+        id: "mh-1",
+        vehicleId: "v-007",
+        type: "Oil Change",
+        description: "Synthetic oil change + filter",
+        mileageAtService: 21800,
+        cost: 180,
+        performedAt: new Date(Date.now() - 1296000000).toISOString(),
+      },
     ],
+    notes: "Daily driver in excellent shape.",
     addedAt: new Date(Date.now() - 2592000000).toISOString(),
   },
   {
@@ -37,7 +46,68 @@ const MOCK_GARAGE_ENTRIES: GarageEntry[] = [
     maintenanceHistory: [],
     addedAt: new Date(Date.now() - 259200000).toISOString(),
   },
+  {
+    id: "ge-4",
+    userId: "user-me",
+    vehicle: MOCK_VEHICLES[2]!,
+    type: "auction-win",
+    purchasePrice: 127000,
+    purchasedAt: new Date(Date.now() - 45 * 86400000).toISOString(),
+    maintenanceHistory: [],
+    notes: "Won on Carasta — awaiting transport.",
+    addedAt: new Date(Date.now() - 45 * 86400000).toISOString(),
+  },
+  {
+    id: "ge-5",
+    userId: "user-me",
+    vehicle: MOCK_VEHICLES[9]!,
+    type: "sold",
+    purchasePrice: 38000,
+    salePrice: 44500,
+    purchasedAt: new Date(Date.now() - 400 * 86400000).toISOString(),
+    soldAt: new Date(Date.now() - 120 * 86400000).toISOString(),
+    maintenanceHistory: [],
+    addedAt: new Date(Date.now() - 400 * 86400000).toISOString(),
+  },
+  {
+    id: "ge-6",
+    userId: "user-me",
+    vehicle: MOCK_VEHICLES[0]!,
+    type: "owned",
+    purchasePrice: 98000,
+    purchasedAt: new Date(Date.now() - 200 * 86400000).toISOString(),
+    maintenanceHistory: [
+      {
+        id: "mh-2",
+        vehicleId: "v-001",
+        type: "Inspection",
+        description: "Pre-purchase inspection + compression test",
+        mileageAtService: 52000,
+        cost: 450,
+        performedAt: new Date(Date.now() - 190 * 86400000).toISOString(),
+      },
+    ],
+    addedAt: new Date(Date.now() - 200 * 86400000).toISOString(),
+  },
 ];
+
+/** Lightweight garage snapshots for other profile users. */
+const SELLER_GARAGE: GarageEntry[] = MOCK_USERS.filter((u) => u.isSeller)
+  .flatMap((seller, sellerIndex) => {
+    const vehicles = MOCK_VEHICLES.filter((v) => v.seller.id === seller.id).slice(0, 3);
+    return vehicles.map((vehicle, i) => ({
+      id: `ge-${seller.id}-${i}`,
+      userId: seller.id,
+      vehicle,
+      type: (i === 0 ? "owned" : i === 1 ? "sold" : "wishlist") as GarageEntry["type"],
+      purchasePrice: vehicle.startingPrice,
+      purchasedAt: new Date(Date.now() - (sellerIndex + i + 1) * 86400000 * 30).toISOString(),
+      maintenanceHistory: [],
+      addedAt: new Date(Date.now() - (sellerIndex + i + 1) * 86400000 * 30).toISOString(),
+    }));
+  });
+
+const ALL_GARAGE = [...MOCK_GARAGE_ENTRIES, ...SELLER_GARAGE];
 
 const MOCK_DRAFTS: ListingDraft[] = [
   {
@@ -56,21 +126,30 @@ export const garageService = {
     return MOCK_GARAGE_ENTRIES;
   },
 
+  async getGarageForUser(userId: string): Promise<GarageEntry[]> {
+    await delay();
+    return ALL_GARAGE.filter((e) => e.userId === userId);
+  },
+
   async getGarageEntry(id: string): Promise<GarageEntry | null> {
     await delay(80);
-    return MOCK_GARAGE_ENTRIES.find((e) => e.id === id) ?? null;
+    return ALL_GARAGE.find((e) => e.id === id) ?? null;
   },
 
   async getStats(): Promise<GarageStats> {
     await delay(80);
+    const ownedCount = MOCK_GARAGE_ENTRIES.filter((e) => e.type === "owned").length;
+    const soldCount = MOCK_GARAGE_ENTRIES.filter((e) => e.type === "sold").length;
+    const wishlistCount = MOCK_GARAGE_ENTRIES.filter((e) => e.type === "wishlist").length;
+    const auctionWins = MOCK_GARAGE_ENTRIES.filter((e) => e.type === "auction-win").length;
     return {
-      totalVehicles: 3,
-      ownedCount: 1,
-      soldCount: 0,
-      wishlistCount: 2,
-      auctionWins: 1,
-      totalInvested: 56500,
-      totalReturned: 0,
+      totalVehicles: MOCK_GARAGE_ENTRIES.length,
+      ownedCount,
+      soldCount,
+      wishlistCount,
+      auctionWins,
+      totalInvested: MOCK_GARAGE_ENTRIES.reduce((sum, e) => sum + (e.purchasePrice ?? 0), 0),
+      totalReturned: MOCK_GARAGE_ENTRIES.reduce((sum, e) => sum + (e.salePrice ?? 0), 0),
     };
   },
 
@@ -88,7 +167,7 @@ export const garageService = {
     }
     const newDraft: ListingDraft = {
       id: `draft-${Date.now()}`,
-      userId: "user-me",
+      userId: me.id,
       step: 1,
       data: {},
       createdAt: new Date().toISOString(),

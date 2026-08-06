@@ -6,6 +6,7 @@ const u1 = MOCK_USERS[0]!;
 const u2 = MOCK_USERS[1]!;
 const u3 = MOCK_USERS[2]!;
 const u4 = MOCK_USERS[3]!;
+const uMe = MOCK_USERS.find((u) => u.id === "user-me")!;
 
 export const MOCK_POSTS: Post[] = [
   {
@@ -127,6 +128,82 @@ export const MOCK_POSTS: Post[] = [
     shares: 445,
     views: 124000,
     createdAt: new Date(Date.now() - 432000000).toISOString(),
+  },
+  {
+    id: "p-007",
+    author: uMe,
+    type: "photo",
+    caption: "First Cars & Coffee of the season in Chicago. Always good to see the community roll out.",
+    images: [
+      {
+        id: "p007-1",
+        url: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&auto=format&fit=crop",
+        alt: "Cars and Coffee Chicago",
+        isPrimary: true,
+      },
+    ],
+    hashtags: ["carsandcoffee", "chicago", "carcommunity", "carmunity"],
+    likes: 214,
+    isLiked: false,
+    comments: [
+      {
+        id: "c-007-1",
+        author: u1,
+        content: "Looks like a great turnout John!",
+        likes: 8,
+        createdAt: new Date(Date.now() - 7200000).toISOString(),
+      },
+    ],
+    commentCount: 12,
+    shares: 9,
+    views: 3100,
+    createdAt: new Date(Date.now() - 48000000).toISOString(),
+  },
+  {
+    id: "p-008",
+    author: uMe,
+    type: "story",
+    caption: "Won this one on Carasta last month. Still smiling every time I open the garage door.",
+    images: [
+      {
+        id: "p008-1",
+        url: "https://images.unsplash.com/photo-1584345274849-e9596d6ea12d?w=800&auto=format&fit=crop",
+        alt: "Auction win garage shot",
+        isPrimary: true,
+      },
+    ],
+    linkedVehicle: MOCK_VEHICLES[2],
+    hashtags: ["auctionwin", "carasta", "garage"],
+    likes: 156,
+    isLiked: true,
+    comments: [],
+    commentCount: 7,
+    shares: 4,
+    views: 2400,
+    createdAt: new Date(Date.now() - 1209600000).toISOString(),
+  },
+  {
+    id: "p-009",
+    author: uMe,
+    type: "build",
+    caption: "Weekend wrenching notes — fluid flush done, new pads on order. Build thread starting here.",
+    images: [
+      {
+        id: "p009-1",
+        url: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&auto=format&fit=crop",
+        alt: "Garage workbench",
+        isPrimary: true,
+      },
+    ],
+    linkedVehicle: MOCK_VEHICLES[6],
+    hashtags: ["build", "garage", "diy", "maintenance"],
+    likes: 89,
+    isLiked: false,
+    comments: [],
+    commentCount: 5,
+    shares: 2,
+    views: 1800,
+    createdAt: new Date(Date.now() - 604800000).toISOString(),
   },
 ];
 

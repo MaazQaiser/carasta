@@ -26,6 +26,6 @@ export const merchService = {
 
   async getFeatured(limit = 4): Promise<MerchProduct[]> {
     await delay(80);
-    return MOCK_MERCH.sort((a, b) => b.rating - a.rating).slice(0, limit);
+    return [...MOCK_MERCH].sort((a, b) => b.rating - a.rating).slice(0, limit);
   },
 };

@@ -6,3 +6,5 @@ export { messageService } from "./message-service";
 export { notificationService } from "./notification-service";
 export { merchService } from "./merch-service";
 export { garageService } from "./garage-service";
+export { profileService } from "./profile-service";
+export type { ProfileTabData, ProfileBid, ProfilePurchase } from "./profile-service";

@@ -33,6 +33,8 @@ export interface UserStats {
   garageCount: number;
   rating?: number;
   reviewCount?: number;
+  /** Optional seller response rate (0–100). */
+  responseRate?: number;
 }
 
 export interface AuthState {

@@ -133,6 +133,22 @@ export const auctionService = {
     return bid;
   },
 
+  /** Mark an auction completed when the countdown reaches zero (client-driven mock). */
+  async completeAuction(auctionId: string): Promise<Auction | null> {
+    await delay(80);
+    const auction = MOCK_AUCTIONS.find((a) => a.id === auctionId);
+    if (!auction) return null;
+    if (auction.status === "completed" || auction.status === "cancelled") return auction;
+
+    const sold = !auction.reservePrice || auction.reserveMet;
+    auction.status = "completed";
+    auction.finalPrice = auction.currentBid;
+    if (sold && auction.leadingBidder) {
+      auction.winner = auction.leadingBidder;
+    }
+    return auction;
+  },
+
   async getFeaturedAuctions(limit = 6): Promise<Auction[]> {
     await delay(100);
     const live = MOCK_AUCTIONS.filter((a) => a.status === "live");

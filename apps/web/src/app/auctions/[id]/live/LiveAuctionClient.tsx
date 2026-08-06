@@ -1,19 +1,27 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Send, ChevronLeft, ChevronRight, Users, Eye, TrendingUp, Maximize2, Gavel, X, CheckCircle, Radio } from "lucide-react";
+import {
+  ArrowLeft, Send, ChevronLeft, ChevronRight, Users, Eye, TrendingUp,
+  Maximize2, CheckCircle, Radio,
+} from "lucide-react";
 import type { Auction, Bid } from "@carasta/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { CountdownTimer } from "@/components/auction/CountdownTimer";
 import { BidModal } from "@/components/auction/BidModal";
+import { AuctionStatusBadge } from "@/components/auction/AuctionStatusBadge";
+import { LeadingBidderBanner, OutbidBanner } from "@/components/auction/AuctionStateBanners";
+import { AuctionEndedPanel } from "@/components/auction/AuctionEndedPanel";
+import { AuctionWonModal } from "@/components/auction/AuctionWonModal";
+import { BidHistoryList } from "@/components/auction/BidHistoryList";
 import { hasJoinedRoom, markRoomJoined } from "@/components/auction/EnterAuctionRoomModal";
 import { BidChart } from "./BidChart";
 import { MOCK_USERS } from "@carasta/mock-data";
+import { auctionService, notificationService } from "@carasta/mock-data/services";
 import { formatPrice } from "@/lib/utils";
 import { useAuth } from "@/lib/context/auth-context";
 
@@ -35,19 +43,41 @@ export function LiveAuctionClient({ initialAuction }: Props) {
   const [auction, setAuction] = useState(initialAuction);
   const [activeImg, setActiveImg] = useState(0);
   const [bidOpen, setBidOpen] = useState(false);
+  const [wonOpen, setWonOpen] = useState(false);
   const [chatMsg, setChatMsg] = useState("");
   const [chatMessages, setChatMessages] = useState(CHAT_MESSAGES);
   const [outbidAmount, setOutbidAmount] = useState<number | null>(null);
   const [welcomeVisible, setWelcomeVisible] = useState(false);
+  const [leadingBannerDismissed, setLeadingBannerDismissed] = useState(false);
+  const [userParticipated, setUserParticipated] = useState(false);
   const [bidPoints, setBidPoints] = useState<{ time: string; amount: number }[]>([
     { time: "Start", amount: initialAuction.startingBid },
     ...initialAuction.bids.slice().reverse().map((b, i) => ({ time: `${i + 1}m`, amount: b.amount })),
   ]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const joinedHandled = useRef(false);
+  const completingRef = useRef(false);
 
   const isLeading = !!(user && auction.leadingBidder?.id === user.id);
   const chatUsername = user?.username ?? "guest";
+  const auctionEnded = auction.status === "completed" || auction.status === "cancelled";
+  const isLive = !auctionEnded && (auction.status === "live" || auction.status === "ending-soon");
+  const userWon = !!(auctionEnded && user && auction.winner?.id === user.id);
+  const userLost = !!(auctionEnded && userParticipated && !userWon);
+
+  useEffect(() => {
+    if (!user) return;
+    if (auction.bids.some((b) => b.bidder.id === user.id) || auction.leadingBidder?.id === user.id) {
+      setUserParticipated(true);
+    }
+  }, [user, auction.bids, auction.leadingBidder?.id]);
+
+  useEffect(() => {
+    if (isLeading) {
+      setOutbidAmount(null);
+      setLeadingBannerDismissed(false);
+    }
+  }, [isLeading]);
 
   // Handle fresh join from the entry modal (?joined=1)
   useEffect(() => {
@@ -74,15 +104,62 @@ export function LiveAuctionClient({ initialAuction }: Props) {
           time: "just now",
         },
       ]);
-      // Clean the query param so refresh doesn't re-trigger
       router.replace(`/auctions/${auction.id}/live`, { scroll: false });
       const t = window.setTimeout(() => setWelcomeVisible(false), 6000);
       return () => window.clearTimeout(t);
     }
   }, [searchParams, auction.id, chatUsername, router]);
 
+  const handleAuctionEnded = useCallback(async () => {
+    if (completingRef.current || auction.status === "completed") return;
+    completingRef.current = true;
+    const completed = await auctionService.completeAuction(auction.id);
+    if (!completed) {
+      completingRef.current = false;
+      return;
+    }
+    setAuction({ ...completed });
+    setOutbidAmount(null);
+
+    const won = !!(user && completed.winner?.id === user.id);
+    const participated =
+      userParticipated || !!(user && completed.bids.some((b) => b.bidder.id === user.id));
+
+    void notificationService.create({
+      type: won ? "auction-won" : participated ? "auction-lost" : "auction-ended",
+      title: won ? "Auction Won" : participated ? "Auction Lost" : "Auction Ended",
+      message: won
+        ? `Congratulations! You won ${completed.vehicle.title}.`
+        : participated
+          ? `You were outbid on ${completed.vehicle.title}.`
+          : `${completed.vehicle.title} has ended.`,
+      actionUrl: `/auctions/${completed.id}/live`,
+      metadata: {
+        auctionId: completed.id,
+        vehicleId: completed.vehicle.id,
+        bidAmount: completed.finalPrice ?? completed.currentBid,
+      },
+    });
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: `cm-end-${Date.now()}`,
+        user: "auction-bot",
+        text: won
+          ? "Auction ended — congratulations, you won!"
+          : "Auction ended. Bidding is closed.",
+        time: "just now",
+      },
+    ]);
+
+    if (won) setWonOpen(true);
+  }, [auction.id, auction.status, user, userParticipated]);
+
   const handleBidPlaced = (bid: Bid) => {
     setOutbidAmount(null);
+    setUserParticipated(true);
+    setLeadingBannerDismissed(false);
     setAuction((prev) => ({
       ...prev,
       currentBid: bid.amount,
@@ -113,9 +190,9 @@ export function LiveAuctionClient({ initialAuction }: Props) {
     setChatMsg("");
   };
 
-  // Simulate incoming bids every ~4s
+  // Placeholder live updates — rival bids, feed, timer-driven UI (no sockets).
   useEffect(() => {
-    if (auction.status !== "live") return;
+    if (!isLive) return;
     const interval = setInterval(() => {
       const increment = auction.minimumBidIncrement * (1 + Math.floor(Math.random() * 3));
       const newAmount = auction.currentBid + increment;
@@ -130,7 +207,18 @@ export function LiveAuctionClient({ initialAuction }: Props) {
       };
 
       setAuction((prev) => {
-        if (user && prev.leadingBidder?.id === user.id) setOutbidAmount(newAmount);
+        if (prev.status === "completed") return prev;
+        const wasLeading = !!(user && prev.leadingBidder?.id === user.id);
+        if (wasLeading) {
+          setOutbidAmount(newAmount);
+          void notificationService.create({
+            type: "outbid",
+            title: "You have been outbid",
+            message: `A new bid of ${formatPrice(newAmount)} was placed on ${prev.vehicle.title}.`,
+            actionUrl: `/auctions/${prev.id}/live`,
+            metadata: { auctionId: prev.id, vehicleId: prev.vehicle.id, bidAmount: newAmount },
+          });
+        }
         return {
           ...prev,
           currentBid: newAmount,
@@ -138,6 +226,7 @@ export function LiveAuctionClient({ initialAuction }: Props) {
           participantCount: prev.participantCount + (Math.random() > 0.7 ? 1 : 0),
           bids: [newBid, ...prev.bids].slice(0, 20),
           leadingBidder: newBid.bidder,
+          reserveMet: prev.reservePrice ? newAmount >= prev.reservePrice : prev.reserveMet,
         };
       });
 
@@ -149,17 +238,17 @@ export function LiveAuctionClient({ initialAuction }: Props) {
         `New bid from ${randomBidder}`,
       ];
       const phrase = chatPhrases[Math.floor(Math.random() * chatPhrases.length)]!;
-      setChatMessages((prev) => [...prev, { id: `cm-${Date.now()}`, user: "auction-bot", text: phrase, time: "just now" }].slice(-30));
+      setChatMessages((prev) =>
+        [...prev, { id: `cm-${Date.now()}`, user: "auction-bot", text: phrase, time: "just now" }].slice(-30)
+      );
     }, 3500 + Math.random() * 2000);
 
     return () => clearInterval(interval);
-  }, [auction.status, auction.currentBid, auction.minimumBidIncrement, user]);
+  }, [isLive, auction.currentBid, auction.minimumBidIncrement, auction.id, user]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
-
-  const isLive = auction.status === "live" || auction.status === "ending-soon";
 
   return (
     <div className="mx-auto max-w-screen-2xl px-4 lg:px-6 py-8">
@@ -176,12 +265,12 @@ export function LiveAuctionClient({ initialAuction }: Props) {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {isAuthenticated && (
+          {isAuthenticated && isLive && (
             <Badge variant="secondary" className="gap-1 text-[11px]">
               <Radio className="h-3 w-3 text-red-500" /> In room
             </Badge>
           )}
-          <Badge variant="live">● LIVE</Badge>
+          <AuctionStatusBadge auction={auction} />
         </div>
       </div>
 
@@ -194,33 +283,39 @@ export function LiveAuctionClient({ initialAuction }: Props) {
               Place a bid anytime — minimum is {formatPrice(auction.currentBid + auction.minimumBidIncrement)}.
             </span>
           </div>
-          {!isLeading && (
+          {!isLeading && isLive && (
             <Button variant="bid" size="sm" onClick={() => setBidOpen(true)}>Place Bid</Button>
           )}
           <button onClick={() => setWelcomeVisible(false)} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Dismiss">
-            <X className="h-4 w-4" />
+            ×
           </button>
         </div>
       )}
 
-      {outbidAmount !== null && (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-orange-300 bg-orange-50 dark:bg-orange-900/15 px-4 py-3">
-          <Gavel className="h-5 w-5 text-orange-600 shrink-0" />
-          <div className="flex-1 text-sm">
-            <span className="font-semibold text-orange-700 dark:text-orange-400">You&apos;ve been outbid!</span>
-            <span className="text-muted-foreground ml-1.5">New leading bid is {formatPrice(outbidAmount)}.</span>
-          </div>
-          <Button variant="bid" size="sm" onClick={() => setBidOpen(true)}>Bid Again</Button>
-          <button onClick={() => setOutbidAmount(null)} className="text-muted-foreground hover:text-foreground shrink-0">
-            <X className="h-4 w-4" />
-          </button>
+      {isLeading && !leadingBannerDismissed && isLive && (
+        <div className="mb-6">
+          <LeadingBidderBanner
+            auction={auction}
+            onDismiss={() => setLeadingBannerDismissed(true)}
+          />
+        </div>
+      )}
+
+      {outbidAmount !== null && !isLeading && isLive && (
+        <div className="mb-6">
+          <OutbidBanner
+            inline
+            currentHighestBid={auction.currentBid}
+            minimumNextBid={auction.currentBid + auction.minimumBidIncrement}
+            onPlaceBid={() => setBidOpen(true)}
+            onDismiss={() => setOutbidAmount(null)}
+          />
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left — Gallery + Chart */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Gallery */}
           <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-muted">
             {auction.vehicle.images[activeImg] && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -247,7 +342,6 @@ export function LiveAuctionClient({ initialAuction }: Props) {
             </div>
           </div>
 
-          {/* Bid History Chart */}
           <div className="rounded-2xl border bg-card p-4">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -257,7 +351,6 @@ export function LiveAuctionClient({ initialAuction }: Props) {
             <BidChart data={bidPoints} currentBid={auction.currentBid} />
           </div>
 
-          {/* Vehicle specs strip */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {[
               ["Year", String(auction.vehicle.spec.year)],
@@ -277,65 +370,63 @@ export function LiveAuctionClient({ initialAuction }: Props) {
 
         {/* Right — Bid Panel + Chat */}
         <div className="flex flex-col gap-4">
-          {/* Current bid */}
           <div className="rounded-2xl border bg-card p-5">
-            <div className="text-center mb-4">
-              <p className="text-sm text-muted-foreground">Current Bid</p>
-              <p className="text-5xl font-bold tabular-nums">{formatPrice(auction.currentBid)}</p>
-              {auction.reservePrice && !auction.reserveMet && (
-                <p className="text-xs text-orange-500 mt-1">Reserve not met</p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-center py-3 px-4 rounded-xl bg-muted mb-4">
-              <CountdownTimer endTime={auction.endTime} size="lg" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 mb-4 text-center">
-              <div>
-                <p className="text-2xl font-bold">{auction.bidCount}</p>
-                <p className="text-xs text-muted-foreground">Total Bids</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{auction.participantCount}</p>
-                <p className="text-xs text-muted-foreground">Active Bidders</p>
-              </div>
-            </div>
-
-            {isLive && (
-              isLeading ? (
-                <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-bid/10 text-bid font-semibold text-sm">
-                  <CheckCircle className="h-4 w-4" /> You&apos;re the highest bidder
+            {auctionEnded ? (
+              <AuctionEndedPanel auction={auction} userLost={userLost} />
+            ) : (
+              <>
+                <div className="text-center mb-4">
+                  <p className="text-sm text-muted-foreground">Current Bid</p>
+                  <p className="text-5xl font-bold tabular-nums">{formatPrice(auction.currentBid)}</p>
+                  {auction.reservePrice && !auction.reserveMet && (
+                    <p className="text-xs text-orange-500 mt-1">Reserve not met</p>
+                  )}
+                  {auction.reservePrice && auction.reserveMet && (
+                    <p className="text-xs text-green-600 mt-1">Reserve met</p>
+                  )}
                 </div>
-              ) : (
-                <Button variant="bid" size="xl" className="w-full" onClick={() => setBidOpen(true)}>
-                  Place Bid — min {formatPrice(auction.currentBid + auction.minimumBidIncrement)}
-                </Button>
-              )
+
+                <div className="flex items-center justify-center py-3 px-4 rounded-xl bg-muted mb-4">
+                  <CountdownTimer
+                    endTime={auction.endTime}
+                    size="lg"
+                    onEnded={handleAuctionEnded}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold">{auction.bidCount}</p>
+                    <p className="text-xs text-muted-foreground">Total Bids</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{auction.participantCount}</p>
+                    <p className="text-xs text-muted-foreground">Active Bidders</p>
+                  </div>
+                </div>
+
+                {isLive && (
+                  isLeading ? (
+                    <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-bid/10 text-bid font-semibold text-sm">
+                      <CheckCircle className="h-4 w-4" /> You&apos;re the highest bidder
+                    </div>
+                  ) : (
+                    <Button variant="bid" size="xl" className="w-full" onClick={() => setBidOpen(true)}>
+                      Place Bid — min {formatPrice(auction.currentBid + auction.minimumBidIncrement)}
+                    </Button>
+                  )
+                )}
+              </>
             )}
           </div>
 
-          {/* Recent bids */}
           <div className="rounded-2xl border bg-card p-4">
             <h3 className="font-semibold text-sm mb-3">Recent Bids</h3>
-            <div className="space-y-2 max-h-44 overflow-y-auto">
-              {auction.bids.slice(0, 8).map((bid) => (
-                <div key={bid.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={bid.bidder.avatar?.url} alt={bid.bidder.username} />
-                      <AvatarFallback className="text-[10px]">{bid.bidder.username.slice(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-muted-foreground text-xs">{bid.bidder.username}</span>
-                    {bid.isAutoBid && <Badge variant="secondary" className="text-[9px] h-3.5 px-1">Auto</Badge>}
-                  </div>
-                  <span className="font-semibold">{formatPrice(bid.amount)}</span>
-                </div>
-              ))}
+            <div className="max-h-44 overflow-y-auto">
+              <BidHistoryList bids={auction.bids} currentUserId={user?.id} limit={8} />
             </div>
           </div>
 
-          {/* Live Chat */}
           <div className="rounded-2xl border bg-card p-4 flex flex-col h-64">
             <h3 className="font-semibold text-sm mb-3">Live Chat</h3>
             <div className="flex-1 overflow-y-auto space-y-2 mb-3 scrollbar-hide">
@@ -355,12 +446,12 @@ export function LiveAuctionClient({ initialAuction }: Props) {
                 onChange={(e) => setChatMsg(e.target.value)}
                 placeholder={isAuthenticated ? "Say something…" : "Sign in to chat"}
                 className="h-8 text-sm"
-                disabled={!isAuthenticated}
+                disabled={!isAuthenticated || auctionEnded}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") sendChat();
                 }}
               />
-              <Button size="icon" className="h-8 w-8 shrink-0" onClick={sendChat} disabled={!isAuthenticated}>
+              <Button size="icon" className="h-8 w-8 shrink-0" onClick={sendChat} disabled={!isAuthenticated || auctionEnded}>
                 <Send className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -368,7 +459,19 @@ export function LiveAuctionClient({ initialAuction }: Props) {
         </div>
       </div>
 
-      <BidModal open={bidOpen} onOpenChange={setBidOpen} auction={auction} vehicle={auction.vehicle} onBidPlaced={handleBidPlaced} />
+      <BidModal
+        open={bidOpen}
+        onOpenChange={setBidOpen}
+        auction={auction}
+        vehicle={auction.vehicle}
+        onBidPlaced={handleBidPlaced}
+      />
+      <AuctionWonModal
+        open={wonOpen}
+        onOpenChange={setWonOpen}
+        auction={auction}
+        vehicle={auction.vehicle}
+      />
     </div>
   );
 }

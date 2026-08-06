@@ -123,8 +123,8 @@ export function GarageClient({ entries, stats, drafts }: Props) {
                    key === "wins" ? "Vehicles you've won at auction appear here." :
                    "Your sold vehicles will appear here."}
                 </p>
-                <Link href={key === "wishlist" ? "/marketplace" : key === "wins" ? "/auctions" : "/sell"}>
-                  <Button variant="outline" size="sm">{key === "owned" ? "Add Vehicle" : key === "wishlist" ? "Browse Marketplace" : key === "wins" ? "Browse Auctions" : "Sell a Vehicle"}</Button>
+                <Link href={key === "wishlist" || key === "wins" ? "/auctions" : "/sell"}>
+                  <Button variant="outline" size="sm">{key === "owned" ? "Add Vehicle" : key === "wishlist" || key === "wins" ? "Browse Auctions" : "Sell a Vehicle"}</Button>
                 </Link>
               </div>
             ) : (

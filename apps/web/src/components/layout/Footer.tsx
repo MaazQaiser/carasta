@@ -16,10 +16,9 @@ import { brand } from "@/theme/carastaTheme";
 
 const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
-    title: "Marketplace",
+    title: "Auctions",
     links: [
-      { label: "Auctions", href: "/auctions" },
-      { label: "Browse cars", href: "/marketplace" },
+      { label: "Browse cars", href: "/auctions" },
       { label: "List your car", href: "/list/new" },
       { label: "Shop", href: "/shop" },
     ],
@@ -55,7 +54,7 @@ export function Footer() {
           <Grid2 size={{ xs: 12, md: 4 }}>
             <CarastaLogo inverted size={26} />
             <Typography variant="body2" sx={{ mt: 2.5, color: "rgba(255,255,255,0.6)", maxWidth: 300, mb: 3 }}>
-              A curated marketplace for enthusiast vehicles — transparent auctions, verified sellers, and a community that knows cars.
+              A curated auctions platform for enthusiast vehicles — transparent bidding, verified sellers, and a community that knows cars.
             </Typography>
 
             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>

@@ -15,6 +15,9 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ComponentType<{ classN
   "auction-ending": { icon: Gavel, color: "text-orange-500 bg-orange-50 dark:bg-orange-950" },
   "auction-won": { icon: Trophy, color: "text-yellow-500 bg-yellow-50 dark:bg-yellow-950" },
   "auction-lost": { icon: Gavel, color: "text-muted-foreground bg-muted" },
+  "auction-ended": { icon: Gavel, color: "text-muted-foreground bg-muted" },
+  "reserve-met": { icon: Check, color: "text-green-500 bg-green-50 dark:bg-green-950" },
+  "bid-submitted": { icon: Gavel, color: "text-bid bg-amber-50 dark:bg-amber-950" },
   comment: { icon: MessageSquare, color: "text-blue-500 bg-blue-50 dark:bg-blue-950" },
   like: { icon: Heart, color: "text-pink-500 bg-pink-50 dark:bg-pink-950" },
   follower: { icon: UserPlus, color: "text-purple-500 bg-purple-50 dark:bg-purple-950" },
@@ -35,7 +38,11 @@ const FILTER_TABS: { value: string; label: string }[] = [
 
 function filterNotifications(notifications: Notification[], filter: string): Notification[] {
   if (filter === "all") return notifications;
-  if (filter === "auction") return notifications.filter((n) => ["outbid", "auction-ending", "auction-won", "auction-lost", "new-bid"].includes(n.type));
+  if (filter === "auction") {
+    return notifications.filter((n) =>
+      ["outbid", "auction-ending", "auction-won", "auction-lost", "auction-ended", "reserve-met", "bid-submitted", "new-bid"].includes(n.type)
+    );
+  }
   if (filter === "social") return notifications.filter((n) => ["comment", "like", "follower"].includes(n.type));
   if (filter === "system") return notifications.filter((n) => ["vehicle-sold", "system", "offer-received", "offer-accepted", "offer-declined"].includes(n.type));
   return notifications;

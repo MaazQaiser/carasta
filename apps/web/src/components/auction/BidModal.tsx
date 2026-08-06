@@ -4,11 +4,19 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Gavel, AlertCircle, CheckCircle, LogIn } from "lucide-react";
 import type { Auction, Bid, Vehicle } from "@carasta/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { auctionService, BidError } from "@carasta/mock-data/services";
+import { CountdownTimer } from "@/components/auction/CountdownTimer";
+import { auctionService, BidError, notificationService } from "@carasta/mock-data/services";
 import { formatPrice, cn } from "@/lib/utils";
 import { useAuth } from "@/lib/context/auth-context";
 
@@ -19,11 +27,20 @@ interface BidModalProps {
   vehicle: Vehicle;
   /** Called after a bid is successfully placed so parents can sync auction state. */
   onBidPlaced?: (bid: Bid) => void;
+  /** Optional: navigate into the live room after success. */
+  onEnterLiveRoom?: () => void;
 }
 
 type BidState = "input" | "confirm" | "success" | "error";
 
-export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: BidModalProps) {
+export function BidModal({
+  open,
+  onOpenChange,
+  auction,
+  vehicle,
+  onBidPlaced,
+  onEnterLiveRoom,
+}: BidModalProps) {
   const { user, isAuthenticated } = useAuth();
   const [bidAmount, setBidAmount] = useState("");
   const [state, setState] = useState<BidState>("input");
@@ -31,9 +48,12 @@ export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: 
   const [errorMessage, setErrorMessage] = useState("");
   const [placedAmount, setPlacedAmount] = useState(0);
 
-  // Keep the suggested amount in sync with the latest current bid whenever the modal (re)opens.
   useEffect(() => {
-    if (open && auction) setBidAmount("");
+    if (open && auction) {
+      setBidAmount("");
+      setState("input");
+      setErrorMessage("");
+    }
   }, [open, auction?.id]);
 
   if (!auction) return null;
@@ -41,16 +61,36 @@ export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: 
   const minBid = auction.currentBid + auction.minimumBidIncrement;
   const quickAmounts = [minBid, minBid + auction.minimumBidIncrement, minBid + auction.minimumBidIncrement * 4];
   const isAlreadyLeading = !!(user && auction.leadingBidder?.id === user.id);
+  const isLeadingAfterPlace = placedAmount > 0 && placedAmount >= auction.currentBid;
 
   const handleConfirm = async () => {
     setIsLoading(true);
     setErrorMessage("");
     const amount = parseInt(bidAmount, 10);
     try {
+      const previousReserveMet = auction.reserveMet;
       const bid = await auctionService.placeBid(auction.id, amount, user ?? undefined);
       setPlacedAmount(amount);
       onBidPlaced?.(bid);
       setState("success");
+
+      void notificationService.create({
+        type: "bid-submitted",
+        title: "Bid Submitted",
+        message: `Your bid of ${formatPrice(amount)} on ${vehicle.title} was submitted successfully.`,
+        actionUrl: `/vehicles/${vehicle.id}`,
+        metadata: { auctionId: auction.id, vehicleId: vehicle.id, bidAmount: amount },
+      });
+
+      if (!previousReserveMet && auction.reservePrice && amount >= auction.reservePrice) {
+        void notificationService.create({
+          type: "reserve-met",
+          title: "Reserve Met",
+          message: `The reserve has been met on ${vehicle.title}.`,
+          actionUrl: `/vehicles/${vehicle.id}`,
+          metadata: { auctionId: auction.id, vehicleId: vehicle.id, bidAmount: amount },
+        });
+      }
     } catch (err) {
       setErrorMessage(err instanceof BidError ? err.message : "Something went wrong. Please try again.");
       setState("error");
@@ -61,7 +101,12 @@ export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: 
 
   const handleClose = () => {
     onOpenChange(false);
-    setTimeout(() => { setState("input"); setBidAmount(""); setErrorMessage(""); }, 300);
+    setTimeout(() => {
+      setState("input");
+      setBidAmount("");
+      setErrorMessage("");
+      setPlacedAmount(0);
+    }, 300);
   };
 
   return (
@@ -77,9 +122,15 @@ export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: 
               <p className="text-muted-foreground mt-1">You need an account to bid on {vehicle.title}.</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleClose}>Cancel</Button>
-              <Link href="/sign-up"><Button variant="outline">Sign Up</Button></Link>
-              <Link href="/sign-in"><Button variant="bid">Log In</Button></Link>
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Link href="/sign-up">
+                <Button variant="outline">Sign Up</Button>
+              </Link>
+              <Link href="/sign-in">
+                <Button variant="bid">Log In</Button>
+              </Link>
             </div>
           </div>
         )}
@@ -95,8 +146,12 @@ export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: 
                 You&apos;re currently the highest bidder at {formatPrice(auction.currentBid)}.
               </p>
             </div>
-            <Badge variant="bid" className="text-sm px-4 py-1">Leading Bidder</Badge>
-            <Button onClick={handleClose} className="mt-2">Got it</Button>
+            <Badge variant="bid" className="text-sm px-4 py-1">
+              Leading Bidder
+            </Badge>
+            <Button onClick={handleClose} className="mt-2">
+              Got it
+            </Button>
           </div>
         )}
 
@@ -137,7 +192,9 @@ export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: 
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Your bid amount</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
+                    $
+                  </span>
                   <Input
                     type="number"
                     className="pl-7"
@@ -156,7 +213,9 @@ export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: 
               )}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
               <Button
                 variant="bid"
                 disabled={!bidAmount || parseInt(bidAmount, 10) < minBid}
@@ -186,11 +245,14 @@ export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: 
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                By placing this bid you agree to purchase the vehicle if you win. Carasta&apos;s buyer protection applies.
+                By placing this bid you agree to purchase the vehicle if you win. Carasta&apos;s buyer
+                protection applies.
               </p>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setState("input")}>Back</Button>
+              <Button variant="outline" onClick={() => setState("input")}>
+                Back
+              </Button>
               <Button variant="bid" onClick={handleConfirm} disabled={isLoading}>
                 {isLoading ? "Placing bid…" : `Confirm ${formatPrice(parseInt(bidAmount, 10))}`}
               </Button>
@@ -199,16 +261,64 @@ export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: 
         )}
 
         {state === "success" && (
-          <div className="py-8 flex flex-col items-center text-center gap-4">
+          <div className="py-4 flex flex-col items-center text-center gap-4">
             <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             <div>
-              <h3 className="font-bold text-xl">Bid Placed!</h3>
-              <p className="text-muted-foreground mt-1">You are now the highest bidder at {formatPrice(placedAmount)}</p>
+              <h3 className="font-bold text-xl">Bid Submitted Successfully</h3>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Your bid has been submitted successfully.
+              </p>
             </div>
-            <Badge variant="bid" className="text-sm px-4 py-1">Leading Bidder</Badge>
-            <Button onClick={handleClose} className="mt-2">Continue</Button>
+
+            {isLeadingAfterPlace && (
+              <Badge variant="bid" className="text-sm px-4 py-1">
+                You&apos;re currently leading
+              </Badge>
+            )}
+
+            <div className="w-full rounded-xl border p-4 space-y-2 text-sm text-left">
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Vehicle</span>
+                <span className="font-medium text-right max-w-[60%]">{vehicle.title}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Submitted Bid</span>
+                <span className="font-bold">{formatPrice(placedAmount)}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Current Highest Bid</span>
+                <span className="font-semibold">{formatPrice(auction.currentBid)}</span>
+              </div>
+              <div className="flex justify-between gap-3 items-center">
+                <span className="text-muted-foreground">Auction Remaining Time</span>
+                <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              <Button variant="outline" className="flex-1" onClick={handleClose}>
+                Continue Watching
+              </Button>
+              <Button
+                variant="bid"
+                className="flex-1"
+                onClick={() => {
+                  handleClose();
+                  onEnterLiveRoom?.();
+                }}
+              >
+                Enter Live Room
+              </Button>
+            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Close
+            </button>
           </div>
         )}
 
@@ -219,10 +329,14 @@ export function BidModal({ open, onOpenChange, auction, vehicle, onBidPlaced }: 
             </div>
             <div>
               <h3 className="font-bold text-xl">Bid Failed</h3>
-              <p className="text-muted-foreground mt-1">{errorMessage || "Something went wrong. Please try again."}</p>
+              <p className="text-muted-foreground mt-1">
+                {errorMessage || "Something went wrong. Please try again."}
+              </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
               <Button onClick={() => setState("input")}>Try Again</Button>
             </div>
           </div>

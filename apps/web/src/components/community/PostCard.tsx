@@ -22,6 +22,7 @@ import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import type { Post } from "@carasta/types";
 import { formatRelativeTime } from "@/lib/utils";
 import { brand } from "@/theme/carastaTheme";
+import { AttachedVehicleCard } from "@/components/community/create-post/AttachedVehicleCard";
 
 interface PostCardProps {
   post: Post;
@@ -63,8 +64,12 @@ export function PostCard({ post, compact = false }: PostCardProps) {
     );
   }
 
+  const typeLabel = post.category
+    ? post.category.replace(/-/g, " ")
+    : post.type;
+
   return (
-    <Card>
+    <Card id={`post-${post.id}`}>
       <CardHeader
         avatar={
           <Avatar component={Link} href={`/profile/${post.author.username}`} src={post.author.avatar?.url}>
@@ -77,11 +82,21 @@ export function PostCard({ post, compact = false }: PostCardProps) {
           </Typography>
         }
         subheader={formatRelativeTime(post.createdAt)}
-        action={<Chip size="small" label={post.type} sx={{ textTransform: "capitalize", mr: 1, mt: 1 }} />}
+        action={<Chip size="small" label={typeLabel} sx={{ textTransform: "capitalize", mr: 1, mt: 1 }} />}
       />
       {primaryImage && (
         <CardMedia component="img" image={primaryImage.url} alt={primaryImage.alt} sx={{ aspectRatio: "4/3", objectFit: "cover" }} />
       )}
+      {!primaryImage && post.videoUrl ? (
+        <Box sx={{ bgcolor: "grey.100", aspectRatio: "4/3" }}>
+          <Box
+            component="video"
+            src={post.videoUrl}
+            controls
+            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </Box>
+      ) : null}
       {post.caption && (
         <CardContent>
           <Typography variant="body2" sx={{ mb: 1 }}>{post.caption}</Typography>
@@ -94,6 +109,11 @@ export function PostCard({ post, compact = false }: PostCardProps) {
           </Stack>
         </CardContent>
       )}
+      {post.linkedVehicle ? (
+        <Box sx={{ px: 2, pb: 1.5, pt: post.caption ? 0 : 1 }}>
+          <AttachedVehicleCard vehicle={post.linkedVehicle} compact />
+        </Box>
+      ) : null}
       <CardActions sx={{ px: 2, pb: 2 }}>
         <Button
           size="small"

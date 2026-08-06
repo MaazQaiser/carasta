@@ -8,6 +8,7 @@ import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/lib/context/auth-context";
 import { WatchlistProvider } from "@/lib/context/watchlist-context";
 import { CompareProvider } from "@/lib/context/compare-context";
+import { CartProvider } from "@/lib/context/cart-context";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
   keywords: [
     "car auctions",
     "Carasta",
-    "automotive marketplace",
+    "automotive auctions",
     "live vehicle auctions",
     "car community",
     "carmunity",
@@ -56,12 +57,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <WatchlistProvider>
               <CompareProvider>
-                <TopNav />
-                <main className="site-main">
-                  {children}
-                </main>
-                <Footer />
-                <BottomNav />
+                <CartProvider>
+                  <TopNav />
+                  <main className="site-main">
+                    {children}
+                  </main>
+                  <Footer />
+                  <BottomNav />
+                </CartProvider>
               </CompareProvider>
             </WatchlistProvider>
           </AuthProvider>

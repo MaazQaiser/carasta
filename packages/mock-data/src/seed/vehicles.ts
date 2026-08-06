@@ -1,5 +1,14 @@
-import type { Vehicle } from "@carasta/types";
+import type {
+  MarketplaceListingType,
+  MarketplaceSaleType,
+  Vehicle,
+} from "@carasta/types";
 import { MOCK_USERS } from "./users";
+import { LISTING_DETAILS_BY_ID } from "./listing-details";
+import {
+  buildMockListingDetailsForType,
+  mergeListingDetails,
+} from "./listing-details-by-type";
 
 const u1 = MOCK_USERS[0]!;
 const u2 = MOCK_USERS[1]!;
@@ -13,7 +22,7 @@ const img = (id: string, alt: string, isPrimary = false) => ({
   isPrimary,
 });
 
-export const MOCK_VEHICLES: Vehicle[] = [
+const BASE_MOCK_VEHICLES: Vehicle[] = [
   {
     id: "v-001",
     title: "1969 Ford Mustang Boss 429",
@@ -374,6 +383,129 @@ export const MOCK_VEHICLES: Vehicle[] = [
     updatedAt: "2024-01-23T10:00:00Z",
   },
 ];
+
+type ListingSeedMeta = {
+  listingType: MarketplaceListingType;
+  saleType: MarketplaceSaleType;
+  vinVerified?: boolean;
+  documentsAvailable?: boolean;
+  carastaVerified?: boolean;
+};
+
+const LISTING_META_BY_ID: Record<string, ListingSeedMeta> = {
+  "v-001": {
+    listingType: "restored-restomod-custom",
+    saleType: "reserve-auction",
+    vinVerified: true,
+    documentsAvailable: true,
+    carastaVerified: true,
+  },
+  "v-002": {
+    listingType: "restored-restomod-custom",
+    saleType: "reserve-auction",
+    documentsAvailable: true,
+    carastaVerified: true,
+  },
+  "v-003": {
+    listingType: "modified-performance",
+    saleType: "reserve-auction",
+    vinVerified: true,
+    documentsAvailable: true,
+  },
+  "v-004": {
+    listingType: "stock-lightly-modified",
+    saleType: "reserve-auction",
+    documentsAvailable: true,
+  },
+  "v-005": {
+    listingType: "stock-lightly-modified",
+    saleType: "buy-it-now",
+  },
+  "v-006": {
+    listingType: "modified-performance",
+    saleType: "reserve-auction",
+    vinVerified: true,
+    carastaVerified: true,
+  },
+  "v-007": {
+    listingType: "race-track-car",
+    saleType: "buy-it-now",
+    documentsAvailable: true,
+  },
+  "v-008": {
+    listingType: "modified-performance",
+    saleType: "reserve-auction",
+    vinVerified: true,
+    documentsAvailable: true,
+    carastaVerified: true,
+  },
+  "v-009": {
+    listingType: "stock-lightly-modified",
+    saleType: "buy-it-now",
+    documentsAvailable: true,
+  },
+  "v-010": {
+    listingType: "restored-restomod-custom",
+    saleType: "reserve-auction",
+    carastaVerified: true,
+  },
+  "v-011": {
+    listingType: "race-track-car",
+    saleType: "reserve-auction",
+    vinVerified: true,
+    documentsAvailable: true,
+  },
+  "v-012": {
+    listingType: "stock-lightly-modified",
+    saleType: "buy-it-now",
+  },
+  "v-013": {
+    listingType: "modified-performance",
+    saleType: "buy-it-now",
+    documentsAvailable: true,
+  },
+  "v-014": {
+    listingType: "restored-restomod-custom",
+    saleType: "reserve-auction",
+    vinVerified: true,
+    documentsAvailable: true,
+    carastaVerified: true,
+  },
+  "v-015": {
+    listingType: "restored-restomod-custom",
+    saleType: "reserve-auction",
+    documentsAvailable: true,
+    carastaVerified: true,
+  },
+};
+
+export const MOCK_VEHICLES: Vehicle[] = BASE_MOCK_VEHICLES.map((vehicle) => {
+  const meta = LISTING_META_BY_ID[vehicle.id];
+  const listingType = meta?.listingType ?? "stock-lightly-modified";
+  const saleType =
+    meta?.saleType ?? (vehicle.reservePrice ? "reserve-auction" : "buy-it-now");
+
+  const withType: Vehicle = {
+    ...vehicle,
+    listingType,
+    saleType,
+  };
+
+  const listingDetails = mergeListingDetails(
+    buildMockListingDetailsForType(withType, listingType),
+    LISTING_DETAILS_BY_ID[vehicle.id]
+  );
+
+  return {
+    ...withType,
+    ...(meta?.vinVerified ? { vinVerified: true } : {}),
+    ...(meta?.documentsAvailable || vehicle.hasInspectionReport
+      ? { documentsAvailable: true }
+      : {}),
+    ...(meta?.carastaVerified ? { carastaVerified: true } : {}),
+    listingDetails,
+  };
+});
 
 export function getMockVehicle(id: string): Vehicle | undefined {
   return MOCK_VEHICLES.find((v) => v.id === id);

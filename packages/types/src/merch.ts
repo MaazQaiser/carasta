@@ -16,6 +16,8 @@ export interface MerchProduct {
   price: number;
   compareAtPrice?: number;
   images: Image[];
+  /** Optional product videos for gallery. */
+  videos?: MerchMedia[];
   variants: ProductVariant[];
   tags: string[];
   inStock: boolean;
@@ -23,6 +25,14 @@ export interface MerchProduct {
   rating: number;
   reviewCount: number;
   createdAt: string;
+}
+
+export interface MerchMedia {
+  id: string;
+  url: string;
+  alt?: string;
+  type: "image" | "video";
+  thumbnailUrl?: string;
 }
 
 export interface ProductVariant {
@@ -39,12 +49,44 @@ export interface CartItem {
   quantity: number;
 }
 
+export type ShippingMethodId = "standard" | "express" | "priority";
+
+export type PaymentMethodId = "credit" | "debit" | "apple-pay" | "google-pay";
+
+export interface ShippingAddress {
+  /** Full name — composed from first/last at checkout. */
+  name: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  phone: string;
+  street: string;
+  apartment?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
+export interface OrderTotals {
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  discount: number;
+  total: number;
+}
+
 export interface Order {
   id: string;
   items: CartItem[];
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  totals: OrderTotals;
+  /** @deprecated Prefer totals.total — kept for seed compatibility. */
   total: number;
-  shippingAddress: string;
+  shippingAddress: ShippingAddress | string;
+  shippingMethod: ShippingMethodId;
+  paymentMethod: PaymentMethodId;
+  estimatedDelivery: string;
   trackingNumber?: string;
   createdAt: string;
 }

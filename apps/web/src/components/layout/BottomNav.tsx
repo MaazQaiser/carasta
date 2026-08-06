@@ -15,7 +15,7 @@ import { brand } from "@/theme/carastaTheme";
 
 const ITEMS = [
   { href: "/", label: "Home", icon: <HomeOutlinedIcon /> },
-  { href: "/auctions", label: "Auction", icon: <GavelOutlinedIcon /> },
+  { href: "/auctions", label: "Auctions", icon: <GavelOutlinedIcon /> },
   { href: "/list", label: "List", icon: <SellOutlinedIcon /> },
   { href: "/shop", label: "Shop", icon: <StorefrontOutlinedIcon /> },
   { href: "/carmunity", label: "Carmunity", icon: <GroupsOutlinedIcon /> },
@@ -23,9 +23,13 @@ const ITEMS = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const value = ITEMS.findIndex((item) =>
-    item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
-  );
+  const value = ITEMS.findIndex((item) => {
+    if (item.href === "/") return pathname === "/";
+    if (item.href === "/auctions") {
+      return pathname.startsWith("/auctions") || pathname.startsWith("/marketplace");
+    }
+    return pathname.startsWith(item.href);
+  });
 
   return (
     <Paper

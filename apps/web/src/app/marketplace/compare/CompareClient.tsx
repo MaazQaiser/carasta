@@ -48,9 +48,9 @@ export function CompareClient() {
           <Plus className="h-7 w-7 text-muted-foreground" />
         </div>
         <h2 className="text-2xl font-bold mb-2">No vehicles to compare</h2>
-        <p className="text-muted-foreground mb-6">Add up to 4 vehicles from the Marketplace to compare side by side.</p>
-        <Link href="/marketplace">
-          <Button>Browse Marketplace</Button>
+        <p className="text-muted-foreground mb-6">Add up to 4 vehicles from Auctions to compare side by side.</p>
+        <Link href="/auctions">
+          <Button>Browse Auctions</Button>
         </Link>
       </div>
     );
@@ -59,9 +59,9 @@ export function CompareClient() {
   return (
     <div className="mx-auto max-w-screen-2xl px-4 lg:px-6 py-8">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/marketplace">
+        <Link href="/auctions">
           <Button variant="ghost" size="sm" className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" /> Marketplace
+            <ArrowLeft className="h-4 w-4" /> Auctions
           </Button>
         </Link>
         <div>
@@ -109,7 +109,7 @@ export function CompareClient() {
               ))}
               {compareList.length < 4 && (
                 <th className="p-3 min-w-[180px]">
-                  <Link href="/marketplace">
+                  <Link href="/auctions">
                     <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors cursor-pointer h-full min-h-[200px]">
                       <Plus className="h-8 w-8 mb-2" />
                       <span className="text-sm font-medium">Add Vehicle</span>

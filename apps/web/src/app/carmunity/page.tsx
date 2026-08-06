@@ -1,5 +1,6 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { postService, userService, notificationService } from "@carasta/mock-data/services";
+import { postService } from "@carasta/mock-data/services";
 import { CarmunityClient } from "./CarmunityClient";
 
 export const metadata: Metadata = {
@@ -8,21 +9,19 @@ export const metadata: Metadata = {
 };
 
 export default async function CarmunityPage() {
-  const [feed, clubs, stories, creators, notifications] = await Promise.all([
+  const [feed, clubs, stories] = await Promise.all([
     postService.getFeed(1, 12),
     postService.getClubs(),
     postService.getStories(),
-    userService.getCreators(8),
-    notificationService.getNotifications(),
   ]);
 
   return (
-    <CarmunityClient
-      initialPosts={feed.data}
-      clubs={clubs.data}
-      stories={stories}
-      creators={creators}
-      notifications={notifications}
-    />
+    <Suspense fallback={<div className="mx-auto max-w-[680px] px-4 py-10 text-sm text-muted-foreground">Loading Carmunity…</div>}>
+      <CarmunityClient
+        initialPosts={feed.data}
+        clubs={clubs.data}
+        stories={stories}
+      />
+    </Suspense>
   );
 }
