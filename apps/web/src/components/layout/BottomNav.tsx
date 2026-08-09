@@ -23,6 +23,10 @@ const ITEMS = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  if (pathname.startsWith("/mobile-listing")) {
+    return null;
+  }
+
   const value = ITEMS.findIndex((item) => {
     if (item.href === "/") return pathname === "/";
     if (item.href === "/auctions") {

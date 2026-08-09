@@ -156,6 +156,17 @@ export const DraftService = {
       const parsed = JSON.parse(raw) as PersistedListingDraft;
       if (!parsed?.version || !parsed.draft) return null;
       const ws = parsed.draft.modificationWorkspace;
+      const race = ws.race;
+      const biography = race?.biography ?? {
+        competitionHistory: race?.competition?.competitionHistorySummary || "",
+        notableResults: race?.competition?.notableResults || "",
+        vehicleHistory: "",
+        builderNotes: "",
+        previousTeamsOrDrivers: "",
+        championships: "",
+        significantEvents: "",
+        additionalBackground: "",
+      };
       parsed.draft = {
         ...parsed.draft,
         modificationWorkspace: {
@@ -163,6 +174,12 @@ export const DraftService = {
           hasModifications: ws.hasModifications ?? null,
           reviewedFactoryCategoryIds: ws.reviewedFactoryCategoryIds ?? [],
           factorySpecOverrides: ws.factorySpecOverrides ?? {},
+          race: race
+            ? {
+                ...race,
+                biography,
+              }
+            : race,
         },
       };
       return parsed;

@@ -60,7 +60,9 @@ export function ModificationEntryForm({
           />
         </div>
         <div className="sm:col-span-2">
-          <FieldLabel htmlFor={`desc-${form.id}`}>Description</FieldLabel>
+          <FieldLabel htmlFor={`desc-${form.id}`}>
+            {config.descriptionLabel ?? "Description"}
+          </FieldLabel>
           <textarea
             id={`desc-${form.id}`}
             className={textareaClassName}
@@ -72,7 +74,7 @@ export function ModificationEntryForm({
             }
           />
         </div>
-        <div>
+        <div className={config.typeOfWorkMultiline ? "sm:col-span-2" : undefined}>
           <FieldLabel htmlFor={`work-type-${form.id}`}>
             {config.typeOfWorkLabel}
           </FieldLabel>
@@ -92,6 +94,14 @@ export function ModificationEntryForm({
                 ))}
               </SelectContent>
             </Select>
+          ) : config.typeOfWorkMultiline ? (
+            <textarea
+              id={`work-type-${form.id}`}
+              className={textareaClassName}
+              value={form.typeOfWork}
+              onChange={(e) => patch({ typeOfWork: e.target.value })}
+              placeholder={config.typeOfWorkPlaceholder}
+            />
           ) : (
             <Input
               id={`work-type-${form.id}`}

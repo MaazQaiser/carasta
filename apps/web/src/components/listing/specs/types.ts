@@ -79,7 +79,11 @@ export interface EntryFormConfig {
   saveButtonLabel?: string;
   notesLabel?: string;
   notesPlaceholder?: string;
+  descriptionLabel?: string;
   descriptionPlaceholder?: string;
+  /** When true, Work Performed / Type of Work uses a textarea. */
+  typeOfWorkMultiline?: boolean;
+  addEntryLabel?: string;
 }
 
 export interface SpecsFlowConfig {

@@ -49,7 +49,7 @@ export function SpecsCategoryPanel({
           className="w-full sm:w-auto shrink-0"
         >
           <Plus className="h-4 w-4" />
-          Add Entry
+          {formConfig?.addEntryLabel ?? "Add Entry"}
         </Button>
       </div>
 

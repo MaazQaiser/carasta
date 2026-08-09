@@ -56,6 +56,27 @@ export const ORIGINAL_PARTS_OPTIONS = ["Yes", "No", "Partial", "Unknown"];
 
 export const YES_NO_UNKNOWN_OPTIONS = ["Yes", "No", "Unknown", "Not Applicable"];
 
+/** Authenticity checklist answers for restored / restomod listings. */
+export const RESTORATION_AUTHENTICITY_OPTIONS = ["Yes", "No", "Unknown", "Not Verified"];
+
+export const RESTORATION_LEVEL_OPTIONS = [
+  "Concours",
+  "Show Quality",
+  "Driver Quality",
+  "Survivor",
+  "Partial Restoration",
+];
+
+export const RESTORATION_COMPLETION_STATUS_OPTIONS = ["Complete", "In Progress", "Planned"];
+
+export const RESTORATION_WORK_PERFORMED_BY_OPTIONS = [
+  "Self",
+  "Restoration Shop",
+  "Dealership",
+  "Previous Owner",
+  "Unknown",
+];
+
 export const VEHICLE_IDENTITY_TYPE_OPTIONS = [
   "Modern VIN",
   "Older VIN",
@@ -151,18 +172,24 @@ export const DEFAULT_ENTRY_FORM_CONFIG: EntryFormConfig = {
 };
 
 export const RESTORATION_ENTRY_FORM_CONFIG: EntryFormConfig = {
-  entryTitleLabel: "Entry Title",
+  entryTitleLabel: "Restoration Title",
+  descriptionLabel: "Summary",
+  descriptionPlaceholder: "Brief overview of this restoration entry",
   typeOfWorkLabel: "Work Performed",
-  typeOfWorkPlaceholder: "e.g. Body restoration, paint, rewire",
+  typeOfWorkPlaceholder: "Describe the restoration work performed",
+  typeOfWorkMultiline: true,
   partsBrandLabel: "Parts / Brand",
   manufacturerLabel: "Manufacturer",
   shopBuilderLabel: "Shop / Builder",
   workPerformedByLabel: "Work Performed By",
+  workPerformedByOptions: RESTORATION_WORK_PERFORMED_BY_OPTIONS,
   workPerformedByAsText: false,
   installationDateLabel: "Completion Date",
   dateStatusOptions: RESTORATION_DATE_STATUS_OPTIONS,
   documentSlots: RESTORATION_ENTRY_DOCUMENT_SLOTS,
   showOriginalPartsIncluded: true,
+  saveButtonLabel: "Save Restoration Entry",
+  addEntryLabel: "Add Restoration Entry",
 };
 
 export const RACE_ENTRY_DOCUMENT_SLOTS: EntryDocumentSlotConfig[] = [
@@ -198,14 +225,75 @@ export const RACE_ENTRY_FORM_CONFIG: EntryFormConfig = {
 };
 
 export const COMPETITION_LEVEL_OPTIONS = [
-  "Track Day",
   "Club",
   "Regional",
   "National",
   "Professional",
-  "Historic / Vintage",
+  "Historic",
+  "Exhibition",
+];
+
+export const RACE_DISCIPLINE_OPTIONS = [
+  "Road Racing",
+  "Time Attack",
+  "Drag Racing",
+  "Karting",
+  "Autocross",
+  "Rally",
+  "Other",
+];
+
+export const RACE_SANCTIONING_BODY_OPTIONS = [
+  "IMSA",
+  "SCCA",
+  "NASA",
+  "PCA",
+  "NHRA",
+  "FIA",
+  "NASCAR",
+  "Other / Independent",
   "Unknown",
 ];
+
+export const RACE_SERIES_OPTIONS = [
+  "GT World Challenge",
+  "IMSA WeatherTech",
+  "SCCA Majors",
+  "NASA Championships",
+  "Club Racing",
+  "Time Trial",
+  "Track Day Series",
+  "Other",
+  "Unknown / N/A",
+];
+
+export const RACE_CLASS_OPTIONS = [
+  "GT3",
+  "GT4",
+  "TCR",
+  "Spec Miata",
+  "Spec E30",
+  "Super Touring",
+  "Open Class",
+  "Other",
+  "Unknown / N/A",
+];
+
+export const RACE_ELIGIBILITY_OPTIONS = ["Eligible", "Pending", "Expired", "Unknown"];
+
+export const RACE_TECHNICAL_INSPECTION_OPTIONS = ["Passed", "Pending", "Failed", "N/A"];
+
+export const RACE_LOGBOOK_STATUS_OPTIONS = ["Current", "Expired", "Missing", "Unknown"];
+
+export const RACE_VEHICLE_TYPE_OPTIONS = [
+  "Street Legal",
+  "Purpose Built Race Car",
+  "Converted Race Car",
+];
+
+export const RACE_STREET_VIN_AVAILABLE_OPTIONS = ["Yes", "No"];
+
+export const RACE_SAFETY_EQUIPMENT_OPTIONS = ["Installed", "Not Installed", "Unknown"];
 
 export const STREET_LEGAL_STATUS_OPTIONS = [
   "Street Legal",
@@ -377,6 +465,8 @@ export function createEmptyRaceState(): RaceState {
       logbookNumber: "",
       builderAssignedId: "",
       noStreetVin: "",
+      builder: "",
+      manufacturer: "",
       builderManufacturer: "",
       buildYear: "",
       mileage: "",
@@ -397,6 +487,7 @@ export function createEmptyRaceState(): RaceState {
       technicalInspection: "",
       competitionHistorySummary: "",
       notableResults: "",
+      notes: "",
     },
     safety: {
       rollCageType: "",
@@ -439,6 +530,16 @@ export function createEmptyRaceState(): RaceState {
       ecuCalibration: "",
       driverNotes: "",
       crewNotes: "",
+    },
+    biography: {
+      competitionHistory: "",
+      notableResults: "",
+      vehicleHistory: "",
+      builderNotes: "",
+      previousTeamsOrDrivers: "",
+      championships: "",
+      significantEvents: "",
+      additionalBackground: "",
     },
     historyEntries: [],
     editingHistoryId: null,

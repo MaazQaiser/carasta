@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Grid2 from "@mui/material/Grid2";
@@ -44,8 +45,13 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
 ];
 
 export function Footer() {
+  const pathname = usePathname();
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+
+  if (pathname.startsWith("/mobile-listing")) {
+    return null;
+  }
 
   return (
     <Box component="footer" sx={{ display: { xs: "none", sm: "block" }, bgcolor: brand.ink, color: "#fff" }}>

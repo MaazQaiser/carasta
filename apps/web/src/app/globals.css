@@ -75,9 +75,85 @@ html {
   scroll-behavior: smooth;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   background-color: #ffffff;
+}
+
+/* Mobile listing phone frame: 440 × 956 */
+.mobile-listing-route {
+  --ml-phone-width: 440px;
+  --ml-phone-height: 956px;
+  min-height: 100svh;
+  height: 100svh;
+  overflow: auto;
+  background: #f4f4f6;
+}
+
+.mobile-listing-route .ml-phone-frame {
+  width: 100%;
+  height: 100svh;
+  max-width: var(--ml-phone-width);
+  margin: 0 auto;
+  background: #ffffff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+@media (min-width: 480px) {
+  .mobile-listing-route {
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+
+  .mobile-listing-route .ml-phone-frame {
+    width: var(--ml-phone-width);
+    height: var(--ml-phone-height);
+    max-height: none;
+    border-radius: 28px;
+    box-shadow: 0 12px 40px rgba(28, 28, 30, 0.12);
+    border: 1px solid rgba(28, 28, 30, 0.08);
+  }
+}
+
+.mobile-listing-route .ml-phone-frame > * {
+  flex: 1 1 0%;
+  min-height: 0;
+  height: 100%;
+}
+
+.ml-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.ml-shell-scroll {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* Native mobile feel: keep scrolling, hide the visible scrollbar gutter */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.ml-shell-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* Header offset: floating bar (18+64) + 24px gap */

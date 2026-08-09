@@ -188,7 +188,7 @@ export function ListingBuilderProvider({ children }: { children: React.ReactNode
             : id === "modified-performance"
               ? MODIFIED_PERFORMANCE_SPECS_CONFIG.categories[0]?.id ?? "powertrain"
               : id === "race-track-car"
-                ? RACE_TRACK_SPECS_CONFIG.categories[0]?.id ?? "competition-classification"
+                ? RACE_TRACK_SPECS_CONFIG.categories[0]?.id ?? "chassis-structure"
                 : prev.modificationWorkspace.activeCategoryId;
 
         return {

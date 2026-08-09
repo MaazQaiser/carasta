@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeRegistry } from "@/theme/ThemeRegistry";
-import { TopNav } from "@/components/layout/TopNav";
-import { BottomNav } from "@/components/layout/BottomNav";
-import { Footer } from "@/components/layout/Footer";
+import { AppFrame } from "@/components/layout/AppFrame";
 import { AuthProvider } from "@/lib/context/auth-context";
 import { WatchlistProvider } from "@/lib/context/watchlist-context";
 import { CompareProvider } from "@/lib/context/compare-context";
@@ -58,12 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <WatchlistProvider>
               <CompareProvider>
                 <CartProvider>
-                  <TopNav />
-                  <main className="site-main">
-                    {children}
-                  </main>
-                  <Footer />
-                  <BottomNav />
+                  <AppFrame>{children}</AppFrame>
                 </CartProvider>
               </CompareProvider>
             </WatchlistProvider>

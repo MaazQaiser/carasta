@@ -27,7 +27,7 @@ export const RESTORATION_BUILD_TYPES: RestorationBuildTypeOption[] = [
   },
   {
     id: "factory-correct-restoration",
-    label: "Factory-Correct Restoration",
+    label: "Factory Correct Restoration",
     description: "Restored to factory-correct specification and finish.",
   },
   {
@@ -63,8 +63,8 @@ export const RESTORED_RESTOMODE_SPECS_CONFIG: SpecsFlowConfig = {
   categories: [
     {
       id: "build-restoration",
-      label: "Build & Restoration",
-      description: "Core restoration and build work",
+      label: "Body & Restoration",
+      description: "Core body and restoration work",
       icon: Hammer,
     },
     {

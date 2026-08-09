@@ -21,7 +21,12 @@ import type {
   RestorationState,
   RestorationBuildTypeId,
 } from "../types";
-import { MILEAGE_STATUS_OPTIONS, YES_NO_UNKNOWN_OPTIONS } from "./options";
+import {
+  MILEAGE_STATUS_OPTIONS,
+  RESTORATION_AUTHENTICITY_OPTIONS,
+  RESTORATION_COMPLETION_STATUS_OPTIONS,
+  RESTORATION_LEVEL_OPTIONS,
+} from "./options";
 import { RESTORATION_BUILD_TYPES } from "./restored-restomod";
 import { SpecsCategoryTabs } from "./SpecsCategoryTabs";
 
@@ -48,10 +53,10 @@ function YesNoSelect({
       <FieldLabel>{label}</FieldLabel>
       <Select value={value || undefined} onValueChange={onChange}>
         <SelectTrigger>
-          <SelectValue placeholder="Select" />
+          <SelectValue placeholder="Yes / No / Unknown" />
         </SelectTrigger>
         <SelectContent>
-          {YES_NO_UNKNOWN_OPTIONS.map((option) => (
+          {RESTORATION_AUTHENTICITY_OPTIONS.map((option) => (
             <SelectItem key={option} value={option}>
               {option}
             </SelectItem>
@@ -218,21 +223,39 @@ export function RestorationProfileHeader({
                   />
                   <div>
                     <FieldLabel htmlFor="restoration-level">Restoration Level</FieldLabel>
-                    <Input
-                      id="restoration-level"
-                      value={value.factoryCorrect.restorationLevel}
-                      onChange={(e) => patchFactory({ restorationLevel: e.target.value })}
-                      placeholder="e.g. Concours / driver-quality"
-                    />
+                    <Select
+                      value={value.factoryCorrect.restorationLevel || undefined}
+                      onValueChange={(v) => patchFactory({ restorationLevel: v })}
+                    >
+                      <SelectTrigger id="restoration-level">
+                        <SelectValue placeholder="Select restoration level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RESTORATION_LEVEL_OPTIONS.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <FieldLabel htmlFor="completion-status">Completion Status</FieldLabel>
-                    <Input
-                      id="completion-status"
-                      value={value.factoryCorrect.completionStatus}
-                      onChange={(e) => patchFactory({ completionStatus: e.target.value })}
-                      placeholder="e.g. Complete / in progress"
-                    />
+                    <Select
+                      value={value.factoryCorrect.completionStatus || undefined}
+                      onValueChange={(v) => patchFactory({ completionStatus: v })}
+                    >
+                      <SelectTrigger id="completion-status">
+                        <SelectValue placeholder="Select completion status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RESTORATION_COMPLETION_STATUS_OPTIONS.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <FieldLabel htmlFor="restoration-shop">Restoration Shop</FieldLabel>
@@ -298,7 +321,11 @@ export function RestorationProfileHeader({
             <div className="space-y-6">
               {(
                 [
-                  ["buildBook", "Build Book", "Compiled restoration or build documentation."],
+                  [
+                    "buildBook",
+                    "Upload Build Book",
+                    "Upload PDFs or photos documenting the restoration.",
+                  ],
                   ["receipts", "Receipts", "Parts and materials receipts."],
                   ["invoices", "Invoices", "Shop and labor invoices."],
                   [

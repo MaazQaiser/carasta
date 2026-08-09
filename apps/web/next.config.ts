@@ -22,6 +22,17 @@ const nextConfig: NextConfig = {
       { source: "/merch/:path*", destination: "/shop/:path*", permanent: true },
       { source: "/community/:path*", destination: "/carmunity/:path*", permanent: false },
       { source: "/sell/listings", destination: "/list", permanent: false },
+      // Buyer detail demos (avoid nesting under seller /mobile-listing)
+      {
+        source: "/mobile-listing/m/listings",
+        destination: "/m/listings",
+        permanent: false,
+      },
+      {
+        source: "/mobile-listing/m/listings/:path*",
+        destination: "/m/listings/:path*",
+        permanent: false,
+      },
     ];
   },
 };

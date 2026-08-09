@@ -47,7 +47,7 @@ export function useAutosave(
       return;
     }
 
-    setStatus("saving");
+    // Don't flash "Saving…" until the debounce actually fires — keeps navigation feeling snappy.
     const timer = window.setTimeout(() => {
       saveNow();
     }, debounceMs);

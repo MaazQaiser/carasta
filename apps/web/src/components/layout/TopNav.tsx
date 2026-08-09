@@ -41,6 +41,10 @@ export function TopNav() {
   const { count: cartCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  if (pathname.startsWith("/mobile-listing")) {
+    return null;
+  }
+
   const isActive = (href: string, exact?: boolean, alsoMatch?: string[]) =>
     exact
       ? pathname === href

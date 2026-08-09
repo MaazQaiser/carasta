@@ -35,7 +35,7 @@ export const MODIFIED_PERFORMANCE_SPECS_CONFIG: SpecsFlowConfig = {
     },
     {
       id: "chassis-handling",
-      label: "Chassis & Handling",
+      label: "Chassis / Handling",
       description: "Suspension, brakes, chassis reinforcement",
       icon: Disc3,
     },

@@ -19,7 +19,7 @@ export const STOCK_FACTORY_CATEGORIES: SpecsCategoryDefinition[] = [
   { id: "wheels-tires", label: "Wheels & Tires", description: "Wheel and tire sizes", icon: CircleDot },
   { id: "exterior", label: "Exterior", description: "Color and body style", icon: Car },
   { id: "interior", label: "Interior", description: "Cabin color and seating", icon: Armchair },
-  { id: "electronics", label: "Electronics & Audio", description: "Factory audio and displays", icon: Speaker },
+  { id: "electronics", label: "Electronics / Audio", description: "Factory audio and displays", icon: Speaker },
   { id: "safety", label: "Safety", description: "Airbags, ABS, and assistance", icon: Shield },
   { id: "factory-equipment", label: "Factory Equipment", description: "Packages and premium options", icon: Factory },
 ];
@@ -180,7 +180,7 @@ export function buildFactorySpecSections(
     },
     {
       id: "electronics",
-      label: "Electronics & Audio",
+      label: "Electronics / Audio",
       fields: [
         field("electronics", "Factory Audio", ""),
         field("electronics", "Navigation", ""),

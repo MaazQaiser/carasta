@@ -201,6 +201,10 @@ export interface RaceVehicleIdentity {
   logbookNumber: string;
   builderAssignedId: string;
   noStreetVin: string;
+  /** Race shop / chassis builder name. */
+  builder: string;
+  /** Manufacturer name (also mirrored to builderManufacturer for legacy reads). */
+  manufacturer: string;
   builderManufacturer: string;
   buildYear: string;
   mileage: string;
@@ -222,6 +226,8 @@ export interface RaceCompetitionProfile {
   technicalInspection: string;
   competitionHistorySummary: string;
   notableResults: string;
+  /** Freeform notes for competition profile details. */
+  notes: string;
 }
 
 export interface RaceSafetyEquipment {
@@ -283,12 +289,24 @@ export interface RaceHistoryEntry {
   expanded: boolean;
 }
 
+export interface RaceVehicleBiography {
+  competitionHistory: string;
+  notableResults: string;
+  vehicleHistory: string;
+  builderNotes: string;
+  previousTeamsOrDrivers: string;
+  championships: string;
+  significantEvents: string;
+  additionalBackground: string;
+}
+
 export interface RaceState {
   identity: RaceVehicleIdentity;
   competition: RaceCompetitionProfile;
   safety: RaceSafetyEquipment;
   documentation: RaceDocumentation;
   setup: RaceSetupInformation;
+  biography: RaceVehicleBiography;
   historyEntries: RaceHistoryEntry[];
   editingHistoryId: string | null;
 }

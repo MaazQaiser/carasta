@@ -1,5 +1,4 @@
 import {
-  Trophy,
   Frame,
   Cog,
   Gauge,
@@ -14,7 +13,6 @@ import {
   Shield,
   Wrench,
   SlidersHorizontal,
-  Flag,
   MoreHorizontal,
 } from "lucide-react";
 import type { ModificationWorkspaceState, SpecsFlowConfig } from "./types";
@@ -34,12 +32,6 @@ export const RACE_TRACK_SPECS_CONFIG: SpecsFlowConfig = {
   showPerformanceSummary: false,
   entryForm: RACE_ENTRY_FORM_CONFIG,
   categories: [
-    {
-      id: "competition-classification",
-      label: "Competition Classification",
-      description: "Class, series, and eligibility details",
-      icon: Trophy,
-    },
     {
       id: "chassis-structure",
       label: "Chassis & Structure",
@@ -125,12 +117,6 @@ export const RACE_TRACK_SPECS_CONFIG: SpecsFlowConfig = {
       icon: SlidersHorizontal,
     },
     {
-      id: "competition-history",
-      label: "Competition History",
-      description: "Events, results, and lap data",
-      icon: Flag,
-    },
-    {
       id: "other",
       label: "Other",
       description: "Anything that doesn’t fit above",
@@ -141,7 +127,7 @@ export const RACE_TRACK_SPECS_CONFIG: SpecsFlowConfig = {
 
 export function createRaceTrackWorkspace(): ModificationWorkspaceState {
   const firstCategoryId =
-    RACE_TRACK_SPECS_CONFIG.categories[0]?.id ?? "competition-classification";
+    RACE_TRACK_SPECS_CONFIG.categories[0]?.id ?? "chassis-structure";
   return {
     performanceSummary: createEmptyPerformanceSummary(),
     restoration: createEmptyRestorationState(),
