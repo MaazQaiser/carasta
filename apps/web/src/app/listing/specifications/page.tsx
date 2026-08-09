@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { SpecificationsScreen } from "@/components/listing/specs";
+import { SpecificationsRedirectScreen } from "@/components/listing/screens/SpecificationsRedirectScreen";
 
 export const metadata: Metadata = { title: "Specifications — Carasta" };
 
 export default function ListingSpecificationsPage() {
-  return <SpecificationsScreen />;
+  return <SpecificationsRedirectScreen />;
 }

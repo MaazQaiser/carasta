@@ -6,8 +6,14 @@ import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getAdjacentListingSteps } from "./config";
 import { useListingBuilder } from "./ListingBuilderContext";
+import {
+  canContinueOnPath,
+  getBackHref,
+  getContinueHref,
+  LISTING_PATHS,
+  resolveListingProgressStepId,
+} from "./listing-route-map";
 
 export interface ListingFooterProps {
   className?: string;
@@ -18,7 +24,7 @@ export interface ListingFooterProps {
 
 /**
  * Footer actions for Listing Builder steps.
- * Continue is disabled on Vehicle Type until a type is selected.
+ * Continue/Back use type-aware routes aligned with mobile listing logic.
  */
 export function ListingFooter({
   className,
@@ -27,11 +33,14 @@ export function ListingFooter({
 }: ListingFooterProps) {
   const pathname = usePathname();
   const { draft } = useListingBuilder();
-  const { previous, current, next } = getAdjacentListingSteps(pathname);
+  const stepId = resolveListingProgressStepId(pathname);
+  const isReviewStep = stepId === "review";
+  const isIdentifyPrompt =
+    pathname.split("?")[0] === LISTING_PATHS.identify;
 
-  const isTypeStep = current?.id === "type";
-  const isReviewStep = current?.id === "review";
-  const continueDisabled = isTypeStep && !draft.listingTypeId;
+  const backHref = getBackHref(pathname, draft.listingTypeId);
+  const continueHref = getContinueHref(pathname, draft);
+  const continueDisabled = !canContinueOnPath(pathname, draft);
 
   const shellClass = cn(
     "flex items-center justify-between gap-2 sm:gap-3",
@@ -54,10 +63,10 @@ export function ListingFooter({
 
   // Review screen owns Submit / Save Draft / Cancel actions.
   if (isReviewStep) {
-    return previous ? (
+    return backHref ? (
       <div className={shellClass}>
         <Button variant="outline" asChild>
-          <Link href={previous.href}>
+          <Link href={backHref}>
             <ChevronLeft className="h-4 w-4" />
             Back
           </Link>
@@ -67,11 +76,30 @@ export function ListingFooter({
     ) : null;
   }
 
+  // Identify prompt uses method cards — no Continue in footer.
+  if (isIdentifyPrompt) {
+    return (
+      <div className={shellClass}>
+        {backHref ? (
+          <Button variant="outline" asChild className="min-w-0 flex-1 sm:flex-none">
+            <Link href={backHref}>
+              <ChevronLeft className="h-4 w-4" />
+              Back
+            </Link>
+          </Button>
+        ) : (
+          <span className="w-10 shrink-0" />
+        )}
+        <span className="w-10 shrink-0" />
+      </div>
+    );
+  }
+
   return (
     <div className={shellClass}>
-      {previous ? (
+      {backHref ? (
         <Button variant="outline" asChild className="min-w-0 flex-1 sm:flex-none">
-          <Link href={previous.href}>
+          <Link href={backHref}>
             <ChevronLeft className="h-4 w-4" />
             Back
           </Link>
@@ -80,7 +108,7 @@ export function ListingFooter({
         <span className="w-10 shrink-0" />
       )}
 
-      {next ? (
+      {continueHref ? (
         continueDisabled ? (
           <Button disabled className="min-w-0 flex-1 sm:flex-none">
             Continue
@@ -88,12 +116,17 @@ export function ListingFooter({
           </Button>
         ) : (
           <Button asChild className="min-w-0 flex-1 sm:flex-none">
-            <Link href={next.href}>
+            <Link href={continueHref}>
               Continue
               <ChevronRight className="h-4 w-4" />
             </Link>
           </Button>
         )
+      ) : continueDisabled ? (
+        <Button disabled className="min-w-0 flex-1 sm:flex-none">
+          Continue
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       ) : (
         <span className="w-10 shrink-0" />
       )}

@@ -1,8 +1,6 @@
-import type { Metadata } from "next";
-import { ShareListingScreen } from "@/components/listing";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Share Listing — Carasta" };
-
+/** Share hub skipped — mobile goes straight to external share. */
 export default function ListingSharePage() {
-  return <ShareListingScreen />;
+  redirect("/listing/share/external");
 }

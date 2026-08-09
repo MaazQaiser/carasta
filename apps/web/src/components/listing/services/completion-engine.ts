@@ -1,5 +1,10 @@
 import type { ListingDraft } from "../types";
 import { LISTING_STEPS, getListingTypeById } from "../config";
+import {
+  LISTING_PATHS,
+  MIN_LISTING_PHOTOS,
+  specsEntryHref,
+} from "../listing-route-map";
 
 export type CompletionCategoryId =
   | "type"
@@ -73,16 +78,34 @@ function specsDone(draft: ListingDraft): boolean {
  * Weights live here so UI stays presentation-only.
  */
 export function evaluateListingCompletion(draft: ListingDraft): CompletionReport {
+  const raceIdentity = draft.modificationWorkspace.race.identity;
+  const isRace = draft.listingTypeId === "race-track-car";
+  const year = isRace ? raceIdentity.year || draft.details.year : draft.details.year;
+  const make = isRace ? raceIdentity.make || draft.details.make : draft.details.make;
+  const model = isRace ? raceIdentity.model || draft.details.model : draft.details.model;
+
   const detailsMissing: string[] = [];
-  if (!draft.details.year) detailsMissing.push("Year");
-  if (!draft.details.make) detailsMissing.push("Make");
-  if (!draft.details.model) detailsMissing.push("Model");
+  if (!year) detailsMissing.push("Year");
+  if (!make) detailsMissing.push("Make");
+  if (!model) detailsMissing.push("Model");
+  if (!isRace) {
+    if (!draft.details.trim) detailsMissing.push("Trim");
+    if (!draft.details.mileage) detailsMissing.push("Mileage");
+  }
+  if (draft.listingTypeId === "restored-restomod-custom") {
+    if (!draft.modificationWorkspace.restoration.buildType) {
+      detailsMissing.push("Build type");
+    }
+    if (!draft.modificationWorkspace.restoration.mileageStatus) {
+      detailsMissing.push("Mileage status");
+    }
+  }
 
   const categories: CompletionCategory[] = [
     {
       id: "type",
       label: "Vehicle Type",
-      href: "/listing/type",
+      href: LISTING_PATHS.type,
       weight: 10,
       done: Boolean(draft.listingTypeId),
       requiredMissing: draft.listingTypeId ? [] : ["Vehicle type"],
@@ -91,7 +114,7 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
     {
       id: "identify",
       label: "Identify Vehicle",
-      href: "/listing/identify",
+      href: LISTING_PATHS.identify,
       weight: 5,
       done: Boolean(draft.details.vin || draft.vinInput),
       requiredMissing: [],
@@ -100,7 +123,7 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
     {
       id: "details",
       label: "Vehicle Details",
-      href: "/listing/details",
+      href: LISTING_PATHS.details,
       weight: 15,
       done: detailsMissing.length === 0,
       requiredMissing: detailsMissing,
@@ -109,7 +132,7 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
     {
       id: "specifications",
       label: "Specifications",
-      href: "/listing/specifications",
+      href: specsEntryHref(draft.listingTypeId),
       weight: 15,
       done: specsDone(draft),
       requiredMissing:
@@ -121,7 +144,7 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
     {
       id: "condition",
       label: "Condition & History",
-      href: "/listing/history",
+      href: LISTING_PATHS.condition,
       weight: 10,
       done: Boolean(
         draft.condition.overallCondition ||
@@ -137,19 +160,19 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
     {
       id: "photos",
       label: "Photos",
-      href: "/listing/photos",
+      href: LISTING_PATHS.photos,
       weight: 15,
-      done: draft.vehiclePhotos.length >= 3,
-      requiredMissing: draft.vehiclePhotos.length === 0 ? ["Vehicle photos"] : [],
-      warnings:
-        draft.vehiclePhotos.length > 0 && draft.vehiclePhotos.length < 3
-          ? ["Add at least 3 vehicle photos"]
+      done: draft.vehiclePhotos.length >= MIN_LISTING_PHOTOS,
+      requiredMissing:
+        draft.vehiclePhotos.length < MIN_LISTING_PHOTOS
+          ? [`At least ${MIN_LISTING_PHOTOS} vehicle photos`]
           : [],
+      warnings: [],
     },
     {
       id: "documents",
       label: "Documents",
-      href: "/listing/photos",
+      href: LISTING_PATHS.photos,
       weight: 5,
       done: draft.documents.length > 0,
       requiredMissing: [],
@@ -158,28 +181,25 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
     {
       id: "notes",
       label: "Owner Notes",
-      href: "/listing/notes",
+      href: LISTING_PATHS.notes,
       weight: 10,
-      done: draft.ownerNotes.trim().length >= 40,
+      done: Boolean(draft.ownerNotes.trim()),
       requiredMissing: draft.ownerNotes.trim() ? [] : ["Owner notes"],
-      warnings:
-        draft.ownerNotes.trim() && draft.ownerNotes.trim().length < 40
-          ? ["Owner notes are brief"]
-          : [],
+      warnings: [],
     },
     {
       id: "ai",
       label: "AI Description",
-      href: "/listing/ai",
+      href: LISTING_PATHS.ai,
       weight: 5,
-      done: draft.aiDescription.trim().length >= 40,
-      requiredMissing: [],
-      warnings: draft.aiDescription.trim() ? [] : ["AI description not saved"],
+      done: Boolean(draft.aiDescription.trim()),
+      requiredMissing: draft.aiDescription.trim() ? [] : ["AI description"],
+      warnings: [],
     },
     {
       id: "settings",
       label: "Sale Settings",
-      href: "/listing/settings",
+      href: LISTING_PATHS.settings,
       weight: 10,
       done: Boolean(draft.saleSettings.saleType && draft.saleSettings.reservePrice),
       requiredMissing: [
@@ -196,11 +216,9 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
 
   const missingRequiredFields = categories.flatMap((c) => c.requiredMissing);
   const missingPhotos =
-    draft.vehiclePhotos.length === 0
-      ? ["Vehicle photos"]
-      : draft.vehiclePhotos.length < 3
-        ? ["Additional vehicle photos"]
-        : [];
+    draft.vehiclePhotos.length < MIN_LISTING_PHOTOS
+      ? [`At least ${MIN_LISTING_PHOTOS} vehicle photos`]
+      : [];
   const missingDocuments = draft.documents.length === 0 ? ["Supporting documents"] : [];
   const incompleteSections = categories
     .filter((c) => !c.done)

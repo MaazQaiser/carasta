@@ -1,8 +1,6 @@
-import type { Metadata } from "next";
-import { ConditionHistoryScreen } from "@/components/listing";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Condition & History — Carasta" };
-
-export default function ListingHistoryPage() {
-  return <ConditionHistoryScreen />;
+/** Legacy path — mirrors mobile `/condition`. */
+export default function ListingHistoryRedirectPage() {
+  redirect("/listing/condition");
 }

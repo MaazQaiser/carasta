@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getListingTypeById, LISTING_EDIT_HREFS } from "../config";
+import { getListingSpecsEditHref, getListingTypeById, LISTING_EDIT_HREFS } from "../config";
 import { useListingBuilder } from "../ListingBuilderContext";
 import { getRestorationBuildTypeLabel } from "../specs/restored-restomod";
 
@@ -74,7 +74,10 @@ export function ListingPreviewScreen() {
           <ValueRow label="VIN" value={d.vin} />
         </PreviewBlock>
 
-        <PreviewBlock title="Specifications" href={LISTING_EDIT_HREFS.specifications}>
+        <PreviewBlock
+          title="Specifications"
+          href={getListingSpecsEditHref(draft.listingTypeId)}
+        >
           {draft.listingTypeId === "modified-performance" ? (
             <div className="space-y-1">
               <ValueRow

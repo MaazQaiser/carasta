@@ -49,13 +49,13 @@ export function ExternalShareScreen() {
       void navigator.clipboard?.writeText(link);
       notify({ title: "Link copied", tone: "success" });
     }
-    router.push("/listing/share/confirmation");
+    router.push("/listing/share/community");
   };
 
   return (
     <ListingStep
       title="External Share"
-      description="Edit the AI-generated caption, then choose a destination."
+      description="Edit the AI-generated caption, then choose a destination. Continue to community share next."
     >
       <div className="space-y-6 max-w-2xl">
         <ListingSection title="AI Generated Caption">
@@ -88,6 +88,18 @@ export function ExternalShareScreen() {
             ))}
           </div>
         </ListingSection>
+
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            onClick={() => {
+              SubmissionSession.patch({ shareCaption: caption });
+              router.push("/listing/share/community");
+            }}
+          >
+            Continue to Community Share
+          </Button>
+        </div>
       </div>
     </ListingStep>
   );

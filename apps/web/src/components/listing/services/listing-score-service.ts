@@ -1,5 +1,6 @@
 import type { ListingDraft } from "../types";
 import { evaluateListingCompletion, type CompletionReport } from "./completion-engine";
+import { specsEntryHref } from "../listing-route-map";
 
 export interface ListingScoreRecommendation {
   id: string;
@@ -74,7 +75,7 @@ export function evaluateListingScore(draft: ListingDraft): ListingScoreReport {
     recommendations.push({
       id: "docs-support",
       label: "Add supporting specification entries",
-      href: "/listing/specifications",
+      href: specsEntryHref(draft.listingTypeId),
       impact: "medium",
     });
   }

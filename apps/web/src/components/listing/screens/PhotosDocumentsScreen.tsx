@@ -6,6 +6,7 @@ import { MediaUploadZone } from "../MediaUploadZone";
 import { useListingBuilder } from "../ListingBuilderContext";
 import { useListingNotifications } from "../notifications/NotificationProvider";
 import type { ListingMediaItem } from "../types";
+import { MIN_LISTING_PHOTOS } from "../listing-route-map";
 
 export function PhotosDocumentsScreen() {
   const { draft, addMediaItems, removeMediaItem } = useListingBuilder();
@@ -28,12 +29,12 @@ export function PhotosDocumentsScreen() {
   return (
     <ListingStep
       title="Photos & Documents"
-      description="Build a desktop media workspace for photos, documents, and video. Upload logic comes later."
+      description={`Add at least ${MIN_LISTING_PHOTOS} vehicle photos to continue. Documents and video are optional.`}
     >
       <div className="space-y-8">
         <ListingSection
           title="Vehicle Photos"
-          description="Exterior, interior, engine bay, and detail shots."
+          description={`${draft.vehiclePhotos.length} of ${MIN_LISTING_PHOTOS} recommended photos added. Exterior, interior, engine bay, and detail shots.`}
         >
           <MediaUploadZone
             accept="image/*"

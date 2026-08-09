@@ -14,7 +14,7 @@ export function SpecsBuildSummary({
   categories,
   entries,
   rows: rowsOverride,
-  continueHref = "/listing/history",
+  continueHref = "/listing/condition",
   className,
   footerNote = "Review your build details before continuing.",
   extraRows,
@@ -99,7 +99,7 @@ export function SpecsBuildSummary({
 
 export function SpecsSummaryShell({
   children,
-  continueHref = "/listing/history",
+  continueHref = "/listing/condition",
   className,
   showContinue = true,
 }: {

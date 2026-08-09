@@ -13,7 +13,7 @@ export function OwnerNotesScreen() {
   return (
     <ListingStep
       title="Owner Notes"
-      description="Share the story behind the car in your own words."
+      description="Share the story behind the car in your own words. Notes are required to continue."
     >
       <ListingSection title="Your notes">
         <textarea

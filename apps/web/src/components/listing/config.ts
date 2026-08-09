@@ -16,6 +16,11 @@ import {
   Flag,
 } from "lucide-react";
 import type { ListingStepDefinition, ListingTypeDefinition } from "./types";
+import {
+  LISTING_PATHS,
+  resolveListingProgressStepId,
+  specsEditHref,
+} from "./listing-route-map";
 
 /** Supported listing categories for every future flow. */
 export const LISTING_TYPES: ListingTypeDefinition[] = [
@@ -81,7 +86,7 @@ export const LISTING_STEPS: ListingStepDefinition[] = [
   {
     id: "history",
     label: "Condition",
-    href: "/listing/history",
+    href: LISTING_PATHS.condition,
     description: "Condition & history.",
     icon: History,
   },
@@ -131,20 +136,25 @@ export const LISTING_STEPS: ListingStepDefinition[] = [
 
 /** Map preview Edit actions back to listing steps. */
 export const LISTING_EDIT_HREFS = {
-  type: "/listing/type",
-  details: "/listing/details",
-  specifications: "/listing/specifications",
-  history: "/listing/history",
-  photos: "/listing/photos",
-  notes: "/listing/notes",
-  ai: "/listing/ai",
-  settings: "/listing/settings",
+  type: LISTING_PATHS.type,
+  details: LISTING_PATHS.details,
+  specifications: LISTING_PATHS.specifications,
+  history: LISTING_PATHS.condition,
+  photos: LISTING_PATHS.photos,
+  notes: LISTING_PATHS.notes,
+  ai: LISTING_PATHS.ai,
+  settings: LISTING_PATHS.settings,
 } as const;
 
+/** Preview specs edit — type-aware (race → race/specifications). */
+export function getListingSpecsEditHref(listingTypeId: string | null | undefined) {
+  return specsEditHref(listingTypeId as Parameters<typeof specsEditHref>[0]);
+}
+
 export function getListingStepIndex(pathname: string): number {
-  return LISTING_STEPS.findIndex(
-    (step) => pathname === step.href || pathname.startsWith(`${step.href}/`)
-  );
+  const stepId = resolveListingProgressStepId(pathname);
+  if (!stepId) return -1;
+  return LISTING_STEPS.findIndex((step) => step.id === stepId);
 }
 
 export function getListingStepByPath(pathname: string): ListingStepDefinition | undefined {
@@ -219,7 +229,7 @@ export function getListingCompletionItems(draft: {
           mods.performanceSummary.horsepower ||
           mods.performanceSummary.currentEngine
       ),
-      href: "/listing/specifications",
+      href: LISTING_PATHS.modifiedSpecs,
     });
   }
 
@@ -233,7 +243,7 @@ export function getListingCompletionItems(draft: {
           mods.entries.some((e) => e.completed || e.title.trim()) ||
           mods.restoration.identityType
       ),
-      href: "/listing/specifications",
+      href: LISTING_PATHS.restoredSpecs,
     });
   }
 
@@ -248,7 +258,7 @@ export function getListingCompletionItems(draft: {
           mods.race.historyEntries.length > 0 ||
           mods.entries.some((e) => e.completed || e.title.trim())
       ),
-      href: "/listing/specifications",
+      href: LISTING_PATHS.raceSummary,
     });
   }
 

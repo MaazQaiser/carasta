@@ -20,6 +20,11 @@ import {
   isMeaningfulDraft,
   type PersistedListingDraft,
 } from "./services/draft-service";
+import {
+  isNestedListingFlow,
+  isTypeSpecificSpecsPath,
+  LISTING_PATHS,
+} from "./listing-route-map";
 
 function ListingProductionBridge({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -88,15 +93,12 @@ function ListingProductionBridge({ children }: { children: React.ReactNode }) {
     onEscape: () => cancelEntryEdit(),
   });
 
-  const isTypeSpecificSpecsWorkspace =
-    pathname.startsWith("/listing/specifications") &&
-    (draft.listingTypeId === "stock-lightly-modified" ||
-      draft.listingTypeId === "modified-performance" ||
-      draft.listingTypeId === "restored-restomod-custom" ||
-      draft.listingTypeId === "race-track-car");
+  const isTypeSpecificSpecsWorkspace = isTypeSpecificSpecsPath(pathname);
+  const isNestedFlow = isNestedListingFlow(pathname);
 
   const isPostSubmitFlow =
-    pathname.startsWith("/listing/submitted") || pathname.startsWith("/listing/share");
+    pathname.startsWith(LISTING_PATHS.submitted) ||
+    pathname.startsWith(LISTING_PATHS.share);
 
   const handleResume = () => {
     if (!pendingRecovery) return;
@@ -127,8 +129,10 @@ function ListingProductionBridge({ children }: { children: React.ReactNode }) {
     markClean();
     setPendingRecovery(null);
     notify({ title: "Started new listing", tone: "default" });
-    router.push("/listing/type");
+    router.push(LISTING_PATHS.type);
   };
+
+  const hideChromeExtras = isPostSubmitFlow || isNestedFlow;
 
   return (
     <ListingLayout
@@ -145,7 +149,7 @@ function ListingProductionBridge({ children }: { children: React.ReactNode }) {
         ) : undefined
       }
       progress={
-        isPostSubmitFlow ? undefined : (
+        hideChromeExtras ? undefined : (
           <ListingProgress
             steps={LISTING_STEPS}
             completionPercent={completion.overallPercent}
@@ -153,14 +157,12 @@ function ListingProductionBridge({ children }: { children: React.ReactNode }) {
         )
       }
       summary={
-        isTypeSpecificSpecsWorkspace || isPostSubmitFlow ? undefined : (
+        isTypeSpecificSpecsWorkspace || hideChromeExtras ? undefined : (
           <ListingSummary validation={validation} />
         )
       }
       footer={
-        isTypeSpecificSpecsWorkspace || isPostSubmitFlow ? undefined : (
-          <ListingFooter inset />
-        )
+        hideChromeExtras ? undefined : <ListingFooter inset />
       }
       header={
         isPostSubmitFlow ? undefined : pendingRecovery ? (

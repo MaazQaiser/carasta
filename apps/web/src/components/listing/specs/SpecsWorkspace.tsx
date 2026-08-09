@@ -28,7 +28,8 @@ export function SpecsWorkspace({
   onSaveEntry,
   onCancelEdit,
   header,
-  continueHref = "/listing/history",
+  continueHref = "/listing/condition",
+  showContinue = false,
   className,
 }: {
   config: SpecsFlowConfig;
@@ -46,6 +47,8 @@ export function SpecsWorkspace({
   onCancelEdit: () => void;
   header?: ReactNode;
   continueHref?: string;
+  /** Shell footer owns Continue by default (mobile-aligned routing). */
+  showContinue?: boolean;
   className?: string;
 }) {
   const activeCategory =
@@ -103,14 +106,16 @@ export function SpecsWorkspace({
           </div>
         </div>
 
-        <div className="flex justify-stretch sm:justify-end pt-2 border-t">
-          <Button asChild className="w-full sm:w-auto">
-            <Link href={continueHref}>
-              Continue
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
+        {showContinue ? (
+          <div className="flex justify-stretch sm:justify-end pt-2 border-t">
+            <Button asChild className="w-full sm:w-auto">
+              <Link href={continueHref}>
+                Continue
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

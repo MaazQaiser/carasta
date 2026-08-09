@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { BadgeCheck, ChevronRight, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { BadgeCheck, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { FieldLabel } from "../fields";
 import { useListingBuilder } from "../ListingBuilderContext";
 import type { ListingVehicleDetails } from "../types";
+import { LISTING_PATHS } from "../listing-route-map";
 import { ModificationEntryCard } from "./ModificationEntryCard";
 import { ModificationEntryForm } from "./ModificationEntryForm";
 import { SpecsBuildSummary } from "./SpecsBuildSummary";
@@ -36,6 +37,7 @@ const STOCK_AREA_TABS = [
 ] as const;
 
 export function StockLightlyModifiedSpecsScreen() {
+  const router = useRouter();
   const {
     draft,
     updateDetails,
@@ -49,7 +51,14 @@ export function StockLightlyModifiedSpecsScreen() {
     toggleEntryExpanded,
   } = useListingBuilder();
 
+  React.useEffect(() => {
+    if (draft.listingTypeId && draft.listingTypeId !== "stock-lightly-modified") {
+      router.replace(LISTING_PATHS.specifications);
+    }
+  }, [draft.listingTypeId, router]);
+
   const ws = draft.modificationWorkspace;
+  const hasModifications = ws.hasModifications;
   const sections = React.useMemo(
     () => buildFactorySpecSections(draft.details, ws.factorySpecOverrides ?? {}),
     [draft.details, ws.factorySpecOverrides]
@@ -111,6 +120,11 @@ export function StockLightlyModifiedSpecsScreen() {
     setActiveArea("modifications");
     updateWorkspace({ hasModifications: true, activeCategoryId: nextCategory });
     startNewEntry(nextCategory);
+    router.push(LISTING_PATHS.stockModAdd);
+  };
+
+  const setFactoryOriginal = (isOriginal: boolean) => {
+    updateWorkspace({ hasModifications: !isOriginal });
   };
 
   const activeFactorySection =
@@ -144,6 +158,32 @@ export function StockLightlyModifiedSpecsScreen() {
             {reviewedCount} of {STOCK_FACTORY_CATEGORIES.length} categories reviewed
           </p>
         </div>
+
+        <section className="rounded-2xl border bg-card p-4 sm:p-5 space-y-3">
+          <div>
+            <h2 className="text-sm font-semibold">Is this vehicle essentially factory original?</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Choose Yes if it remains essentially as delivered from the factory. You must answer
+              before continuing.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 max-w-md">
+            <Button
+              type="button"
+              variant={hasModifications === false ? "default" : "outline"}
+              onClick={() => setFactoryOriginal(true)}
+            >
+              Yes
+            </Button>
+            <Button
+              type="button"
+              variant={hasModifications === true ? "default" : "outline"}
+              onClick={() => setFactoryOriginal(false)}
+            >
+              No
+            </Button>
+          </div>
+        </section>
 
         <div className="rounded-2xl border bg-card p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-5 min-w-0">
           <SpecsCategoryTabs
@@ -327,6 +367,7 @@ export function StockLightlyModifiedSpecsScreen() {
                               onEdit={() => {
                                 setActiveArea("modifications");
                                 startEditEntry(entry.id);
+                                router.push(LISTING_PATHS.stockModAdd);
                               }}
                               onDuplicate={() => duplicateEntry(entry.id)}
                               onDelete={() => deleteEntry(entry.id)}
@@ -344,14 +385,6 @@ export function StockLightlyModifiedSpecsScreen() {
             </section>
           )}
 
-          <div className="flex justify-stretch sm:justify-end pt-2 border-t">
-            <Button asChild className="w-full sm:w-auto">
-              <Link href="/listing/history">
-                Continue
-                <ChevronRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
         </div>
       </div>
 

@@ -18,9 +18,19 @@ export {
   getListingStepByPath,
   getAdjacentListingSteps,
   getListingTypeById,
+  getListingSpecsEditHref,
   getListingCompletionItems,
   getListingScore,
 } from "./config";
+
+export {
+  LISTING_PATHS,
+  LISTING_BASE,
+  afterDetailsHref,
+  specsEntryHref,
+  specsEditHref,
+  MIN_LISTING_PHOTOS,
+} from "./listing-route-map";
 
 export { ListingLayout } from "./ListingLayout";
 export { ListingProgress } from "./ListingProgress";
