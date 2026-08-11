@@ -9,6 +9,7 @@ import { MobileListingShell } from "../MobileListingShell";
 export function MobileListingSubmittedScreen() {
   const { draft } = useListingBuilder();
   const [reference, setReference] = React.useState("—");
+  const [listingHref, setListingHref] = React.useState("/auctions");
   const vehicleLabel =
     [draft.details.year, draft.details.make, draft.details.model].filter(Boolean).join(" ") ||
     "Your vehicle";
@@ -16,6 +17,11 @@ export function MobileListingSubmittedScreen() {
   React.useEffect(() => {
     const session = SubmissionSession.load();
     if (session?.reference) setReference(session.reference);
+    if (session?.vehicleId) {
+      setListingHref(`/m/listings/v/${session.vehicleId}`);
+    } else if (session?.auctionId) {
+      setListingHref(`/m/listings/v/${session.auctionId}`);
+    }
   }, []);
 
   return (
@@ -26,23 +32,29 @@ export function MobileListingSubmittedScreen() {
         </div>
         <h1 className="mt-5 text-[27px] font-extrabold text-[#1c1c1e]">Listing Submitted!</h1>
         <p className="mt-2 text-[14px] text-[#636366]">
-          Your {vehicleLabel} is now live.
+          Your {vehicleLabel} is now live for buyers in auctions and search.
         </p>
         <p className="mt-3 text-[12px] font-medium text-[#1c1c1e]">
           Listing Reference: <span className="font-mono">{reference}</span>
         </p>
         <div className="mt-10 w-full space-y-3">
           <Link
-            href="/mobile-listing/share/external"
+            href={listingHref}
             className="flex h-11 w-full items-center justify-center rounded-lg bg-[#1b1464] text-[13px] font-semibold text-white"
           >
-            Share Listing
+            View Buyer Listing
           </Link>
           <Link
-            href="/profile?tab=listings"
+            href="/auctions"
             className="flex h-11 w-full items-center justify-center rounded-lg border border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
           >
-            View Listing
+            Browse Auctions
+          </Link>
+          <Link
+            href="/mobile-listing/share/external"
+            className="flex h-11 w-full items-center justify-center rounded-lg border border-[#e5e5ea] text-[13px] font-semibold text-[#1c1c1e]"
+          >
+            Share Listing
           </Link>
           <Link href="/mobile-listing/type" className="block text-[12px] text-[#636366] underline">
             Create Another Listing

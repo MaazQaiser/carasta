@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { MobileBuyerDetailScreen } from "@/components/mobile-buyer";
 import type { BuyerListingType } from "@/components/mobile-buyer";
 
-const TYPES: BuyerListingType[] = ["stock", "classic", "restored", "race"];
+const TYPES: BuyerListingType[] = ["stock", "classic", "modified", "restored", "race"];
 
 export function generateStaticParams() {
   return TYPES.map((type) => ({ type }));
@@ -18,6 +18,7 @@ export async function generateMetadata({
   const labels: Record<string, string> = {
     stock: "Standard Vehicle Listing",
     classic: "Classic Vehicle Listing",
+    modified: "Modified / Performance Listing",
     restored: "Restoration Listing",
     race: "Race / Competition Listing",
   };

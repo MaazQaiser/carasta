@@ -19,6 +19,8 @@ import { CountdownTimer } from "@/components/auction/CountdownTimer";
 import { auctionService, BidError, notificationService } from "@carasta/mock-data/services";
 import { formatPrice, cn } from "@/lib/utils";
 import { useAuth } from "@/lib/context/auth-context";
+import { placePublishedBid } from "@/lib/marketplace-listings";
+import { PublishedListingService } from "@/components/listing/services/published-listing-service";
 
 interface BidModalProps {
   open: boolean;
@@ -69,7 +71,16 @@ export function BidModal({
     const amount = parseInt(bidAmount, 10);
     try {
       const previousReserveMet = auction.reserveMet;
-      const bid = await auctionService.placeBid(auction.id, amount, user ?? undefined);
+      let bid: Bid;
+      try {
+        bid = await auctionService.placeBid(auction.id, amount, user ?? undefined);
+      } catch (err) {
+        const isMissing =
+          err instanceof BidError && String(err.message).toLowerCase().includes("not found");
+        const isPublished = Boolean(PublishedListingService.resolve(auction.id));
+        if (!isMissing && !isPublished) throw err;
+        bid = placePublishedBid(auction.id, amount, user ?? undefined).bid;
+      }
       setPlacedAmount(amount);
       onBidPlaced?.(bid);
       setState("success");
@@ -92,7 +103,13 @@ export function BidModal({
         });
       }
     } catch (err) {
-      setErrorMessage(err instanceof BidError ? err.message : "Something went wrong. Please try again.");
+      setErrorMessage(
+        err instanceof BidError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Something went wrong. Please try again."
+      );
       setState("error");
     } finally {
       setIsLoading(false);

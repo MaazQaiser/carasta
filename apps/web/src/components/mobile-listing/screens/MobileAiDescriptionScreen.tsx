@@ -46,7 +46,7 @@ export function MobileAiDescriptionScreen() {
             onClick={generate}
             className="h-11 w-full rounded-lg bg-[#1b1464] text-[13px] font-semibold text-white"
           >
-            Generate Description
+            ✧ Generate with AI
           </button>
         ) : null}
 

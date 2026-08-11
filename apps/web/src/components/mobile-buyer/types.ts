@@ -1,4 +1,4 @@
-export type BuyerListingType = "stock" | "classic" | "restored" | "race";
+export type BuyerListingType = "stock" | "classic" | "modified" | "restored" | "race";
 
 export interface BuyerMediaItem {
   id: string;
@@ -55,6 +55,10 @@ export interface BuyerSellerInfo {
   listings: number;
   verified: boolean;
   organization?: string;
+  username?: string;
+  memberSince?: string;
+  responseTime?: string;
+  listingsSold?: number;
 }
 
 export interface BuyerListingDemo {

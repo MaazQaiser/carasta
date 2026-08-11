@@ -22,6 +22,7 @@ import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import { vehicleService } from "@carasta/mock-data/services";
 import type { Vehicle } from "@carasta/types";
 import { formatPrice } from "@/lib/utils";
+import { mergePublishedVehicles } from "@/lib/marketplace-listings";
 
 interface SearchDialogProps {
   open: boolean;
@@ -47,7 +48,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
     }
     const timer = setTimeout(async () => {
       const data = await vehicleService.search(query);
-      setResults(data);
+      setResults(mergePublishedVehicles(data, query));
     }, 250);
     return () => clearTimeout(timer);
   }, [query]);

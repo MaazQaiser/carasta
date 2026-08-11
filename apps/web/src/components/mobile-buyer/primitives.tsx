@@ -31,18 +31,55 @@ export function Section({
   title,
   children,
   description,
+  defaultOpen = true,
+  collapsible = true,
 }: {
   title: string;
   description?: string;
   children: React.ReactNode;
+  defaultOpen?: boolean;
+  collapsible?: boolean;
 }) {
+  const [open, setOpen] = React.useState(defaultOpen);
+
+  if (!collapsible) {
+    return (
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-[16px] font-bold text-[#1c1c1e]">{title}</h2>
+          {description ? <p className="mt-1 text-[12px] text-[#636366]">{description}</p> : null}
+        </div>
+        {children}
+      </section>
+    );
+  }
+
   return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-[16px] font-bold text-[#1c1c1e]">{title}</h2>
-        {description ? <p className="mt-1 text-[12px] text-[#636366]">{description}</p> : null}
-      </div>
-      {children}
+    <section className="overflow-hidden rounded-xl border border-[#e5e5ea] bg-white">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center justify-between gap-3 px-3.5 py-3.5 text-left"
+      >
+        <span className="min-w-0">
+          <span className="block text-[15px] font-bold text-[#1c1c1e]">{title}</span>
+          {description && !open ? (
+            <span className="mt-0.5 block truncate text-[11px] text-[#636366]">{description}</span>
+          ) : null}
+        </span>
+        {open ? (
+          <ChevronDown className="h-4 w-4 shrink-0 text-[#636366]" />
+        ) : (
+          <ChevronRight className="h-4 w-4 shrink-0 text-[#636366]" />
+        )}
+      </button>
+      {open ? (
+        <div className="space-y-3 border-t border-[#e5e5ea] px-3.5 pb-3.5 pt-3">
+          {description ? <p className="text-[12px] text-[#636366]">{description}</p> : null}
+          {children}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -78,35 +115,55 @@ export function InfoCard({
 }
 
 export function AccordionList({ items }: { items: BuyerAccordionItem[] }) {
-  const [openId, setOpenId] = React.useState<string | null>(items[0]?.id ?? null);
+  const [openIds, setOpenIds] = React.useState<Set<string>>(() => new Set());
+
+  const toggle = (id: string) => {
+    setOpenIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  if (!items.length) {
+    return <p className="text-[13px] text-[#636366]">No items yet.</p>;
+  }
 
   return (
-    <div className="divide-y divide-[#e5e5ea] rounded-xl border border-[#e5e5ea]">
+    <div className="divide-y divide-[#e5e5ea] overflow-hidden rounded-xl border border-[#e5e5ea]">
       {items.map((item) => {
-        const open = openId === item.id;
+        const open = openIds.has(item.id);
         return (
-          <div key={item.id}>
+          <div key={item.id} className="bg-white">
             <button
               type="button"
-              onClick={() => setOpenId(open ? null : item.id)}
-              className="flex h-12 w-full items-center justify-between px-3 text-left"
+              aria-expanded={open}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                toggle(item.id);
+              }}
+              className="flex min-h-12 w-full items-center justify-between gap-3 px-3 py-3 text-left active:bg-[#f2f2f7]"
             >
-              <span className="text-[13px] font-semibold text-[#1c1c1e]">
+              <span className="min-w-0 text-[13px] font-semibold text-[#1c1c1e]">
                 {item.title}
                 {item.summary ? (
                   <span className="ml-2 text-[10px] font-medium text-[#7b78a3]">{item.summary}</span>
                 ) : null}
               </span>
               {open ? (
-                <ChevronDown className="h-4 w-4 text-[#636366]" />
+                <ChevronDown className="h-4 w-4 shrink-0 text-[#636366]" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-[#636366]" />
+                <ChevronRight className="h-4 w-4 shrink-0 text-[#636366]" />
               )}
             </button>
             {open ? (
               <div className="space-y-3 border-t border-[#e5e5ea] bg-[#fafafa] p-3">
-                {item.body ? <p className="text-[13px] leading-relaxed text-[#636366]">{item.body}</p> : null}
-                {item.specs ? <SpecGrid items={item.specs} /> : null}
+                {item.body ? (
+                  <p className="text-[13px] leading-relaxed text-[#636366]">{item.body}</p>
+                ) : null}
+                {item.specs?.length ? <SpecGrid items={item.specs} /> : null}
                 {item.entries?.map((entry) => (
                   <div
                     key={entry.id}
@@ -146,6 +203,9 @@ export function AccordionList({ items }: { items: BuyerAccordionItem[] }) {
                       />
                     ))}
                   </div>
+                ) : null}
+                {!item.body && !item.specs?.length && !item.entries?.length && !item.photos?.length ? (
+                  <p className="text-[12px] text-[#636366]">No details provided.</p>
                 ) : null}
               </div>
             ) : null}
@@ -205,35 +265,53 @@ export function DocumentCards({ documents }: { documents: BuyerDocumentItem[] })
   );
 }
 
-export function SellerCard({ seller }: { seller: BuyerSellerInfo }) {
-  return (
-    <div className="rounded-xl border border-[#e5e5ea] bg-white p-3">
-      <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1b1464] text-[14px] font-bold text-white">
-          {seller.name
-            .split(" ")
-            .map((part) => part[0])
-            .join("")
-            .slice(0, 2)}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-bold text-[#1c1c1e]">{seller.name}</p>
-          <p className="text-[12px] text-[#636366]">
-            {seller.role}
-            {seller.organization ? ` · ${seller.organization}` : ""}
-          </p>
-          <p className="text-[11px] text-[#7b78a3]">
-            {seller.location} · ★ {seller.rating} · {seller.listings} listings
-          </p>
-        </div>
-        {seller.verified ? (
-          <span className="rounded-full bg-[#eef8f0] px-2 py-1 text-[10px] font-semibold text-[#2f7d4a]">
-            Verified
-          </span>
-        ) : null}
+export function SellerCard({
+  seller,
+  onOpen,
+}: {
+  seller: BuyerSellerInfo;
+  onOpen?: () => void;
+}) {
+  const content = (
+    <div className="flex items-center gap-3">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1b1464] text-[14px] font-bold text-white">
+        {seller.name
+          .split(" ")
+          .map((part) => part[0])
+          .join("")
+          .slice(0, 2)}
       </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] font-bold text-[#1c1c1e]">{seller.name}</p>
+        <p className="text-[12px] text-[#636366]">
+          {seller.role}
+          {seller.organization ? ` · ${seller.organization}` : ""}
+        </p>
+        <p className="text-[11px] text-[#7b78a3]">
+          {seller.location} · ★ {seller.rating} · {seller.listings} listings
+        </p>
+      </div>
+      {seller.verified ? (
+        <span className="rounded-full bg-[#eef8f0] px-2 py-1 text-[10px] font-semibold text-[#2f7d4a]">
+          Verified
+        </span>
+      ) : null}
     </div>
   );
+
+  if (onOpen) {
+    return (
+      <button
+        type="button"
+        onClick={onOpen}
+        className="w-full rounded-xl border border-[#e5e5ea] bg-white p-3 text-left"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return <div className="rounded-xl border border-[#e5e5ea] bg-white p-3">{content}</div>;
 }
 
 export function GalleryHero({

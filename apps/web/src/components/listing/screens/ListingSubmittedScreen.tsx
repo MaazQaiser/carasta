@@ -21,7 +21,9 @@ export function ListingSubmittedScreen() {
       setReference(session.reference);
     }
     if (session?.vehicleId) {
-      setListingHref(`/vehicles/${session.vehicleId}`);
+      setListingHref(`/m/listings/v/${session.vehicleId}`);
+    } else if (session?.auctionId) {
+      setListingHref(`/m/listings/v/${session.auctionId}`);
     } else {
       setListingHref("/profile?tab=listings");
     }
@@ -34,15 +36,18 @@ export function ListingSubmittedScreen() {
       </div>
       <h1 className="text-3xl font-bold mb-3">Listing Successfully Submitted</h1>
       <p className="text-muted-foreground mb-2">
-        {vehicleLabel} is live on your profile Listings tab. Share it to reach more of the
-        community.
+        {vehicleLabel} is live for buyers on auctions and searchable marketplace results. Share it
+        to reach more of the community.
       </p>
       <p className="text-sm font-medium mb-8">
         Listing Reference: <span className="font-mono">{reference}</span>
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button type="button" variant="outline" asChild>
-          <Link href={listingHref}>View Listing</Link>
+          <Link href={listingHref}>View Buyer Listing</Link>
+        </Button>
+        <Button type="button" variant="secondary" asChild>
+          <Link href="/auctions">Browse Auctions</Link>
         </Button>
         <Button type="button" variant="secondary" asChild>
           <Link href="/profile?tab=listings">View on Profile</Link>

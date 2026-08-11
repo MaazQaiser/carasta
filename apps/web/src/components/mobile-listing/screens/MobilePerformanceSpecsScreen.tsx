@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { MobileOptionList, MobileOptionSheet } from "../MobileOptionSheet";
 import { ChevronDown } from "lucide-react";
 import { MobileListingShell } from "../MobileListingShell";
 
@@ -113,25 +114,15 @@ function StatusSheet({ label, onClose }: { label: string; onClose: () => void })
   const options = ["Factory Rated", "Estimated", "Dyno Verified", "Unknown"];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40">
-      <button type="button" aria-label="Close status menu" className="absolute inset-0" onClick={onClose} />
-      <div className="relative mx-auto w-full max-w-[440px] rounded-t-[28px] bg-white p-6 pb-8">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#d1d1d6]" />
-        <h2 className="text-[18px] font-bold text-[#1c1c1e]">{label} Status</h2>
-        <div className="mt-4 space-y-2">
-          {options.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => { setSelected(option); onClose(); }}
-              className={`flex h-11 w-full items-center rounded-lg border px-3 text-left text-[13px] ${selected === option ? "border-[#1b1464] bg-[#f4f5fc]" : "border-[#e5e5ea]"}`}
-            >
-              <span className={`mr-2 h-3 w-3 rounded-full border ${selected === option ? "border-[4px] border-[#1b1464]" : "border-[#c7c7cc]"}`} />
-              {option}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+    <MobileOptionSheet open title={`${label} Status`} onClose={onClose}>
+      <MobileOptionList
+        options={options}
+        value={selected}
+        onSelect={(option) => {
+          setSelected(option);
+          onClose();
+        }}
+      />
+    </MobileOptionSheet>
   );
 }

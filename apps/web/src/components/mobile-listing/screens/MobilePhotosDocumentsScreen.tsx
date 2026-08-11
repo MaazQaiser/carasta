@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { MobileOptionSheet } from "../MobileOptionSheet";
 import { Camera, FolderOpen, ImageIcon, Move, Replace, Star, Trash2 } from "lucide-react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import type { ListingMediaItem } from "@/components/listing/types";
@@ -160,28 +161,23 @@ function PhotoSheet({
       ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40">
-      <button className="absolute inset-0" aria-label="Close photo menu" onClick={onClose} />
-      <div className="relative mx-auto w-full max-w-[440px] rounded-t-[28px] bg-white p-6 pb-8">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#d1d1d6]" />
-        <h2 className="text-[18px] font-bold text-[#1c1c1e]">{title}</h2>
-        <div className="mt-4 space-y-2">
-          {choices.map(([Icon, label]) => {
-            const ItemIcon = Icon as typeof Camera;
-            return (
-              <button
-                key={label as string}
-                type="button"
-                onClick={onChoose}
-                className="flex h-11 w-full items-center gap-3 rounded-lg bg-[#f4f5fc] px-3 text-left text-[13px] font-medium text-[#1c1c1e]"
-              >
-                <ItemIcon className="h-4 w-4 text-[#1b1464]" />
-                {label as string}
-              </button>
-            );
-          })}
-        </div>
+    <MobileOptionSheet open title={title} onClose={onClose}>
+      <div className="space-y-2">
+        {choices.map(([Icon, label]) => {
+          const ItemIcon = Icon as typeof Camera;
+          return (
+            <button
+              key={label as string}
+              type="button"
+              onClick={onChoose}
+              className="flex h-11 w-full items-center gap-3 rounded-lg bg-[#f4f5fc] px-3 text-left text-[13px] font-medium text-[#1c1c1e]"
+            >
+              <ItemIcon className="h-4 w-4 text-[#1b1464]" />
+              {label as string}
+            </button>
+          );
+        })}
       </div>
-    </div>
+    </MobileOptionSheet>
   );
 }

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import { MobileListingShell } from "../MobileListingShell";
+import { MobileOptionSheet } from "../MobileOptionSheet";
 
 function digitsOnly(value: string) {
   return value.replace(/\D/g, "");
@@ -85,20 +86,6 @@ export function MobileSaleSettingsScreen() {
           </button>
         </Field>
 
-        <Field label="Auction Duration">
-          <select
-            value={settings.auctionDuration || "7 Days"}
-            onChange={(event) =>
-              updateSaleSettings({ auctionDuration: event.target.value })
-            }
-            className="h-10 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px]"
-          >
-            <option>7 Days</option>
-            <option>10 Days</option>
-            <option>14 Days</option>
-          </select>
-        </Field>
-
         <Toggle
           label="Shipping Available"
           checked={settings.shipping === "available"}
@@ -117,13 +104,6 @@ export function MobileSaleSettingsScreen() {
             className="min-h-32 w-full rounded-lg border border-[#e5e5ea] p-3 text-[13px] outline-none focus:border-[#1b1464]"
           />
         </Field>
-
-        <button
-          type="button"
-          className="h-10 rounded-lg border border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
-        >
-          ✧ Generate with AI
-        </button>
       </div>
 
       {dateSheet ? (
@@ -185,34 +165,29 @@ function DateSheet({
   onSelect: (date: string) => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40">
-      <button className="absolute inset-0" aria-label="Close date picker" onClick={onClose} />
-      <div className="relative mx-auto w-full max-w-[440px] rounded-t-[28px] bg-white p-6 pb-8">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#d1d1d6]" />
-        <h2 className="text-[18px] font-bold">Select Start Date</h2>
-        <p className="mt-1 text-[12px] text-[#636366]">August 2026</p>
-        <div className="mt-4 grid grid-cols-7 gap-2 text-center text-[12px]">
-          {Array.from({ length: 28 }, (_, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => onSelect(`Aug ${index + 1}, 2026`)}
-              className={`h-8 rounded-full ${
-                index === 11 ? "bg-[#1b1464] text-white" : "hover:bg-[#f4f5fc]"
-              }`}
-            >
-              {index + 1}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={() => onSelect("Aug 12, 2026")}
-          className="mt-5 h-11 w-full rounded-lg bg-[#1b1464] text-[13px] font-semibold text-white"
-        >
-          Done
-        </button>
+    <MobileOptionSheet open title="Select Start Date" onClose={onClose}>
+      <p className="text-[12px] text-[#636366]">August 2026</p>
+      <div className="mt-4 grid grid-cols-7 gap-2 text-center text-[12px]">
+        {Array.from({ length: 28 }, (_, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => onSelect(`Aug ${index + 1}, 2026`)}
+            className={`h-8 rounded-full ${
+              index === 11 ? "bg-[#1b1464] text-white" : "hover:bg-[#f4f5fc]"
+            }`}
+          >
+            {index + 1}
+          </button>
+        ))}
       </div>
-    </div>
+      <button
+        type="button"
+        onClick={() => onSelect("Aug 12, 2026")}
+        className="mt-5 h-11 w-full rounded-lg bg-[#1b1464] text-[13px] font-semibold text-white"
+      >
+        Done
+      </button>
+    </MobileOptionSheet>
   );
 }

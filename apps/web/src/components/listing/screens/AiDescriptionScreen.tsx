@@ -112,7 +112,7 @@ export function AiDescriptionScreen() {
               ) : (
                 <Sparkles className="h-4 w-4" />
               )}
-              {isEmpty ? "Generate Description" : "Generate"}
+              Generate with AI
             </Button>
             <Button
               type="button"

@@ -12,6 +12,7 @@ import {
 } from "@/components/listing/specs/stock-lightly-modified";
 import { ORIGINAL_PARTS_OPTIONS } from "@/components/listing/specs/options";
 import { MobileListingShell } from "../MobileListingShell";
+import { MobileSelectField } from "../MobileOptionSheet";
 import { MobileShopBuilderField } from "../shop-builder/MobileShopBuilderField";
 import { useOpenShopBuilder } from "../shop-builder/useOpenShopBuilder";
 
@@ -338,21 +339,7 @@ function FieldSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block space-y-1.5">
-      <span className="text-[12px] font-semibold text-[#636366]">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-lg border border-[#e5e5ea] bg-white px-3 text-[13px] outline-none focus:border-[#1b1464]"
-      >
-        <option value="">Select {label.toLowerCase()}</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+    <MobileSelectField label={label} value={value} options={options} onChange={onChange} />
   );
 }
 

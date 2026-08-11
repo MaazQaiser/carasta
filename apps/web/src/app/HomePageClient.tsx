@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -21,6 +21,7 @@ import type { Auction, Post } from "@carasta/types";
 import { AuctionCard } from "@/components/auction/AuctionCard";
 import { formatPrice } from "@/lib/utils";
 import { brand } from "@/theme/carastaTheme";
+import { mergePublishedAuctions } from "@/lib/marketplace-listings";
 
 interface Props {
   featuredAuctions: Auction[];
@@ -161,10 +162,22 @@ export function HomePageClient({
 }: Props) {
   const [contact, setContact] = useState({ first: "", last: "", email: "", subject: "", message: "" });
   const [sent, setSent] = useState(false);
+  const [featured, setFeatured] = useState(featuredAuctions);
+  const [soon, setSoon] = useState(endingSoon);
 
-  const latest = featuredAuctions.slice(0, 6);
+  useEffect(() => {
+    setFeatured(mergePublishedAuctions(featuredAuctions, { sort: "newest" }));
+    setSoon(
+      mergePublishedAuctions(endingSoon, {
+        filters: { status: ["live", "ending-soon"] },
+        sort: "ending-soon",
+      })
+    );
+  }, [featuredAuctions, endingSoon]);
+
+  const latest = featured.slice(0, 6);
   const brandLeft = brands.slice(0, 2);
-  const sideListings = endingSoon.slice(0, 4);
+  const sideListings = soon.slice(0, 4);
 
   return (
     <Box sx={{ bgcolor: brand.canvas, pb: "18px" }}>

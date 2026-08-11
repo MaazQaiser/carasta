@@ -10,6 +10,7 @@ import {
 import { RESTORATION_BUILD_TYPES } from "@/components/listing/specs/restored-restomod";
 import type { RestorationBuildTypeId } from "@/components/listing/types";
 import { MobileListingShell } from "../MobileListingShell";
+import { MobileOptionList, MobileOptionSheet } from "../MobileOptionSheet";
 import { MobileRaceIdentityFields } from "./MobileRaceIdentityFields";
 
 const RESTORED_MILEAGE_STATUS_OPTIONS = [
@@ -549,59 +550,48 @@ function SelectSheet({
   const [customColor, setCustomColor] = React.useState("");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40">
-      <button type="button" aria-label="Close selection" className="absolute inset-0" onClick={onClose} />
-      <div className="relative mx-auto w-full max-w-[440px] rounded-t-[28px] bg-white p-6 pb-8">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#d1d1d6]" />
-        <h2 className="text-[18px] font-bold text-[#1c1c1e]">Select {label}</h2>
-        <div className="mt-4 divide-y divide-[#f0f0f2]">
-          {options.map((option) => (
+    <MobileOptionSheet open title={`Select ${label}`} onClose={onClose}>
+      <MobileOptionList
+        options={options}
+        value={value}
+        onSelect={(next) => {
+          onSelect(next);
+        }}
+      />
+      {allowCustom ? (
+        addingCustom ? (
+          <div className="mt-4 flex gap-2">
+            <input
+              autoFocus
+              value={customColor}
+              onChange={(event) => setCustomColor(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && customColor.trim()) {
+                  onSelect(customColor.trim());
+                }
+              }}
+              placeholder="Enter custom color"
+              className="h-10 min-w-0 flex-1 rounded-lg border border-[#1b1464] px-3 text-[13px] outline-none"
+            />
             <button
-              key={option}
               type="button"
-              className="flex w-full items-center justify-between py-3 text-left text-[14px] text-[#1c1c1e]"
-              onClick={() => onSelect(option)}
+              disabled={!customColor.trim()}
+              onClick={() => onSelect(customColor.trim())}
+              className="h-10 rounded-lg bg-[#1b1464] px-4 text-[13px] font-semibold text-white disabled:bg-[#e5e5ea] disabled:text-[#9ca3af]"
             >
-              {option}
-              {option === value ? <span className="text-[#1b1464]">✓</span> : null}
+              Add
             </button>
-          ))}
-          {allowCustom ? (
-            addingCustom ? (
-              <div className="flex gap-2 pt-4">
-                <input
-                  autoFocus
-                  value={customColor}
-                  onChange={(event) => setCustomColor(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && customColor.trim()) {
-                      onSelect(customColor.trim());
-                    }
-                  }}
-                  placeholder="Enter custom color"
-                  className="h-10 min-w-0 flex-1 rounded-lg border border-[#1b1464] px-3 text-[13px] outline-none"
-                />
-                <button
-                  type="button"
-                  disabled={!customColor.trim()}
-                  onClick={() => onSelect(customColor.trim())}
-                  className="h-10 rounded-lg bg-[#1b1464] px-4 text-[13px] font-semibold text-white disabled:bg-[#e5e5ea] disabled:text-[#9ca3af]"
-                >
-                  Add
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAddingCustom(true)}
-                className="mt-3 h-10 w-full rounded-lg border border-dashed border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
-              >
-                + Add custom color
-              </button>
-            )
-          ) : null}
-        </div>
-      </div>
-    </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAddingCustom(true)}
+            className="mt-3 h-10 w-full rounded-lg border border-dashed border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
+          >
+            + Add custom color
+          </button>
+        )
+      ) : null}
+    </MobileOptionSheet>
   );
 }

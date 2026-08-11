@@ -15,7 +15,6 @@ import { useListingBuilder } from "../ListingBuilderContext";
 import type { ListingSaleSettings } from "../types";
 
 const SALE_TYPES = ["Auction", "Buy Now", "Auction + Buy Now", "Make Offer"];
-const DURATIONS = ["3 days", "5 days", "7 days", "10 days", "14 days"];
 const SHIPPING_OPTIONS = [
   "Buyer arranged",
   "Seller arranged",
@@ -84,24 +83,6 @@ export function SaleSettingsScreen() {
               value={s.preferredStartDate}
               onChange={(e) => set("preferredStartDate", e.target.value)}
             />
-          </div>
-          <div>
-            <FieldLabel htmlFor="duration">Auction Duration</FieldLabel>
-            <Select
-              value={s.auctionDuration || undefined}
-              onValueChange={(v) => set("auctionDuration", v)}
-            >
-              <SelectTrigger id="duration">
-                <SelectValue placeholder="Select duration" />
-              </SelectTrigger>
-              <SelectContent>
-                {DURATIONS.map((duration) => (
-                  <SelectItem key={duration} value={duration}>
-                    {duration}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
 

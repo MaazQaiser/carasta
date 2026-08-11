@@ -8,25 +8,42 @@ import {
   createListingReference,
   SubmissionSession,
 } from "@/components/listing/services/submission-session";
+import { PublishedListingService } from "@/components/listing/services/published-listing-service";
+import { DraftService } from "@/components/listing/services/draft-service";
+import { useAuth } from "@/lib/context/auth-context";
+import { MOCK_USERS } from "@carasta/mock-data";
 import { MobileListingShell } from "../MobileListingShell";
 
 const RECOMMENDED_PHOTOS = 20;
 
 export function MobileReviewSubmitScreen() {
   const router = useRouter();
-  const { draft } = useListingBuilder();
+  const { user } = useAuth();
+  const { draft, activity, markClean, addActivity } = useListingBuilder();
   const [submitting, setSubmitting] = React.useState(false);
   const checks = ["Vehicle Details", "Specifications", "Photos", "Documents", "Description"];
   const photoCount = draft.vehiclePhotos.length;
   const needsMorePhotos = photoCount < RECOMMENDED_PHOTOS;
 
   const submit = () => {
+    if (submitting) return;
     setSubmitting(true);
+    const reference = createListingReference();
+    const submittedAt = new Date().toISOString();
+    const seller =
+      user ?? MOCK_USERS.find((u) => u.id === "user-me") ?? MOCK_USERS[0]!;
+
     window.setTimeout(() => {
+      const published = PublishedListingService.publish(draft, seller, reference);
       SubmissionSession.save({
-        reference: createListingReference(),
-        submittedAt: new Date().toISOString(),
+        reference,
+        submittedAt,
+        auctionId: published.auction.id,
+        vehicleId: published.auction.vehicle.id,
       });
+      DraftService.save(draft, { lastPath: "/mobile-listing/submitted", activity });
+      markClean();
+      addActivity("Listing submitted", "submit");
       setSubmitting(false);
       router.push("/mobile-listing/submitted");
     }, 1200);
@@ -38,7 +55,8 @@ export function MobileReviewSubmitScreen() {
         <div>
           <h1 className="text-[28px] font-extrabold text-[#1c1c1e]">Review &amp; Submit</h1>
           <p className="mt-2 text-[14px] text-[#636366]">
-            Make sure everything looks good before submitting.
+            Make sure everything looks good before submitting. Your listing will appear in
+            marketplace auctions for buyers.
           </p>
         </div>
         {checks.map((item) => (

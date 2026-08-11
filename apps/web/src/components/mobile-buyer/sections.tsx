@@ -88,6 +88,64 @@ export function StockSections({ listing }: { listing: BuyerListingDemo }) {
   );
 }
 
+export function ModifiedSections({ listing }: { listing: BuyerListingDemo }) {
+  const content = listing.content as Content;
+  const currentSpecs = asArray<{ label: string; value: string }>(content.currentSpecs);
+  const categories = asArray<{
+    id: string;
+    title: string;
+    summary?: string;
+    entries?: {
+      id: string;
+      title: string;
+      detail?: string;
+      meta?: string;
+      photos?: { id: string; url: string; alt: string }[];
+    }[];
+  }>(content.categories);
+  const dyno = asArray<{ label: string; value: string }>(content.dyno);
+
+  return (
+    <>
+      <Section title="Build Summary">
+        <p className="text-[14px] leading-relaxed text-[#636366]">
+          {asString(content.buildSummary, listing.overview)}
+        </p>
+      </Section>
+
+      <Section title="Current Specifications">
+        <SpecGrid items={currentSpecs.length ? currentSpecs : listing.quickSpecs} />
+      </Section>
+
+      <Section
+        title="Modification Categories"
+        description="Expand each category to review installed parts and supporting notes."
+      >
+        <AccordionList items={categories} />
+      </Section>
+
+      <Section title="Dyno Information">
+        <KeyValueList items={dyno} />
+      </Section>
+
+      <Section title="Builder Information">
+        <InfoCard>
+          <p className="text-[13px] font-semibold text-[#1c1c1e]">{asString(content.builder, "—")}</p>
+          <p className="mt-1 text-[12px] text-[#636366]">Primary shop / builder</p>
+        </InfoCard>
+      </Section>
+
+      {listing.story ? (
+        <Section title="Owner Notes">
+          <InfoCard>
+            <p className="text-[13px] leading-relaxed text-[#636366]">{listing.story}</p>
+          </InfoCard>
+        </Section>
+      ) : null}
+    </>
+  );
+}
+
 export function ClassicSections({ listing }: { listing: BuyerListingDemo }) {
   const content = listing.content as Content;
   const production = asArray<{ label: string; value: string }>(content.production);

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { MobileBuyerGalleryScreen } from "@/components/mobile-buyer";
 import type { BuyerListingType } from "@/components/mobile-buyer";
 
-const TYPES: BuyerListingType[] = ["stock", "classic", "restored", "race"];
+const TYPES: BuyerListingType[] = ["stock", "classic", "modified", "restored", "race"];
 
 export const metadata: Metadata = {
   title: "Gallery — Carasta Listing",

@@ -16,6 +16,7 @@ import {
 } from "@/components/listing/specs/options";
 import { RESTORED_RESTOMODE_SPECS_CONFIG } from "@/components/listing/specs/restored-restomod";
 import { MobileListingShell } from "../MobileListingShell";
+import { MobileOptionList, MobileOptionSheet } from "../MobileOptionSheet";
 import { MobileShopBuilderField } from "../shop-builder/MobileShopBuilderField";
 import { useOpenShopBuilder } from "../shop-builder/useOpenShopBuilder";
 
@@ -493,27 +494,13 @@ function OptionSheet({
   onClose: () => void;
   onSelect: (value: string) => void;
 }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40">
-      <button type="button" className="absolute inset-0" aria-label="Close picker" onClick={onClose} />
-      <div className="relative mx-auto w-full max-w-[440px] rounded-t-[28px] bg-white p-6 pb-8">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#d1d1d6]" />
-        <h2 className="text-[18px] font-bold">{label}</h2>
-        <div className="mt-4 max-h-[50vh] space-y-2 overflow-y-auto">
-          {options.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onSelect(option)}
-              className={`h-11 w-full rounded-lg border px-3 text-left text-[13px] ${
-                option === value ? "border-[#1b1464] bg-[#f4f5fc]" : "border-[#e5e5ea]"
-              }`}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+    return (
+    <MobileOptionSheet open title={label} onClose={onClose}>
+      <MobileOptionList
+        options={options}
+        value={value}
+        onSelect={onSelect}
+      />
+    </MobileOptionSheet>
   );
 }

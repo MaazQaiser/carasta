@@ -12,6 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import {
+  mergePublishedAuctions,
+  mergePublishedVehicles,
+  searchPublishedAuctions,
+} from "@/lib/marketplace-listings";
 
 interface SearchResults {
   vehicles: Vehicle[];
@@ -32,9 +37,30 @@ export function SearchResultsClient({ initialQuery }: { initialQuery: string }) 
         vehicleService.search(q),
         userService.searchUsers(q),
       ]);
-      const auctionResults = await auctionService.getAuctions({ pageSize: 4 });
+      const auctionResults = await auctionService.getAuctions({ pageSize: 8 });
       const postFeed = await postService.getFeed(1, 4);
-      setResults({ vehicles, auctions: auctionResults.data.slice(0, 4), users, posts: postFeed.data.slice(0, 4) });
+      const publishedAuctions = searchPublishedAuctions(q, 8);
+      const mergedAuctions = mergePublishedAuctions(
+        [...publishedAuctions, ...auctionResults.data],
+        { sort: "newest" }
+      ).filter((a) => {
+        const text = [
+          a.vehicle.title,
+          a.vehicle.spec.make,
+          a.vehicle.spec.model,
+          String(a.vehicle.spec.year),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return text.includes(q.trim().toLowerCase());
+      });
+
+      setResults({
+        vehicles: mergePublishedVehicles(vehicles, q),
+        auctions: mergedAuctions.slice(0, 8),
+        users,
+        posts: postFeed.data.slice(0, 4),
+      });
     });
   };
 

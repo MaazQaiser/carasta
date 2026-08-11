@@ -74,8 +74,10 @@ export function AuctionListClient({ initialStatus, initialMake, liveCount, endin
       if (priceMax) filters.priceMax = parseInt(priceMax);
 
       const result = await auctionService.getAuctions({ filters, sort, pageSize: 24 });
-      setAuctions(result.data);
-      setTotal(result.total);
+      const { mergePublishedAuctions } = await import("@/lib/marketplace-listings");
+      const merged = mergePublishedAuctions(result.data, { filters, sort });
+      setAuctions(merged);
+      setTotal(Math.max(result.total, merged.length));
     });
   };
 

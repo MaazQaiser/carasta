@@ -72,7 +72,7 @@ export function ReviewSubmitScreen() {
       addActivity("Listing submitted", "submit");
       notify({
         title: "Listing Submitted",
-        description: `Live on your profile Listings · ${reference}`,
+        description: `Live for buyers on Auctions · ${reference}`,
         tone: "success",
       });
       router.push("/listing/submitted");

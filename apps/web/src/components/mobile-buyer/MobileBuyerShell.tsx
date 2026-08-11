@@ -3,6 +3,8 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
+import { ReserveMeterGauge } from "./AuctionStatusCard";
 
 export function MobileBuyerShell({
   children,
@@ -12,6 +14,7 @@ export function MobileBuyerShell({
   onPrimary,
   onSecondary,
   hideSticky,
+  auctionSticky,
 }: {
   children: React.ReactNode;
   title?: string;
@@ -20,6 +23,13 @@ export function MobileBuyerShell({
   onPrimary?: () => void;
   onSecondary?: () => void;
   hideSticky?: boolean;
+  /** Auction-style sticky bar (price + Bid Now + reserve gauge). */
+  auctionSticky?: {
+    currentBid: number;
+    endsAt?: string;
+    reserveProgress: number;
+    onReservePress?: () => void;
+  } | null;
 }) {
   const router = useRouter();
 
@@ -41,7 +51,32 @@ export function MobileBuyerShell({
 
         <div className="ml-shell-scroll">{children}</div>
 
-        {!hideSticky && stickyPrimary ? (
+        {!hideSticky && auctionSticky ? (
+          <div className="shrink-0 bg-[#1b1464] px-3 pb-5 pt-3">
+            <div className="flex items-center gap-2.5">
+              <div className="min-w-0 shrink-0">
+                <p className="text-[16px] font-extrabold leading-none text-white">
+                  {formatPrice(auctionSticky.currentBid)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onPrimary}
+                className="h-11 flex-1 rounded-lg bg-white text-[14px] font-bold text-[#1b1464]"
+              >
+                {stickyPrimary || "Bid Now"}
+              </button>
+              <button
+                type="button"
+                aria-label="Reserve meter"
+                onClick={auctionSticky.onReservePress ?? onSecondary}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white"
+              >
+                <ReserveMeterGauge progress={auctionSticky.reserveProgress} size={40} />
+              </button>
+            </div>
+          </div>
+        ) : !hideSticky && stickyPrimary ? (
           <div className="shrink-0 border-t border-[#e5e5ea] bg-white px-4 pb-5 pt-3">
             <div className="grid grid-cols-2 gap-3">
               {stickySecondary ? (

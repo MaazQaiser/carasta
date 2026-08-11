@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { MobileOptionSheet } from "../MobileOptionSheet";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -145,38 +146,32 @@ export function MobileVinPromptScreen() {
       </div>
 
       {showMethodSheet ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/40">
-          <button
-            type="button"
-            aria-label="Close VIN method menu"
-            className="absolute inset-0"
-            onClick={() => setShowMethodSheet(false)}
-          />
-          <div className="relative w-full max-w-[440px] mx-auto rounded-t-[28px] bg-white p-6 pb-8">
-            <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-[#d1d1d6]" />
-            <h2 className="text-[18px] font-bold text-[#1c1c1e]">Choose VIN Method</h2>
-            <div className="mt-4 flex flex-col gap-2">
-              <VinOptionCard
-                icon="/mobile-listing/camera.svg"
-                title="Scan VIN Barcode"
-                description="Camera scanning coming soon"
-                onClick={() => setShowMethodSheet(false)}
-              />
-              <VinOptionCard
-                icon="/mobile-listing/keyboard.svg"
-                title="Enter VIN Manually"
-                description="Type your 17-character VIN"
-                onClick={() => router.push("/mobile-listing/identify/manual")}
-              />
-              <VinOptionCard
-                icon="/mobile-listing/arrow-right.svg"
-                title="Continue Without VIN"
-                description="Enter vehicle details manually"
-                onClick={() => router.push("/mobile-listing/details")}
-              />
-            </div>
+        <MobileOptionSheet
+          open
+          title="Choose VIN Method"
+          onClose={() => setShowMethodSheet(false)}
+        >
+          <div className="flex flex-col gap-2">
+            <VinOptionCard
+              icon="/mobile-listing/camera.svg"
+              title="Scan VIN Barcode"
+              description="Camera scanning coming soon"
+              onClick={() => setShowMethodSheet(false)}
+            />
+            <VinOptionCard
+              icon="/mobile-listing/keyboard.svg"
+              title="Enter VIN Manually"
+              description="Type your 17-character VIN"
+              onClick={() => router.push("/mobile-listing/identify/manual")}
+            />
+            <VinOptionCard
+              icon="/mobile-listing/arrow-right.svg"
+              title="Continue Without VIN"
+              description="Enter vehicle details manually"
+              onClick={() => router.push("/mobile-listing/details")}
+            />
           </div>
-        </div>
+        </MobileOptionSheet>
       ) : null}
     </MobileListingShell>
   );

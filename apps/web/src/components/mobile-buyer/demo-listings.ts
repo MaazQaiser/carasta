@@ -199,6 +199,120 @@ export const BUYER_LISTING_DEMOS: Record<BuyerListingType, BuyerListingDemo> = {
     },
   },
 
+  modified: {
+    type: "modified",
+    id: "buyer-modified",
+    title: "2018 Nissan GT-R Premium",
+    subtitle: "Modified / Performance · Coupe",
+    priceLabel: "Current bid $98,500",
+    location: "Los Angeles, CA",
+    sellerBadge: "Verified Seller",
+    badges: [
+      { label: "Modified", tone: "brand" },
+      { label: "Dyno Proven", tone: "success" },
+      { label: "Track Ready", tone: "neutral" },
+    ],
+    gallery: [
+      img("1552519507-da3b142c6e3d", "GT-R front"),
+      img("1494905998402-395d579af36f", "Side profile"),
+      img("1549317661-bd32c8ce0db2", "Engine bay"),
+      img("1503376780353-7e6692767b70", "Rear"),
+      img("1492144534655-ae79c964c9d7", "Interior"),
+    ],
+    quickSpecs: [
+      { label: "Year", value: "2018" },
+      { label: "Engine", value: "3.8L Twin-Turbo V6" },
+      { label: "Transmission", value: "6-Speed DCT" },
+      { label: "Drivetrain", value: "AWD" },
+      { label: "Mileage", value: "24,100 mi" },
+      { label: "Color", value: "Gun Metallic" },
+    ],
+    overview:
+      "Built for street and track with supporting mods, documented dyno sheets, and a clean California title. Power delivery is calibrated and the car remains daily-drivable.",
+    story:
+      "Built over three seasons with receipts for every major part. Street-legal, track-proven, and ready for the next owner.",
+    documents: [
+      { id: "m1", title: "Dyno Sheet", type: "PDF", subtitle: "Latest pull" },
+      { id: "m2", title: "Parts Receipts", type: "PDF", subtitle: "Major components" },
+      { id: "m3", title: "Alignment Spec", type: "PDF", subtitle: "Track setup" },
+    ],
+    seller: {
+      name: "Pacific Motorsport",
+      location: "Los Angeles, CA",
+      role: "Performance Builder",
+      rating: "4.9",
+      listings: 18,
+      verified: true,
+      organization: "Pacific Motorsport",
+    },
+    primaryCta: "Place Bid",
+    secondaryCta: "Make an Offer",
+    content: {
+      buildSummary:
+        "Stage 2+ street/track build with supporting fuel, cooling, and chassis upgrades. Tuned for reliability with documented power figures.",
+      currentSpecs: [
+        { label: "Engine", value: "3.8L Twin-Turbo V6 (built)" },
+        { label: "Transmission", value: "6-Speed DCT" },
+        { label: "Drivetrain", value: "AWD" },
+        { label: "Horsepower", value: "742 whp · Dyno proven" },
+        { label: "Torque", value: "698 wtq · Dyno proven" },
+        { label: "Fuel", value: "E85 capable" },
+        { label: "Tuning", value: "Ecutek" },
+      ],
+      categories: [
+        {
+          id: "cat-power",
+          title: "Powertrain",
+          summary: "3 items",
+          entries: [
+            {
+              id: "p1",
+              title: "Turbo upgrade",
+              detail: "Larger twins with supporting oil lines.",
+              meta: "AMS · Shop install · 2023",
+            },
+            {
+              id: "p2",
+              title: "Fuel system",
+              detail: "High-flow pumps and injectors for E85.",
+              meta: "Injector Dynamics",
+            },
+            {
+              id: "p3",
+              title: "Intercooler",
+              detail: "Front-mount cooler with denser core.",
+              meta: "AMS",
+            },
+          ],
+        },
+        {
+          id: "cat-chassis",
+          title: "Chassis & Brakes",
+          summary: "2 items",
+          entries: [
+            {
+              id: "c1",
+              title: "Coilover kit",
+              detail: "Track-oriented springs and dampers.",
+              meta: "KW Clubsport",
+            },
+            {
+              id: "c2",
+              title: "Brake package",
+              detail: "Two-piece rotors and performance pads.",
+              meta: "Brembo",
+            },
+          ],
+        },
+      ],
+      dyno: [
+        { label: "HP Status", value: "Dyno proven" },
+        { label: "Torque Status", value: "Dyno proven" },
+      ],
+      builder: "Pacific Motorsport",
+    },
+  },
+
   restored: {
     type: "restored",
     id: "buyer-restored",
@@ -645,9 +759,14 @@ export const BUYER_LISTING_INDEX: {
     description: "Flow 1 — Stock / lightly modified buyer detail",
   },
   {
+    type: "modified",
+    label: "Modified / Performance",
+    description: "Flow 2 — Build summary, mods, and dyno data",
+  },
+  {
     type: "classic",
     label: "Classic Collector",
-    description: "Flow 2 — Heritage, originality, and documentation",
+    description: "Heritage sample — originality and documentation",
   },
   {
     type: "restored",

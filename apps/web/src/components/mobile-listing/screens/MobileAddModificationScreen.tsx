@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { MobileOptionList, MobileOptionSheet } from "../MobileOptionSheet";
 import { useRouter } from "next/navigation";
 import { MobileListingShell } from "../MobileListingShell";
 
@@ -43,20 +44,16 @@ export function MobileAddModificationScreen() {
         </button>
       </div>
       {workerSheet ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/40">
-          <button className="absolute inset-0" aria-label="Close worker selection" onClick={() => setWorkerSheet(false)} />
-          <div className="relative mx-auto w-full max-w-[440px] rounded-t-[28px] bg-white p-6 pb-8">
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#d1d1d6]" />
-            <h2 className="text-[18px] font-bold text-[#1c1c1e]">Work Performed By</h2>
-            <div className="mt-4 space-y-2">
-              {workerTypes.map((option) => (
-                <button key={option} type="button" onClick={() => { setWorker(option); setWorkerSheet(false); }} className={`flex h-11 w-full items-center rounded-lg border px-3 text-left text-[13px] ${worker === option ? "border-[#1b1464] bg-[#f4f5fc]" : "border-[#e5e5ea]"}`}>
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <MobileOptionSheet open title="Work Performed By" onClose={() => setWorkerSheet(false)}>
+          <MobileOptionList
+            options={workerTypes}
+            value={worker}
+            onSelect={(option) => {
+              setWorker(option);
+              setWorkerSheet(false);
+            }}
+          />
+        </MobileOptionSheet>
       ) : null}
     </MobileListingShell>
   );
