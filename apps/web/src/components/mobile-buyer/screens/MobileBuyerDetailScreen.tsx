@@ -92,6 +92,67 @@ function ListingBody({
       }
     >
       <div className="flex flex-col gap-6 px-5 pb-6 pt-4">
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-[24px] font-extrabold leading-tight text-[#1c1c1e]">
+                {listing.title}
+              </h1>
+              <p className="mt-1 text-[13px] text-[#636366]">{listing.subtitle}</p>
+            </div>
+            {!isAuction ? (
+              <p className="shrink-0 text-[18px] font-extrabold text-[#1b1464]">
+                {listing.priceLabel}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex h-7 items-center rounded-full bg-[#1b1464] px-2.5 text-[11px] font-semibold text-white">
+              {listing.sellerBadge}
+            </span>
+            <span className="inline-flex items-center gap-1 text-[12px] text-[#636366]">
+              <MapPin className="h-3.5 w-3.5" />
+              {listing.location}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {listing.badges.map((badge) => (
+              <Badge key={badge.label} {...badge} />
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#e5e5ea] bg-[#fafafa] p-3 text-[12px]">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
+                Seller
+              </p>
+              <p className="mt-0.5 font-semibold text-[#1c1c1e]">{listing.seller.name}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
+                Mileage
+              </p>
+              <p className="mt-0.5 font-semibold text-[#1c1c1e]">{listing.mileageLabel}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
+                Year
+              </p>
+              <p className="mt-0.5 font-semibold text-[#1c1c1e]">{listing.year || "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
+                Sale type
+              </p>
+              <p className="mt-0.5 font-semibold text-[#1c1c1e]">
+                {isAuction ? "Auction" : "Fixed price"}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="relative">
           <GalleryHero images={listing.gallery} onOpen={openGallery} />
           <div className="absolute right-3 top-3 flex gap-2">
@@ -138,54 +199,26 @@ function ListingBody({
               reserveMet={listing.reserveMet || auction?.reserveMet}
             />
           </div>
-        ) : null}
-
-        <div className="space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="text-[24px] font-extrabold leading-tight text-[#1c1c1e]">
-                {listing.title}
-              </h1>
-              <p className="mt-1 text-[13px] text-[#636366]">{listing.subtitle}</p>
+        ) : (
+          <Section title="Purchase Summary" collapsible={false}>
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#e5e5ea] bg-[#fafafa] p-3 text-[12px]">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
+                  Asking price
+                </p>
+                <p className="mt-0.5 text-[15px] font-extrabold text-[#1b1464]">
+                  {listing.priceLabel}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
+                  Status
+                </p>
+                <p className="mt-0.5 font-semibold text-[#1c1c1e]">{listing.listingStatusLabel}</p>
+              </div>
             </div>
-            {!isAuction ? (
-              <p className="shrink-0 text-[18px] font-extrabold text-[#1b1464]">
-                {listing.priceLabel}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex h-7 items-center rounded-full bg-[#1b1464] px-2.5 text-[11px] font-semibold text-white">
-              {listing.sellerBadge}
-            </span>
-            <span className="inline-flex items-center gap-1 text-[12px] text-[#636366]">
-              <MapPin className="h-3.5 w-3.5" />
-              {listing.location}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {listing.badges.map((badge) => (
-              <Badge key={badge.label} {...badge} />
-            ))}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#e5e5ea] bg-[#fafafa] p-3 text-[12px]">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
-                Seller
-              </p>
-              <p className="mt-0.5 font-semibold text-[#1c1c1e]">{listing.seller.name}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
-                Mileage
-              </p>
-              <p className="mt-0.5 font-semibold text-[#1c1c1e]">{listing.mileageLabel}</p>
-            </div>
-          </div>
-        </div>
+          </Section>
+        )}
 
         <Section title="Key Highlights">
           <SpecGrid items={listing.quickSpecs} />
@@ -205,8 +238,40 @@ function ListingBody({
           )}
         </Section>
 
-        <Section title="Seller Information">
+        <Section title="Seller Information" description="Who is selling this vehicle.">
           <SellerCard seller={listing.seller} onOpen={() => router.push(sellerHref)} />
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-[#e5e5ea] bg-[#fafafa] p-3 text-[12px]">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
+                Location
+              </p>
+              <p className="mt-0.5 font-semibold text-[#1c1c1e]">{listing.location}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
+                Member since
+              </p>
+              <p className="mt-0.5 font-semibold text-[#1c1c1e]">
+                {listing.sellerMemberSince || listing.seller.memberSince || "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
+                Response time
+              </p>
+              <p className="mt-0.5 font-semibold text-[#1c1c1e]">
+                {listing.sellerResponseTime || listing.seller.responseTime || "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7b78a3]">
+                Listings sold
+              </p>
+              <p className="mt-0.5 font-semibold text-[#1c1c1e]">
+                {listing.sellerListingsSold ?? listing.seller.listingsSold ?? listing.seller.listings}
+              </p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={openContact}
@@ -221,6 +286,22 @@ function ListingBody({
           >
             More purchase options
           </button>
+          <button
+            type="button"
+            onClick={openPrimary}
+            className="mt-2 h-11 w-full rounded-lg bg-[#1b1464] text-[13px] font-semibold text-white"
+          >
+            {isAuction ? "Bid Now" : listing.primaryCta}
+          </button>
+          {!isAuction ? (
+            <button
+              type="button"
+              onClick={openSecondary}
+              className="mt-2 h-11 w-full rounded-lg border border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
+            >
+              {listing.secondaryCta}
+            </button>
+          ) : null}
         </Section>
       </div>
       {sheets}
