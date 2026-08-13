@@ -162,14 +162,13 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
       label: "Photos",
       href: LISTING_PATHS.photos,
       weight: 15,
-      done: draft.vehiclePhotos.length >= MIN_LISTING_PHOTOS && draft.videos.length >= 1,
+      done: draft.vehiclePhotos.length >= MIN_LISTING_PHOTOS,
       requiredMissing: [
         ...(draft.vehiclePhotos.length < MIN_LISTING_PHOTOS
           ? [`At least ${MIN_LISTING_PHOTOS} vehicle photos`]
           : []),
-        ...(draft.videos.length < 1 ? ["At least 1 vehicle video"] : []),
       ],
-      warnings: [],
+      warnings: draft.videos.length === 0 ? ["Videos are optional but recommended"] : [],
     },
     {
       id: "documents",
@@ -194,8 +193,11 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
       label: "AI Description",
       href: LISTING_PATHS.ai,
       weight: 5,
-      done: Boolean(draft.aiDescription.trim()),
-      requiredMissing: draft.aiDescription.trim() ? [] : ["AI description"],
+      done: draft.aiDescription.trim().length >= 100,
+      requiredMissing:
+        draft.aiDescription.trim().length >= 100
+          ? []
+          : ["AI description (min 100 characters)"],
       warnings: [],
     },
     {
@@ -203,10 +205,11 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
       label: "Auction Settings",
       href: LISTING_PATHS.settings,
       weight: 10,
-      done: Boolean(draft.saleSettings.saleType && draft.saleSettings.reservePrice),
+      done: Boolean(draft.saleSettings.buyNowPrice || draft.saleSettings.reservePrice),
       requiredMissing: [
-        ...(!draft.saleSettings.saleType ? ["Sale type"] : []),
-        ...(!draft.saleSettings.reservePrice ? ["Reserve price"] : []),
+        ...(!draft.saleSettings.buyNowPrice && !draft.saleSettings.reservePrice
+          ? ["Buy Now or Reserve Price"]
+          : []),
       ],
       warnings: [],
     },
@@ -221,7 +224,6 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
     ...(draft.vehiclePhotos.length < MIN_LISTING_PHOTOS
       ? [`At least ${MIN_LISTING_PHOTOS} vehicle photos`]
       : []),
-    ...(draft.videos.length < 1 ? ["At least 1 vehicle video"] : []),
   ];
   const missingDocuments = draft.documents.length === 0 ? ["Supporting documents"] : [];
   const incompleteSections = categories

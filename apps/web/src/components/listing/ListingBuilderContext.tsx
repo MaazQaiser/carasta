@@ -15,10 +15,14 @@ import type {
   PerformanceSummary,
 } from "./specs/types";
 import { createModifiedPerformanceWorkspace } from "./specs/modified-performance";
-import { RESTORED_RESTOMODE_SPECS_CONFIG } from "./specs/restored-restomod";
-import { MODIFIED_PERFORMANCE_SPECS_CONFIG } from "./specs/modified-performance";
-import { RACE_TRACK_SPECS_CONFIG } from "./specs/race-track";
-import { createStockLightlyModifiedWorkspace } from "./specs/stock-lightly-modified";
+import { createWorkspaceForListingType } from "./listing-type-utils";
+import {
+  collectCarriedDocuments,
+  collectCarriedModificationPhotos,
+  collectCarriedVideos,
+  LISTING_MEDIA_LIMITS,
+  mergeUniqueMedia,
+} from "./listing-media-library";
 import type { ListingActivityEvent } from "./services/draft-service";
 import { isMeaningfulDraft } from "./services/draft-service";
 
@@ -29,6 +33,7 @@ const emptyDetails: ListingVehicleDetails = {
   trim: "",
   mileage: "",
   exteriorColor: "",
+  secondaryExteriorColor: "",
   interiorColor: "",
   engine: "",
   transmission: "",
@@ -44,6 +49,8 @@ const emptyCondition: ListingConditionHistory = {
   overallCondition: "",
   ownershipHistory: "",
   generalNotes: "",
+  numberOfKeys: "",
+  warranty: "",
 };
 
 const emptySaleSettings: ListingSaleSettings = {
@@ -54,12 +61,14 @@ const emptySaleSettings: ListingSaleSettings = {
   auctionDuration: "",
   shipping: "",
   shippingLocation: "",
+  localPickup: "",
 };
 
 export const INITIAL_LISTING_DRAFT: ListingDraft = {
   listingTypeId: null,
   vinInput: "",
   details: emptyDetails,
+  vinImportedFields: [],
   condition: emptyCondition,
   vehiclePhotos: [],
   modificationPhotos: [],
@@ -69,6 +78,7 @@ export const INITIAL_LISTING_DRAFT: ListingDraft = {
   aiDescription: "",
   aiSummary: "",
   saleSettings: emptySaleSettings,
+  auctionCoverPhotoId: null,
   modificationWorkspace: createModifiedPerformanceWorkspace(),
 };
 
@@ -79,6 +89,7 @@ interface ListingBuilderContextValue {
   setListingType: (id: ListingTypeId) => void;
   setVinInput: (vin: string) => void;
   updateDetails: (patch: Partial<ListingVehicleDetails>) => void;
+  setVinImportedFields: (fields: (keyof ListingVehicleDetails)[]) => void;
   updateCondition: (patch: Partial<ListingConditionHistory>) => void;
   updateSaleSettings: (patch: Partial<ListingSaleSettings>) => void;
   setOwnerNotes: (notes: string) => void;
@@ -86,6 +97,9 @@ interface ListingBuilderContextValue {
   setAiSummary: (value: string) => void;
   addMediaItems: (bucket: MediaBucket, items: ListingMediaItem[]) => void;
   removeMediaItem: (bucket: MediaBucket, id: string) => void;
+  reorderMediaItems: (bucket: MediaBucket, fromIndex: number, toIndex: number) => void;
+  setAuctionCoverPhotoId: (id: string | null) => void;
+  syncCarriedForwardMedia: () => void;
   updatePerformanceSummary: (patch: Partial<PerformanceSummary>) => void;
   setActiveSpecsCategory: (categoryId: string) => void;
   toggleEntryExpanded: (entryId: string) => void;
@@ -165,40 +179,25 @@ export function ListingBuilderProvider({ children }: { children: React.ReactNode
     isDirty,
     markClean: () => setIsDirty(false),
     replaceDraft: (next) => {
-      setDraft(next);
+      setDraft({
+        ...next,
+        auctionCoverPhotoId: next.auctionCoverPhotoId ?? null,
+        saleSettings: {
+          ...emptySaleSettings,
+          ...next.saleSettings,
+          localPickup: next.saleSettings?.localPickup ?? "",
+        },
+      });
       setIsDirty(false);
     },
     setListingType: (id) => {
       touch((prev) => {
-        if (id === "stock-lightly-modified") {
-          return {
-            ...prev,
-            listingTypeId: id,
-            modificationWorkspace: {
-              ...createStockLightlyModifiedWorkspace(),
-              // Preserve any already-entered vehicle details; reset stock workspace flags.
-              entries: [],
-            },
-          };
-        }
-
-        const activeCategoryId =
-          id === "restored-restomod-custom"
-            ? RESTORED_RESTOMODE_SPECS_CONFIG.categories[0]?.id ?? "build-restoration"
-            : id === "modified-performance"
-              ? MODIFIED_PERFORMANCE_SPECS_CONFIG.categories[0]?.id ?? "powertrain"
-              : id === "race-track-car"
-                ? RACE_TRACK_SPECS_CONFIG.categories[0]?.id ?? "chassis-structure"
-                : prev.modificationWorkspace.activeCategoryId;
-
+        if (prev.listingTypeId === id) return prev;
+        // Preserve shared VIN/details/media/etc. Reset only adaptive category workspace.
         return {
           ...prev,
           listingTypeId: id,
-          modificationWorkspace: {
-            ...prev.modificationWorkspace,
-            activeCategoryId,
-            editingEntryId: null,
-          },
+          modificationWorkspace: createWorkspaceForListingType(id),
         };
       });
       addActivity("Vehicle type set", "type");
@@ -211,6 +210,8 @@ export function ListingBuilderProvider({ children }: { children: React.ReactNode
       })),
     updateDetails: (patch) =>
       touch((prev) => ({ ...prev, details: { ...prev.details, ...patch } })),
+    setVinImportedFields: (fields) =>
+      touch((prev) => ({ ...prev, vinImportedFields: fields })),
     updateCondition: (patch) =>
       touch((prev) => ({ ...prev, condition: { ...prev.condition, ...patch } })),
     updateSaleSettings: (patch) =>
@@ -222,7 +223,23 @@ export function ListingBuilderProvider({ children }: { children: React.ReactNode
     setAiDescription: (aiDescription) => touch((prev) => ({ ...prev, aiDescription })),
     setAiSummary: (aiSummary) => touch((prev) => ({ ...prev, aiSummary })),
     addMediaItems: (bucket, items) => {
-      touch((prev) => ({ ...prev, [bucket]: [...prev[bucket], ...items] }));
+      touch((prev) => {
+        if (bucket === "videos") {
+          const room = LISTING_MEDIA_LIMITS.maxVideos - prev.videos.length;
+          if (room <= 0) return prev;
+          return { ...prev, videos: [...prev.videos, ...items.slice(0, room)] };
+        }
+        if (bucket === "vehiclePhotos" || bucket === "modificationPhotos") {
+          const used =
+            prev.vehiclePhotos.length +
+            mergeUniqueMedia(prev.modificationPhotos, collectCarriedModificationPhotos(prev))
+              .length;
+          const room = LISTING_MEDIA_LIMITS.maxPhotos - used;
+          if (room <= 0) return prev;
+          return { ...prev, [bucket]: [...prev[bucket], ...items.slice(0, room)] };
+        }
+        return { ...prev, [bucket]: [...prev[bucket], ...items] };
+      });
       addActivity(
         bucket === "vehiclePhotos"
           ? "Photos uploaded"
@@ -236,7 +253,52 @@ export function ListingBuilderProvider({ children }: { children: React.ReactNode
       touch((prev) => ({
         ...prev,
         [bucket]: prev[bucket].filter((item) => item.id !== id),
+        auctionCoverPhotoId:
+          bucket === "vehiclePhotos" && prev.auctionCoverPhotoId === id
+            ? null
+            : prev.auctionCoverPhotoId,
       })),
+    reorderMediaItems: (bucket, fromIndex, toIndex) =>
+      touch((prev) => {
+        const list = [...prev[bucket]];
+        if (
+          fromIndex < 0 ||
+          toIndex < 0 ||
+          fromIndex >= list.length ||
+          toIndex >= list.length ||
+          fromIndex === toIndex
+        ) {
+          return prev;
+        }
+        const moved = list[fromIndex];
+        if (!moved) return prev;
+        list.splice(fromIndex, 1);
+        list.splice(toIndex, 0, moved);
+        return { ...prev, [bucket]: list };
+      }),
+    setAuctionCoverPhotoId: (id) => touch((prev) => ({ ...prev, auctionCoverPhotoId: id })),
+    syncCarriedForwardMedia: () => {
+      setDraft((prev) => {
+        const modificationPhotos = mergeUniqueMedia(
+          prev.modificationPhotos,
+          collectCarriedModificationPhotos(prev)
+        );
+        const documents = mergeUniqueMedia(prev.documents, collectCarriedDocuments(prev));
+        const videos = mergeUniqueMedia(prev.videos, collectCarriedVideos(prev)).slice(
+          0,
+          LISTING_MEDIA_LIMITS.maxVideos
+        );
+        if (
+          modificationPhotos.length === prev.modificationPhotos.length &&
+          documents.length === prev.documents.length &&
+          videos.length === prev.videos.length
+        ) {
+          return prev;
+        }
+        setIsDirty(true);
+        return { ...prev, modificationPhotos, documents, videos };
+      });
+    },
     updatePerformanceSummary: (patch) =>
       touch((prev) =>
         patchWorkspace(prev, {

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Share hub skipped — mobile goes straight to external share. */
+/** Post-submit share hub removed — share after approval from the live auction page. */
 export default function ListingSharePage() {
-  redirect("/listing/share/external");
+  redirect("/profile?tab=listings");
 }

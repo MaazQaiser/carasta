@@ -34,7 +34,18 @@ export function useListingApprovalWatcher(options?: {
         await notificationService.create({
           type: "system",
           title: "Auction approved",
-          message: `${title} was approved. Open it to share your listing.`,
+          message: `${title} was approved and scheduled. We also sent you an email. Open the auction anytime to share it.`,
+          actionUrl: href,
+          metadata: {
+            auctionId: record.auction.id,
+            vehicleId: record.auction.vehicle.id,
+          },
+        });
+        // Demo stand-in for seller email (production would enqueue email).
+        await notificationService.create({
+          type: "system",
+          title: "Email: Auction approved",
+          message: `Email sent: ${title} is approved. Your auction start date is set — open the listing to share.`,
           actionUrl: href,
           metadata: {
             auctionId: record.auction.id,

@@ -168,6 +168,8 @@ function mapListingDetailsFromDraft(
       overallCondition: draft.condition.overallCondition || undefined,
       ownershipHistory: draft.condition.ownershipHistory || undefined,
       generalNotes: draft.condition.generalNotes || undefined,
+      numberOfKeys: draft.condition.numberOfKeys || undefined,
+      warranty: draft.condition.warranty || undefined,
     },
     media: {
       vehiclePhotos: mediaAssets(draft.vehiclePhotos, "Vehicle photo"),
@@ -312,6 +314,7 @@ export function draftToAuction(
             : "rwd") as Vehicle["spec"]["driveType"],
       mileage: Number(draft.details.mileage) || 0,
       exteriorColor: draft.details.exteriorColor || "Unspecified",
+      secondaryExteriorColor: draft.details.secondaryExteriorColor || undefined,
       interiorColor: draft.details.interiorColor || "Unspecified",
       vin: draft.details.vin || draft.vinInput || undefined,
     },

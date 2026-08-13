@@ -39,4 +39,4 @@ export { MobileShopBuilderScreen } from "./shop-builder/MobileShopBuilderScreen"
 export { MobileShopBuilderAddScreen } from "./shop-builder/MobileShopBuilderAddScreen";
 export { MobileShopBuilderField } from "./shop-builder/MobileShopBuilderField";
 export { useOpenShopBuilder } from "./shop-builder/useOpenShopBuilder";
-export { MOBILE_LISTING_TYPES, MOBILE_LISTING_STEPS, getMobileStep } from "./config";
+export { MOBILE_LISTING_TYPES, MOBILE_LISTING_TYPE_ICONS, MOBILE_LISTING_STEPS, getMobileStep } from "./config";

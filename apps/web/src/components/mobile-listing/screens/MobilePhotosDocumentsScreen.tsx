@@ -4,59 +4,89 @@ import * as React from "react";
 import { Camera, FolderOpen, ImageIcon, Move, Replace, Star, Trash2, Video } from "lucide-react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import type { ListingMediaItem } from "@/components/listing/types";
+import {
+  collectBuildHistoryMedia,
+  LISTING_MEDIA_COPY,
+  LISTING_MEDIA_LIMITS,
+  showBuildHistorySection,
+  showModificationPhotosSection,
+  totalListingPhotos,
+} from "@/components/listing/listing-media-library";
 import { MobileListingShell } from "../MobileListingShell";
 import { MobileOptionSheet } from "../MobileOptionSheet";
 
-const MIN_PHOTOS = 20;
-const MIN_VIDEOS = 1;
-const MAX_VIDEOS = 5;
-
-type MediaTab = "general" | "modifications" | "video" | "documents";
+type TopTab = "photos" | "videos" | "documents";
+type PhotoSection = "general" | "modifications" | "build-history";
+type ActionKind = "cover" | "move" | "replace" | "delete";
 
 function createLocalId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
 export function MobilePhotosDocumentsScreen() {
-  const { draft, addMediaItems } = useListingBuilder();
+  const {
+    draft,
+    addMediaItems,
+    removeMediaItem,
+    reorderMediaItems,
+    setAuctionCoverPhotoId,
+    syncCarriedForwardMedia,
+  } = useListingBuilder();
+
+  const showModifications = showModificationPhotosSection(draft);
+  const buildHistory = collectBuildHistoryMedia(draft);
+  const showBuildHistory = showBuildHistorySection(draft);
   const photos = draft.vehiclePhotos;
   const modPhotos = draft.modificationPhotos;
   const videos = draft.videos;
   const documents = draft.documents;
+  const photoTotal = totalListingPhotos(draft);
+  const coverId = draft.auctionCoverPhotoId ?? photos[0]?.id ?? null;
 
-  const isStock =
-    draft.listingTypeId === "stock-lightly-modified" &&
-    draft.modificationWorkspace.hasModifications === false;
-
-  const [tab, setTab] = React.useState<MediaTab>("general");
+  const [tab, setTab] = React.useState<TopTab>("photos");
+  const [photoSection, setPhotoSection] = React.useState<PhotoSection>("general");
   const [sheet, setSheet] = React.useState<"add" | "actions" | null>(null);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (isStock && tab === "modifications") setTab("general");
-  }, [isStock, tab]);
+    syncCarriedForwardMedia();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  }, []);
 
-  const tabs: { id: MediaTab; label: string }[] = [
-    { id: "general", label: "General" },
-    ...(!isStock ? [{ id: "modifications" as const, label: "Modifications" }] : []),
-    { id: "video", label: "Video" },
-    { id: "documents", label: "Documents" },
-  ];
+  React.useEffect(() => {
+    if (!showModifications && photoSection === "modifications") {
+      setPhotoSection("general");
+    }
+    if (!showBuildHistory && photoSection === "build-history") {
+      setPhotoSection("general");
+    }
+  }, [showModifications, showBuildHistory, photoSection]);
 
-  const canContinue = photos.length >= MIN_PHOTOS && videos.length >= MIN_VIDEOS;
+  const canContinue = photos.length >= LISTING_MEDIA_LIMITS.minPhotos;
+
+  const activePhotoBucket =
+    photoSection === "general" ? "vehiclePhotos" : "modificationPhotos";
+  const activePhotoItems =
+    photoSection === "general"
+      ? photos
+      : photoSection === "modifications"
+        ? modPhotos
+        : buildHistory;
 
   const addBatch = (bucket: "vehiclePhotos" | "modificationPhotos" | "documents" | "videos") => {
     if (bucket === "videos") {
-      const room = MAX_VIDEOS - videos.length;
+      const room = LISTING_MEDIA_LIMITS.maxVideos - videos.length;
       if (room <= 0) {
         setSheet(null);
         return;
       }
-      const count = Math.min(1, room);
-      const batch: ListingMediaItem[] = Array.from({ length: count }, (_, index) => ({
-        id: createLocalId("video"),
-        name: `Vehicle video ${videos.length + index + 1}`,
-        previewUrl: `https://picsum.photos/seed/carasta-video-${videos.length + index + 1}/400/225`,
-      }));
+      const batch: ListingMediaItem[] = [
+        {
+          id: createLocalId("video"),
+          name: `Vehicle video ${videos.length + 1}`,
+          previewUrl: `https://picsum.photos/seed/carasta-video-${videos.length + 1}/400/225`,
+        },
+      ];
       addMediaItems("videos", batch);
       setSheet(null);
       return;
@@ -77,9 +107,16 @@ export function MobilePhotosDocumentsScreen() {
       return;
     }
 
+    const room = LISTING_MEDIA_LIMITS.maxPhotos - photoTotal;
+    if (room <= 0) {
+      setSheet(null);
+      return;
+    }
+
     if (bucket === "modificationPhotos") {
       const start = modPhotos.length;
-      const batch: ListingMediaItem[] = Array.from({ length: 4 }, (_, index) => {
+      const count = Math.min(4, room);
+      const batch: ListingMediaItem[] = Array.from({ length: count }, (_, index) => {
         const n = start + index + 1;
         return {
           id: createLocalId("mod-photo"),
@@ -93,7 +130,8 @@ export function MobilePhotosDocumentsScreen() {
     }
 
     const start = photos.length;
-    const batch: ListingMediaItem[] = Array.from({ length: 8 }, (_, index) => {
+    const count = Math.min(8, room);
+    const batch: ListingMediaItem[] = Array.from({ length: count }, (_, index) => {
       const n = start + index + 1;
       return {
         id: createLocalId("photo"),
@@ -105,50 +143,74 @@ export function MobilePhotosDocumentsScreen() {
     setSheet(null);
   };
 
-  const activeBucket =
-    tab === "general"
-      ? "vehiclePhotos"
-      : tab === "modifications"
-        ? "modificationPhotos"
-        : tab === "video"
-          ? "videos"
-          : "documents";
+  const runAction = (kind: ActionKind) => {
+    if (!selectedId || photoSection === "build-history") {
+      setSheet(null);
+      return;
+    }
 
-  const activeItems =
-    tab === "general"
-      ? photos
-      : tab === "modifications"
-        ? modPhotos
-        : tab === "video"
-          ? videos
-          : documents;
+    if (tab === "photos") {
+      const list = activePhotoItems;
+      const index = list.findIndex((item) => item.id === selectedId);
+      if (index < 0) {
+        setSheet(null);
+        return;
+      }
+      if (kind === "cover" && photoSection === "general") {
+        setAuctionCoverPhotoId(selectedId);
+      } else if (kind === "delete") {
+        removeMediaItem(activePhotoBucket, selectedId);
+      } else if (kind === "move" && index > 0) {
+        reorderMediaItems(activePhotoBucket, index, index - 1);
+      } else if (kind === "replace") {
+        removeMediaItem(activePhotoBucket, selectedId);
+        addBatch(activePhotoBucket);
+        return;
+      }
+    } else if (tab === "videos") {
+      const index = videos.findIndex((item) => item.id === selectedId);
+      if (kind === "delete" && index >= 0) removeMediaItem("videos", selectedId);
+      else if (kind === "move" && index > 0) reorderMediaItems("videos", index, index - 1);
+      else if (kind === "replace" && index >= 0) {
+        removeMediaItem("videos", selectedId);
+        addBatch("videos");
+        return;
+      }
+    } else {
+      const index = documents.findIndex((item) => item.id === selectedId);
+      if (kind === "delete" && index >= 0) removeMediaItem("documents", selectedId);
+      else if (kind === "move" && index > 0) reorderMediaItems("documents", index, index - 1);
+      else if (kind === "replace" && index >= 0) {
+        removeMediaItem("documents", selectedId);
+        addBatch("documents");
+        return;
+      }
+    }
 
-  const heading =
-    tab === "general"
-      ? `Add at least ${MIN_PHOTOS} photos of your vehicle.`
-      : tab === "modifications"
-        ? "Add photos of modifications and custom work."
-        : tab === "video"
-          ? `Add at least ${MIN_VIDEOS} video of your vehicle. Limit ${MAX_VIDEOS} videos.`
-          : "Add photos of documents associated with this vehicle.";
+    setSelectedId(null);
+    setSheet(null);
+  };
 
-  const progressLabel =
-    tab === "general"
-      ? `${photos.length} / ${MIN_PHOTOS} Photos Uploaded`
-      : tab === "modifications"
-        ? `${modPhotos.length} Modification Photos`
-        : tab === "video"
-          ? `${videos.length} / ${MAX_VIDEOS} Videos Uploaded`
-          : `${documents.length} Documents Uploaded`;
+  const tabs: { id: TopTab; label: string; badge?: number }[] = [
+    { id: "photos", label: LISTING_MEDIA_COPY.photosTab, badge: photoTotal || undefined },
+    { id: "videos", label: LISTING_MEDIA_COPY.videosTab, badge: videos.length || undefined },
+    {
+      id: "documents",
+      label: LISTING_MEDIA_COPY.documentsTab,
+      badge: documents.length || undefined,
+    },
+  ];
 
-  const progressPct =
-    tab === "general"
-      ? Math.min((photos.length / MIN_PHOTOS) * 100, 100)
-      : tab === "video"
-        ? Math.min((videos.length / MAX_VIDEOS) * 100, 100)
-        : Math.min(activeItems.length * 20, 100);
+  const helper =
+    tab === "photos"
+      ? LISTING_MEDIA_COPY.photosHelper
+      : tab === "videos"
+        ? LISTING_MEDIA_COPY.videosHelper
+        : LISTING_MEDIA_COPY.documentsHelper;
 
-  const addDisabled = tab === "video" && videos.length >= MAX_VIDEOS;
+  const photosAtCap = photoTotal >= LISTING_MEDIA_LIMITS.maxPhotos;
+  const videosAtCap = videos.length >= LISTING_MEDIA_LIMITS.maxVideos;
+  const buildHistoryOnly = photoSection === "build-history";
 
   return (
     <MobileListingShell
@@ -159,9 +221,9 @@ export function MobilePhotosDocumentsScreen() {
       <div className="flex flex-col gap-5 px-6 pb-6 pt-4">
         <div className="space-y-2">
           <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
-            Photos &amp; Documents
+            {LISTING_MEDIA_COPY.screenTitle}
           </h1>
-          <p className="text-[15px] leading-[1.4] text-[#636366]">{heading}</p>
+          <p className="text-[15px] leading-[1.4] text-[#636366]">{helper}</p>
         </div>
 
         <div className="flex gap-4 overflow-x-auto border-b border-[#e5e5ea] text-[13px] font-semibold">
@@ -172,122 +234,361 @@ export function MobilePhotosDocumentsScreen() {
               onClick={() => setTab(item.id)}
               className={
                 tab === item.id
-                  ? "shrink-0 border-b-2 border-[#1b1464] px-1 pb-2 text-[#1b1464]"
-                  : "shrink-0 px-1 pb-2 text-[#636366]"
+                  ? "relative shrink-0 border-b-2 border-[#1b1464] px-1 pb-2 text-[#1b1464]"
+                  : "relative shrink-0 px-1 pb-2 text-[#636366]"
               }
             >
               {item.label}
+              {item.badge ? (
+                <span className="ml-1 rounded-full bg-[#1b1464] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {item.badge}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>
 
-        {activeItems.length ? (
-          <>
-            <div className="flex items-center justify-between text-[11px] font-semibold text-[#1b1464]">
-              <span>Upload Progress</span>
-              <span>{progressLabel}</span>
-            </div>
-            <div className="h-1 overflow-hidden rounded-full bg-[#e5e5ea]">
-              <div className="h-full bg-[#1b1464]" style={{ width: `${progressPct}%` }} />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {activeItems.map((item, index) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSheet("actions")}
-                  className="relative aspect-[4/3] overflow-hidden rounded-lg bg-[#e5e5ea]"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.previewUrl || ""}
-                    alt={item.name || `Media ${index + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-                  {tab === "general" && index === 0 ? (
-                    <span className="absolute left-1 top-1 rounded bg-[#1b1464] px-1 text-[8px] font-bold text-white">
-                      COVER
-                    </span>
-                  ) : null}
-                  {tab === "video" ? (
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/25">
-                      <Video className="h-5 w-5 text-white" />
-                    </span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              disabled={addDisabled}
-              onClick={() => setSheet("add")}
-              className="h-10 w-full rounded-lg bg-[#f4f5fc] text-[12px] font-semibold text-[#1b1464] disabled:opacity-50"
-            >
-              {tab === "video"
-                ? videos.length >= MAX_VIDEOS
-                  ? `Video limit reached (${MAX_VIDEOS})`
-                  : "+ Add More Videos"
-                : tab === "documents"
-                  ? "+ Add More Documents"
-                  : "+ Add More Photos"}
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => setSheet("add")}
-              className="flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-[#c7c7cc] bg-[#fafafa] text-center"
-            >
-              {tab === "video" ? (
-                <Video className="mb-3 h-6 w-6 text-[#1b1464]" />
-              ) : (
-                <Camera className="mb-3 h-6 w-6 text-[#1b1464]" />
-              )}
-              <span className="text-[13px] font-semibold text-[#1c1c1e]">
-                {tab === "video"
-                  ? "Tap to add video"
-                  : tab === "documents"
-                    ? "Tap to add documents"
-                    : "Tap to add photos"}
-              </span>
-              <span className="mt-1 px-6 text-[11px] text-[#636366]">
-                {tab === "video"
-                  ? `Upload at least ${MIN_VIDEOS} video (max ${MAX_VIDEOS})`
-                  : tab === "documents"
-                    ? "Add photos of documents associated with this vehicle"
-                    : "Upload from your camera roll"}
-              </span>
-            </button>
-            {tab === "general" ? (
-              <div className="rounded-lg bg-[#f4f5fc] p-3 text-[12px] leading-relaxed text-[#4b4877]">
-                Tips: Use a mix of exterior, interior, engine bay, wheels, and detail photos. Clear
-                photos build buyer confidence.
-              </div>
-            ) : null}
-          </>
-        )}
+        {tab === "photos" ? (
+          <PhotosTab
+            photoSection={photoSection}
+            setPhotoSection={setPhotoSection}
+            showModifications={showModifications}
+            showBuildHistory={showBuildHistory}
+            photos={photos}
+            modPhotos={modPhotos}
+            buildHistory={buildHistory}
+            photoTotal={photoTotal}
+            coverId={coverId}
+            photosAtCap={photosAtCap}
+            onOpenAdd={() => setSheet("add")}
+            onOpenActions={(id) => {
+              setSelectedId(id);
+              setSheet("actions");
+            }}
+          />
+        ) : null}
+
+        {tab === "videos" ? (
+          <MediaGridTab
+            items={videos}
+            progressLabel={`Optional · ${videos.length} of ${LISTING_MEDIA_LIMITS.maxVideos}`}
+            progressPct={Math.min((videos.length / LISTING_MEDIA_LIMITS.maxVideos) * 100, 100)}
+            emptyLabel="Tap to add videos"
+            emptyHint={`Optional · up to ${LISTING_MEDIA_LIMITS.maxVideos} videos, each up to 1 minute`}
+            addLabel={
+              videosAtCap
+                ? `Video limit reached (${LISTING_MEDIA_LIMITS.maxVideos})`
+                : "+ Add More Videos"
+            }
+            addDisabled={videosAtCap}
+            variant="video"
+            onOpenAdd={() => setSheet("add")}
+            onOpenActions={(id) => {
+              setSelectedId(id);
+              setSheet("actions");
+            }}
+          />
+        ) : null}
+
+        {tab === "documents" ? (
+          <MediaGridTab
+            items={documents}
+            progressLabel={`${documents.length} documents`}
+            progressPct={Math.min(documents.length * 10, 100)}
+            emptyLabel="Tap to add documents"
+            emptyHint={LISTING_MEDIA_COPY.documentsHelper}
+            addLabel="+ Add More Documents"
+            addDisabled={false}
+            variant="document"
+            onOpenAdd={() => setSheet("add")}
+            onOpenActions={(id) => {
+              setSelectedId(id);
+              setSheet("actions");
+            }}
+          />
+        ) : null}
       </div>
 
-      {sheet === "add" ? (
+      {sheet === "add" && !buildHistoryOnly ? (
         <PhotoSheet
           title={
-            tab === "video" ? "Add Video" : tab === "documents" ? "Add Documents" : "Add Photos"
+            tab === "videos"
+              ? "Add Video"
+              : tab === "documents"
+                ? "Add Documents"
+                : "Add Photos"
           }
           onClose={() => setSheet(null)}
-          onChoose={() => addBatch(activeBucket)}
-          video={tab === "video"}
+          onChoose={() =>
+            addBatch(
+              tab === "videos"
+                ? "videos"
+                : tab === "documents"
+                  ? "documents"
+                  : activePhotoBucket
+            )
+          }
+          mode={tab === "videos" ? "video" : "media"}
         />
       ) : null}
-      {sheet === "actions" ? (
+      {sheet === "actions" && !buildHistoryOnly ? (
         <PhotoSheet
-          title={tab === "video" ? "Video Actions" : "Media Actions"}
-          onClose={() => setSheet(null)}
-          onChoose={() => setSheet(null)}
-          actions
+          title={tab === "videos" ? "Video Actions" : "Photo Actions"}
+          onClose={() => {
+            setSelectedId(null);
+            setSheet(null);
+          }}
+          onAction={runAction}
+          mode="actions"
+          showCover={tab === "photos" && photoSection === "general"}
         />
       ) : null}
     </MobileListingShell>
+  );
+}
+
+function PhotosTab({
+  photoSection,
+  setPhotoSection,
+  showModifications,
+  showBuildHistory,
+  photos,
+  modPhotos,
+  buildHistory,
+  photoTotal,
+  coverId,
+  photosAtCap,
+  onOpenAdd,
+  onOpenActions,
+}: {
+  photoSection: PhotoSection;
+  setPhotoSection: (section: PhotoSection) => void;
+  showModifications: boolean;
+  showBuildHistory: boolean;
+  photos: ListingMediaItem[];
+  modPhotos: ListingMediaItem[];
+  buildHistory: ListingMediaItem[];
+  photoTotal: number;
+  coverId: string | null;
+  photosAtCap: boolean;
+  onOpenAdd: () => void;
+  onOpenActions: (id: string) => void;
+}) {
+  const items =
+    photoSection === "general"
+      ? photos
+      : photoSection === "modifications"
+        ? modPhotos
+        : buildHistory;
+  const readOnly = photoSection === "build-history";
+  const progressLabel = `${photoTotal} of ${LISTING_MEDIA_LIMITS.maxPhotos} max · ${photos.length} general`;
+  const progressPct = Math.min((photos.length / LISTING_MEDIA_LIMITS.minPhotos) * 100, 100);
+
+  const sectionChips: { id: PhotoSection; label: string; count: number }[] = [
+    { id: "general", label: LISTING_MEDIA_COPY.generalPhotosTitle, count: photos.length },
+    ...(showModifications
+      ? [
+          {
+            id: "modifications" as const,
+            label: LISTING_MEDIA_COPY.modificationPhotosTitle,
+            count: modPhotos.length,
+          },
+        ]
+      : []),
+    ...(showBuildHistory
+      ? [
+          {
+            id: "build-history" as const,
+            label: LISTING_MEDIA_COPY.buildHistoryTitle,
+            count: buildHistory.length,
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <div className="space-y-4">
+      {sectionChips.length > 1 ? (
+        <div className="flex flex-wrap gap-2">
+          {sectionChips.map(({ id, label, count }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setPhotoSection(id)}
+              className={
+                photoSection === id
+                  ? "rounded-lg bg-[#1b1464] px-3 py-1.5 text-[12px] font-semibold text-white"
+                  : "rounded-lg bg-[#f4f5fc] px-3 py-1.5 text-[12px] font-semibold text-[#1b1464]"
+              }
+            >
+              {label}
+              <span className="ml-1 opacity-80">({count})</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <p className="text-[12px] leading-relaxed text-[#636366]">
+        {photoSection === "general"
+          ? LISTING_MEDIA_COPY.generalPhotosHelper
+          : photoSection === "modifications"
+            ? LISTING_MEDIA_COPY.modificationPhotosHelper
+            : LISTING_MEDIA_COPY.buildHistoryHelper}
+      </p>
+
+      {items.length ? (
+        <>
+          {!readOnly ? (
+            <>
+              <div className="flex items-center justify-between text-[11px] font-semibold text-[#1b1464]">
+                <span>Upload Progress</span>
+                <span>{progressLabel}</span>
+              </div>
+              <div className="h-1 overflow-hidden rounded-full bg-[#e5e5ea]">
+                <div className="h-full bg-[#1b1464]" style={{ width: `${progressPct}%` }} />
+              </div>
+            </>
+          ) : null}
+          <div className="grid grid-cols-3 gap-2">
+            {items.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => (readOnly ? undefined : onOpenActions(item.id))}
+                className="relative aspect-[4/3] overflow-hidden rounded-lg bg-[#e5e5ea]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.previewUrl || ""}
+                  alt={item.name || `Photo ${index + 1}`}
+                  className="h-full w-full object-cover"
+                />
+                <span className="absolute left-1 top-1 rounded bg-black/55 px-1 text-[8px] font-bold text-white">
+                  {index + 1}
+                </span>
+                {photoSection === "general" && item.id === coverId ? (
+                  <span className="absolute right-1 top-1 rounded bg-[#1b1464] px-1 text-[8px] font-bold text-white">
+                    {LISTING_MEDIA_COPY.coverBadge}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+          {!readOnly ? (
+            <button
+              type="button"
+              disabled={photosAtCap}
+              onClick={onOpenAdd}
+              className="h-10 w-full rounded-lg bg-[#f4f5fc] text-[12px] font-semibold text-[#1b1464] disabled:opacity-50"
+            >
+              {photosAtCap
+                ? `Photo limit reached (${LISTING_MEDIA_LIMITS.maxPhotos})`
+                : "+ Add More Photos"}
+            </button>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={onOpenAdd}
+            className="flex min-h-44 w-full flex-col items-center justify-center rounded-xl border border-dashed border-[#c7c7cc] bg-[#fafafa] text-center"
+          >
+            <Camera className="mb-3 h-6 w-6 text-[#1b1464]" />
+            <span className="text-[13px] font-semibold text-[#1c1c1e]">Tap to add photos</span>
+            <span className="mt-1 px-6 text-[11px] text-[#636366]">
+              Drag images or click to browse · max {LISTING_MEDIA_LIMITS.maxPhotos} total
+            </span>
+          </button>
+          {photoSection === "general" ? (
+            <div className="rounded-lg bg-[#f4f5fc] p-3 text-[12px] leading-relaxed text-[#4b4877]">
+              Recommend: front/rear 3/4, both sides, wheels, engine bay, interior, dashboard, seats,
+              trunk, undercarriage when possible, and any flaws.
+            </div>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+}
+
+function MediaGridTab({
+  items,
+  progressLabel,
+  progressPct,
+  emptyLabel,
+  emptyHint,
+  addLabel,
+  addDisabled,
+  variant,
+  onOpenAdd,
+  onOpenActions,
+}: {
+  items: ListingMediaItem[];
+  progressLabel: string;
+  progressPct: number;
+  emptyLabel: string;
+  emptyHint: string;
+  addLabel: string;
+  addDisabled: boolean;
+  variant: "video" | "document";
+  onOpenAdd: () => void;
+  onOpenActions: (id: string) => void;
+}) {
+  return items.length ? (
+    <>
+      <div className="flex items-center justify-between text-[11px] font-semibold text-[#1b1464]">
+        <span>Upload Progress</span>
+        <span>{progressLabel}</span>
+      </div>
+      <div className="h-1 overflow-hidden rounded-full bg-[#e5e5ea]">
+        <div className="h-full bg-[#1b1464]" style={{ width: `${progressPct}%` }} />
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {items.map((item, index) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onOpenActions(item.id)}
+            className="relative aspect-[4/3] overflow-hidden rounded-lg bg-[#e5e5ea]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.previewUrl || ""}
+              alt={item.name || `Media ${index + 1}`}
+              className="h-full w-full object-cover"
+            />
+            {variant === "video" ? (
+              <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+                <Video className="h-5 w-5 text-white" />
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        disabled={addDisabled}
+        onClick={onOpenAdd}
+        className="h-10 w-full rounded-lg bg-[#f4f5fc] text-[12px] font-semibold text-[#1b1464] disabled:opacity-50"
+      >
+        {addLabel}
+      </button>
+    </>
+  ) : (
+    <button
+      type="button"
+      onClick={onOpenAdd}
+      className="flex min-h-44 w-full flex-col items-center justify-center rounded-xl border border-dashed border-[#c7c7cc] bg-[#fafafa] text-center"
+    >
+      {variant === "video" ? (
+        <Video className="mb-3 h-6 w-6 text-[#1b1464]" />
+      ) : (
+        <Camera className="mb-3 h-6 w-6 text-[#1b1464]" />
+      )}
+      <span className="text-[13px] font-semibold text-[#1c1c1e]">{emptyLabel}</span>
+      <span className="mt-1 px-6 text-[11px] text-[#636366]">{emptyHint}</span>
+    </button>
   );
 }
 
@@ -295,50 +596,96 @@ function PhotoSheet({
   title,
   onClose,
   onChoose,
-  actions = false,
-  video = false,
+  onAction,
+  mode,
+  showCover = false,
 }: {
   title: string;
   onClose: () => void;
-  onChoose: () => void;
-  actions?: boolean;
-  video?: boolean;
+  onChoose?: () => void;
+  onAction?: (kind: ActionKind) => void;
+  mode: "media" | "video" | "actions";
+  showCover?: boolean;
 }) {
-  const choices = actions
-    ? [
-        [Star, "Set as Auction Cover Photo"],
-        [Move, "Move"],
-        [Replace, "Replace"],
-        [Trash2, "Delete"],
-      ]
-    : video
+  if (mode === "actions") {
+    const choices: {
+      icon: typeof Star;
+      label: string;
+      kind: ActionKind;
+      show?: boolean;
+      danger?: boolean;
+    }[] = [
+      { icon: Star, label: "Set as Auction Cover Photo", kind: "cover", show: showCover },
+      { icon: Move, label: "Move", kind: "move", show: true },
+      { icon: Replace, label: "Replace", kind: "replace", show: true },
+      { icon: Trash2, label: "Delete", kind: "delete", show: true, danger: true },
+    ];
+    return (
+      <MobileOptionSheet open title={title} onClose={onClose}>
+        <div className="space-y-2">
+          {choices
+            .filter((c) => c.show)
+            .map(({ icon: ItemIcon, label, kind, danger }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => onAction?.(kind)}
+                className={
+                  danger
+                    ? "flex h-11 w-full items-center gap-3 rounded-lg bg-[#f4f5fc] px-3 text-left text-[13px] font-medium text-[#c10606]"
+                    : "flex h-11 w-full items-center gap-3 rounded-lg bg-[#f4f5fc] px-3 text-left text-[13px] font-medium text-[#1c1c1e]"
+                }
+              >
+                <ItemIcon className={`h-4 w-4 ${danger ? "text-[#c10606]" : "text-[#1b1464]"}`} />
+                {label}
+              </button>
+            ))}
+        </div>
+      </MobileOptionSheet>
+    );
+  }
+
+  const choices =
+    mode === "video"
       ? [
-          [Video, "Record Video"],
-          [FolderOpen, "Choose from Files"],
+          { icon: Video, label: "Record Video", hint: "Capture up to 1 minute" },
+          { icon: FolderOpen, label: "Files", hint: "Upload from files" },
         ]
       : [
-          [Camera, "Camera"],
-          [ImageIcon, "Gallery"],
-          [FolderOpen, "Files"],
+          {
+            icon: Camera,
+            label: LISTING_MEDIA_COPY.addCamera,
+            hint: LISTING_MEDIA_COPY.addCameraHint,
+          },
+          {
+            icon: ImageIcon,
+            label: LISTING_MEDIA_COPY.addGallery,
+            hint: LISTING_MEDIA_COPY.addGalleryHint,
+          },
+          {
+            icon: FolderOpen,
+            label: LISTING_MEDIA_COPY.addFiles,
+            hint: LISTING_MEDIA_COPY.addFilesHint,
+          },
         ];
 
   return (
     <MobileOptionSheet open title={title} onClose={onClose}>
       <div className="space-y-2">
-        {choices.map(([Icon, label]) => {
-          const ItemIcon = Icon as typeof Camera;
-          return (
-            <button
-              key={label as string}
-              type="button"
-              onClick={onChoose}
-              className="flex h-11 w-full items-center gap-3 rounded-lg bg-[#f4f5fc] px-3 text-left text-[13px] font-medium text-[#1c1c1e]"
-            >
-              <ItemIcon className="h-4 w-4 text-[#1b1464]" />
-              {label as string}
-            </button>
-          );
-        })}
+        {choices.map(({ icon: ItemIcon, label, hint }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={onChoose}
+            className="flex min-h-11 w-full items-center gap-3 rounded-lg bg-[#f4f5fc] px-3 py-2 text-left"
+          >
+            <ItemIcon className="h-4 w-4 shrink-0 text-[#1b1464]" />
+            <span className="flex flex-col">
+              <span className="text-[13px] font-medium text-[#1c1c1e]">{label}</span>
+              <span className="text-[11px] text-[#636366]">{hint}</span>
+            </span>
+          </button>
+        ))}
       </div>
     </MobileOptionSheet>
   );

@@ -8,6 +8,7 @@ interface MobileListingFooterProps {
   onContinue?: () => void;
   continueHref?: string;
   continueDisabled?: boolean;
+  backDisabled?: boolean;
   onSaveDraftExit?: () => void;
   backLabel?: string;
   continueLabel?: string;
@@ -19,6 +20,7 @@ export function MobileListingFooter({
   onContinue,
   continueHref,
   continueDisabled = false,
+  backDisabled = false,
   onSaveDraftExit,
   backLabel = "Back",
   continueLabel = "Continue",
@@ -36,8 +38,14 @@ export function MobileListingFooter({
       <div className="flex gap-3">
         <button
           type="button"
-          onClick={onBack}
-          className="flex-1 h-12 rounded-2xl border-[1.5px] border-[#e5e5ea] bg-white flex items-center justify-center text-[15px] font-semibold text-[#1c1c1e] transition-colors hover:bg-[#f9f9f9]"
+          onClick={backDisabled ? undefined : onBack}
+          disabled={backDisabled}
+          className={cn(
+            "flex-1 h-12 rounded-2xl border-[1.5px] border-[#e5e5ea] bg-white flex items-center justify-center text-[15px] font-semibold transition-colors",
+            backDisabled
+              ? "text-[#9ca3af] cursor-not-allowed opacity-60"
+              : "text-[#1c1c1e] hover:bg-[#f9f9f9]"
+          )}
         >
           {backLabel}
         </button>
@@ -61,8 +69,9 @@ export function MobileListingFooter({
       {hideSaveDraftExit ? null : (
         <button
           type="button"
-          onClick={onSaveDraftExit}
-          className="w-full text-center text-[13px] font-medium text-[#636366] underline underline-offset-2"
+          onClick={backDisabled || continueDisabled ? undefined : onSaveDraftExit}
+          disabled={backDisabled || continueDisabled}
+          className="w-full text-center text-[13px] font-medium text-[#636366] underline underline-offset-2 disabled:opacity-50 disabled:no-underline"
         >
           Save Draft &amp; Exit
         </button>

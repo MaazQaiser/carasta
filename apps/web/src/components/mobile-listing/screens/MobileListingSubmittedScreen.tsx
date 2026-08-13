@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { LISTING_SUBMITTED_COPY } from "@/components/listing/listing-submitted-copy";
 import { SubmissionSession } from "@/components/listing/services/submission-session";
 import { MobileListingShell } from "../MobileListingShell";
 
@@ -25,13 +26,17 @@ export function MobileListingSubmittedScreen() {
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#52b870] text-2xl text-white">
           ✓
         </div>
-        <h1 className="mt-5 text-[27px] font-extrabold text-[#1c1c1e]">Listing Submitted</h1>
-        <p className="mt-3 max-w-[320px] text-[14px] leading-relaxed text-[#636366]">
-          Your vehicle has been submitted to Carasta for review. We&apos;ll review your listing and
-          reach out if we have any questions. Once your auction start date has been selected,
-          we&apos;ll notify you. You can view your pending listing anytime in the{" "}
-          <span className="font-semibold text-[#1c1c1e]">Auctions</span> tab on your profile.
+        <h1 className="mt-5 text-[27px] font-extrabold text-[#1c1c1e]">
+          {LISTING_SUBMITTED_COPY.title}
+        </h1>
+        <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-[#8b6500]">
+          {LISTING_SUBMITTED_COPY.statusLabel}
         </p>
+        <div className="mt-3 max-w-[320px] space-y-3 text-[14px] leading-relaxed text-[#636366]">
+          {LISTING_SUBMITTED_COPY.paragraphs.map((text) => (
+            <p key={text}>{text}</p>
+          ))}
+        </div>
         <p className="mt-4 text-[12px] font-medium text-[#1c1c1e]">
           Listing Reference: <span className="font-mono">{reference}</span>
         </p>
@@ -40,10 +45,13 @@ export function MobileListingSubmittedScreen() {
             href={listingHref}
             className="flex h-11 w-full items-center justify-center rounded-lg bg-[#1b1464] text-[13px] font-semibold text-white"
           >
-            View Buyer Listing
+            {LISTING_SUBMITTED_COPY.viewListing}
           </Link>
-          <Link href="/mobile-listing/type" className="block text-[12px] text-[#636366] underline">
-            Create Another Listing
+          <Link
+            href="/mobile-listing/type"
+            className="block text-[12px] text-[#636366] underline"
+          >
+            {LISTING_SUBMITTED_COPY.createAnother}
           </Link>
         </div>
       </div>

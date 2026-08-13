@@ -1,9 +1,9 @@
 "use client";
 
-import * as React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { VIN_IDENTIFY_COPY } from "@/components/listing/vin-identify-copy";
 import { MobileListingShell } from "../MobileListingShell";
 
 interface VinOptionCardProps {
@@ -42,6 +42,10 @@ function VinOptionCard({ icon, title, description, onClick }: VinOptionCardProps
   );
 }
 
+/**
+ * Shared VIN prompt for every adaptive listing flow.
+ * Continue Without VIN stays available for classics, race, kit, and custom vehicles.
+ */
 export function MobileVinPromptScreen() {
   const router = useRouter();
 
@@ -50,30 +54,30 @@ export function MobileVinPromptScreen() {
       <div className="flex flex-col gap-6 px-6 pb-6 pt-4">
         <div className="flex flex-col gap-2">
           <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
-            Identify Your Vehicle
+            {VIN_IDENTIFY_COPY.title}
           </h1>
           <p className="text-[15px] font-normal leading-[1.4] text-[#636366]">
-            Start by identifying your vehicle. This helps us pre-fill critical details instantly.
+            {VIN_IDENTIFY_COPY.subtext}
           </p>
         </div>
 
         <div className="flex flex-col gap-3">
           <VinOptionCard
             icon="/mobile-listing/camera.svg"
-            title="Scan VIN Barcode"
-            description="Use your camera to scan the door jamb or windshield"
+            title={VIN_IDENTIFY_COPY.scan.title}
+            description={VIN_IDENTIFY_COPY.scan.description}
             onClick={() => router.push("/mobile-listing/identify/manual")}
           />
           <VinOptionCard
             icon="/mobile-listing/keyboard.svg"
-            title="Enter VIN Manually"
-            description="Type the 17-character vehicle code directly"
+            title={VIN_IDENTIFY_COPY.manual.title}
+            description={VIN_IDENTIFY_COPY.manual.description}
             onClick={() => router.push("/mobile-listing/identify/manual")}
           />
           <VinOptionCard
             icon="/mobile-listing/arrow-right.svg"
-            title="Continue Without VIN"
-            description="Manually input all technical spec cards later"
+            title={VIN_IDENTIFY_COPY.withoutVin.title}
+            description={VIN_IDENTIFY_COPY.withoutVin.description}
             onClick={() => router.push("/mobile-listing/details")}
           />
         </div>

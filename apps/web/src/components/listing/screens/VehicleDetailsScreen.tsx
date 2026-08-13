@@ -17,8 +17,14 @@ import { getIssuesForStep } from "../services/validation-service";
 import { MILEAGE_STATUS_OPTIONS } from "../specs/options";
 import { RESTORATION_BUILD_TYPES } from "../specs/restored-restomod";
 import { RaceIdentityFields } from "./RaceIdentityFields";
+import {
+  EXTERIOR_COLOR_OPTIONS,
+  INTERIOR_COLOR_OPTIONS,
+  VEHICLE_DETAILS_COPY,
+} from "../vehicle-details-copy";
+import { VIN_IDENTIFY_COPY } from "../vin-identify-copy";
 
-const CORE_FIELDS: {
+const IDENTITY_FIELDS: {
   key: keyof ListingVehicleDetails;
   label: string;
   placeholder: string;
@@ -28,21 +34,28 @@ const CORE_FIELDS: {
   { key: "make", label: "Make", placeholder: "e.g. Porsche", required: true },
   { key: "model", label: "Model", placeholder: "e.g. 911", required: true },
   { key: "trim", label: "Trim", placeholder: "e.g. Carrera S", required: true },
-  { key: "mileage", label: "Mileage", placeholder: "e.g. 24500", required: true },
-  { key: "exteriorColor", label: "Exterior Color", placeholder: "e.g. Guards Red" },
-  { key: "interiorColor", label: "Interior Color", placeholder: "e.g. Black" },
-  { key: "vin", label: "VIN", placeholder: "Vehicle VIN" },
+  { key: "mileage", label: "Mileage", placeholder: VEHICLE_DETAILS_COPY.mileagePlaceholder, required: true },
 ];
 
 const FACTORY_EQUIPMENT_KEY = "factory-equipment:Packages";
 
+function VinImportedBadge() {
+  return (
+    <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+      {VEHICLE_DETAILS_COPY.vinImportedBadge}
+    </span>
+  );
+}
+
 /**
- * Type-adaptive vehicle details — gates and fields aligned with mobile listing.
+ * Shared Vehicle Details for every listing flow (VIN and no-VIN).
+ * Exterior supports Primary + Secondary color.
  */
 export function VehicleDetailsScreen() {
   const { draft, updateDetails, updateWorkspace, updatePerformanceSummary } =
     useListingBuilder();
   const issues = getIssuesForStep(draft, "details");
+  const imported = new Set(draft.vinImportedFields ?? []);
 
   const isStock = draft.listingTypeId === "stock-lightly-modified";
   const isModified = draft.listingTypeId === "modified-performance";
@@ -53,37 +66,37 @@ export function VehicleDetailsScreen() {
     draft.modificationWorkspace.factorySpecOverrides?.[FACTORY_EQUIPMENT_KEY] ?? "";
   const performance = draft.modificationWorkspace.performanceSummary;
   const restoration = draft.modificationWorkspace.restoration;
-
-  const description = isStock
-    ? "Confirm VIN-imported factory information. All fields remain editable. Trim and mileage are required."
-    : isModified
-      ? "Confirm vehicle identity and current performance specifications. Trim and mileage are required."
-      : isRestored
-        ? "Confirm vehicle identity, build type, and mileage status. Trim, mileage, build type, and mileage status are required."
-        : isRace
-          ? "Organize race identity, numbers, builder details, and legal status. Year, make, and model are required."
-          : "Confirm and complete your vehicle information.";
+  const noVin = !draft.details.vin && !draft.vinInput;
 
   if (isRace) {
     return (
-      <ListingStep title="Vehicle Details" description={description}>
+      <ListingStep title={VEHICLE_DETAILS_COPY.title} description={VEHICLE_DETAILS_COPY.subtext}>
         <RaceIdentityFields />
       </ListingStep>
     );
   }
 
   return (
-    <ListingStep title="Vehicle Details" description={description}>
+    <ListingStep title={VEHICLE_DETAILS_COPY.title} description={VEHICLE_DETAILS_COPY.subtext}>
       <div className="space-y-6">
-        <ListingSection title="Core details">
+        <ListingSection
+          title="Core details"
+          description={
+            noVin
+              ? "No VIN on file — enter identity details manually on this same screen."
+              : "Confirm or correct VIN-imported values. All fields stay editable."
+          }
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {CORE_FIELDS.map((field) => {
+            {IDENTITY_FIELDS.map((field) => {
               const fieldIssue = issues.find((issue) => issue.field === field.key);
+              const isImported = imported.has(field.key) && Boolean(draft.details[field.key]);
               return (
-                <div key={field.key} className={field.key === "vin" ? "sm:col-span-2" : undefined}>
+                <div key={field.key}>
                   <FieldLabel htmlFor={`detail-${field.key}`}>
                     {field.label}
                     {field.required ? " *" : ""}
+                    {isImported ? <VinImportedBadge /> : null}
                   </FieldLabel>
                   <Input
                     id={`detail-${field.key}`}
@@ -91,21 +104,13 @@ export function VehicleDetailsScreen() {
                     onChange={(e) =>
                       updateDetails({
                         [field.key]:
-                          field.key === "vin"
-                            ? e.target.value.toUpperCase()
-                            : field.key === "mileage"
-                              ? e.target.value.replace(/[^\d,]/g, "")
-                              : e.target.value,
+                          field.key === "mileage"
+                            ? e.target.value.replace(/[^\d,]/g, "")
+                            : e.target.value,
                       })
                     }
                     placeholder={field.placeholder}
-                    className={
-                      field.key === "vin"
-                        ? "font-mono tracking-wide uppercase"
-                        : fieldIssue
-                          ? "border-destructive"
-                          : undefined
-                    }
+                    className={fieldIssue ? "border-destructive" : undefined}
                     aria-invalid={Boolean(fieldIssue)}
                   />
                   {fieldIssue ? (
@@ -114,10 +119,115 @@ export function VehicleDetailsScreen() {
                 </div>
               );
             })}
+
+            <div>
+              <FieldLabel htmlFor="detail-exterior-primary">
+                {VEHICLE_DETAILS_COPY.primaryColor}
+                {imported.has("exteriorColor") && draft.details.exteriorColor ? (
+                  <VinImportedBadge />
+                ) : null}
+              </FieldLabel>
+              <Select
+                value={draft.details.exteriorColor || undefined}
+                onValueChange={(v) => updateDetails({ exteriorColor: v })}
+              >
+                <SelectTrigger id="detail-exterior-primary">
+                  <SelectValue placeholder={VEHICLE_DETAILS_COPY.primaryColorPlaceholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  {EXTERIOR_COLOR_OPTIONS.map((color) => (
+                    <SelectItem key={color} value={color}>
+                      {color}
+                    </SelectItem>
+                  ))}
+                  {draft.details.exteriorColor &&
+                  !EXTERIOR_COLOR_OPTIONS.includes(
+                    draft.details.exteriorColor as (typeof EXTERIOR_COLOR_OPTIONS)[number]
+                  ) ? (
+                    <SelectItem value={draft.details.exteriorColor}>
+                      {draft.details.exteriorColor}
+                    </SelectItem>
+                  ) : null}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <FieldLabel htmlFor="detail-exterior-secondary">
+                {VEHICLE_DETAILS_COPY.secondaryColor}
+              </FieldLabel>
+              <Select
+                value={draft.details.secondaryExteriorColor || "None"}
+                onValueChange={(v) =>
+                  updateDetails({ secondaryExteriorColor: v === "None" ? "" : v })
+                }
+              >
+                <SelectTrigger id="detail-exterior-secondary">
+                  <SelectValue placeholder={VEHICLE_DETAILS_COPY.secondaryColorPlaceholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="None">None</SelectItem>
+                  {EXTERIOR_COLOR_OPTIONS.map((color) => (
+                    <SelectItem key={color} value={color}>
+                      {color}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <FieldLabel htmlFor="detail-interior">Interior Color</FieldLabel>
+              <Select
+                value={draft.details.interiorColor || undefined}
+                onValueChange={(v) => updateDetails({ interiorColor: v })}
+              >
+                <SelectTrigger id="detail-interior">
+                  <SelectValue placeholder="Select color" />
+                </SelectTrigger>
+                <SelectContent>
+                  {INTERIOR_COLOR_OPTIONS.map((color) => (
+                    <SelectItem key={color} value={color}>
+                      {color}
+                    </SelectItem>
+                  ))}
+                  {draft.details.interiorColor &&
+                  !INTERIOR_COLOR_OPTIONS.includes(
+                    draft.details.interiorColor as (typeof INTERIOR_COLOR_OPTIONS)[number]
+                  ) ? (
+                    <SelectItem value={draft.details.interiorColor}>
+                      {draft.details.interiorColor}
+                    </SelectItem>
+                  ) : null}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <FieldLabel htmlFor="detail-vin">
+                VIN
+                {imported.has("vin") && draft.details.vin ? <VinImportedBadge /> : null}
+              </FieldLabel>
+              <Input
+                id="detail-vin"
+                value={draft.details.vin}
+                onChange={(e) => updateDetails({ vin: e.target.value.toUpperCase() })}
+                placeholder={
+                  noVin
+                    ? "Optional — leave blank for classics, race, kit, or custom vehicles"
+                    : "Vehicle VIN"
+                }
+                className="font-mono tracking-wide uppercase"
+              />
+              {noVin ? (
+                <FieldHint>
+                  {VIN_IDENTIFY_COPY.withoutVin.description}
+                </FieldHint>
+              ) : null}
+            </div>
           </div>
           <FieldHint>
-            Trim and mileage are required to continue. Values stay in the listing draft as you move
-            between steps.
+            Trim and mileage are required to continue. VIN-imported values stay editable.
           </FieldHint>
         </ListingSection>
 
@@ -135,7 +245,10 @@ export function VehicleDetailsScreen() {
                 ] as const
               ).map(([key, label]) => (
                 <div key={key}>
-                  <FieldLabel htmlFor={`factory-${key}`}>{label}</FieldLabel>
+                  <FieldLabel htmlFor={`factory-${key}`}>
+                    {label}
+                    {imported.has(key) && draft.details[key] ? <VinImportedBadge /> : null}
+                  </FieldLabel>
                   <Input
                     id={`factory-${key}`}
                     value={draft.details[key]}

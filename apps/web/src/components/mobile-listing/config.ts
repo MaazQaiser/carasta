@@ -1,4 +1,5 @@
 import type { ListingTypeId } from "@/components/listing/types";
+import { LISTING_TYPES } from "@/components/listing/config";
 
 export interface MobileListingType {
   id: ListingTypeId;
@@ -17,36 +18,21 @@ export interface MobileListingStep {
 
 export const MOBILE_LISTING_TOTAL_STEPS = 16;
 
-export const MOBILE_LISTING_TYPES: MobileListingType[] = [
-  {
-    id: "stock-lightly-modified",
-    label: "Stock / Lightly Modified",
-    description:
-      "Stock or mostly stock, with only minor performance upgrades or cosmetic changes",
-    icon: "/mobile-listing/car.svg",
-  },
-  {
-    id: "modified-performance",
-    label: "Modified / Performance",
-    description:
-      "Significantly modified, with major upgrades to the powertrain, suspension, brakes, or exterior",
-    icon: "/mobile-listing/wrench.svg",
-  },
-  {
-    id: "restored-restomod-custom",
-    label: "Restored / Restomod / Custom",
-    description:
-      "Restored, modernized, or custom-built, with extensive work completed on the body, chassis, powertrain, or interior",
-    icon: "/mobile-listing/history.svg",
-  },
-  {
-    id: "race-track-car",
-    label: "Race / Track Car",
-    description:
-      "Purpose-built or heavily modified for racing, track use, or competition",
-    icon: "/mobile-listing/flag.svg",
-  },
-];
+/** Mobile-only icon assets; labels/descriptions come from shared LISTING_TYPES. */
+export const MOBILE_LISTING_TYPE_ICONS: Record<ListingTypeId, string> = {
+  "stock-lightly-modified": "/mobile-listing/car.svg",
+  "modified-performance": "/mobile-listing/wrench.svg",
+  "restored-restomod-custom": "/mobile-listing/history.svg",
+  "race-track-car": "/mobile-listing/flag.svg",
+};
+
+/** @deprecated Prefer LISTING_TYPES + MOBILE_LISTING_TYPE_ICONS — kept for any legacy imports. */
+export const MOBILE_LISTING_TYPES: MobileListingType[] = LISTING_TYPES.map((type) => ({
+  id: type.id,
+  label: type.label,
+  description: type.description,
+  icon: MOBILE_LISTING_TYPE_ICONS[type.id],
+}));
 
 /**
  * Shared 15-screen listing order used by every vehicle type.
@@ -54,8 +40,8 @@ export const MOBILE_LISTING_TYPES: MobileListingType[] = [
  */
 export const MOBILE_LISTING_STEPS: MobileListingStep[] = [
   { index: 1, total: MOBILE_LISTING_TOTAL_STEPS, id: "type", label: "Vehicle Type", href: "/mobile-listing/type" },
-  { index: 2, total: MOBILE_LISTING_TOTAL_STEPS, id: "identify", label: "Identify Your Vehicle", href: "/mobile-listing/identify" },
-  { index: 2, total: MOBILE_LISTING_TOTAL_STEPS, id: "identify-manual", label: "Identify Your Vehicle", href: "/mobile-listing/identify/manual" },
+  { index: 2, total: MOBILE_LISTING_TOTAL_STEPS, id: "identify", label: "Vehicle Information", href: "/mobile-listing/identify" },
+  { index: 2, total: MOBILE_LISTING_TOTAL_STEPS, id: "identify-manual", label: "Vehicle Information", href: "/mobile-listing/identify/manual" },
   { index: 3, total: MOBILE_LISTING_TOTAL_STEPS, id: "details", label: "Vehicle Details", href: "/mobile-listing/details" },
   // Step 4 — vehicle-specific specifications & modifications (shared wrapper + type branches)
   { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "specifications", label: "Specifications & Modifications", href: "/mobile-listing/specifications" },
@@ -73,17 +59,16 @@ export const MOBILE_LISTING_STEPS: MobileListingStep[] = [
   { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-mod-add", label: "Race Specifications & Modifications", href: "/mobile-listing/race/modifications/add" },
   { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-competition", label: "Competition Profile", href: "/mobile-listing/race/competition" },
   { index: 5, total: MOBILE_LISTING_TOTAL_STEPS, id: "condition", label: "Condition & History", href: "/mobile-listing/condition" },
-  { index: 6, total: MOBILE_LISTING_TOTAL_STEPS, id: "photos", label: "Photos & Documents", href: "/mobile-listing/photos" },
-  { index: 7, total: MOBILE_LISTING_TOTAL_STEPS, id: "notes", label: "Owner Notes", href: "/mobile-listing/notes" },
+  { index: 6, total: MOBILE_LISTING_TOTAL_STEPS, id: "photos", label: "Photos, Videos & Documents", href: "/mobile-listing/photos" },
+  { index: 7, total: MOBILE_LISTING_TOTAL_STEPS, id: "notes", label: "Owner's Notes", href: "/mobile-listing/notes" },
   { index: 8, total: MOBILE_LISTING_TOTAL_STEPS, id: "ai", label: "AI Description", href: "/mobile-listing/ai" },
   { index: 9, total: MOBILE_LISTING_TOTAL_STEPS, id: "settings", label: "Auction Settings", href: "/mobile-listing/settings" },
   { index: 10, total: MOBILE_LISTING_TOTAL_STEPS, id: "preview", label: "Listing Review", href: "/mobile-listing/preview" },
   { index: 11, total: MOBILE_LISTING_TOTAL_STEPS, id: "buyer-preview", label: "Buyer View Preview", href: "/mobile-listing/buyer-preview" },
-  { index: 12, total: MOBILE_LISTING_TOTAL_STEPS, id: "review", label: "Submit to Carasta", href: "/mobile-listing/review" },
-  { index: 13, total: MOBILE_LISTING_TOTAL_STEPS, id: "submitted", label: "Listing Submitted", href: "/mobile-listing/submitted" },
-  { index: 14, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-external", label: "External Share", href: "/mobile-listing/share/external" },
-  { index: 15, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-community", label: "Carasta Community Share", href: "/mobile-listing/share/community" },
-  { index: 16, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-confirmation", label: "Share Confirmation", href: "/mobile-listing/share/confirmation" },
+  { index: 12, total: MOBILE_LISTING_TOTAL_STEPS, id: "submitted", label: "Listing Submitted / Pending Review", href: "/mobile-listing/submitted" },
+  { index: 13, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-external", label: "External Share", href: "/mobile-listing/share/external" },
+  { index: 14, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-community", label: "Carasta Community Share", href: "/mobile-listing/share/community" },
+  { index: 15, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-confirmation", label: "Share Confirmation", href: "/mobile-listing/share/confirmation" },
 ];
 
 /** Canonical shared back navigation for consistent cross-type routing. */
@@ -101,7 +86,7 @@ export const MOBILE_SHARED_BACK_HREF: Record<string, string> = {
   "modified-mod-add": "/mobile-listing/modified/specifications",
   "restored-specifications": "/mobile-listing/details",
   "restored-mod-add": "/mobile-listing/restored/specifications",
-  condition: "/mobile-listing/modifications",
+  condition: "/mobile-listing/stock/specifications",
   photos: "/mobile-listing/condition",
   notes: "/mobile-listing/photos",
   ai: "/mobile-listing/notes",
@@ -109,10 +94,10 @@ export const MOBILE_SHARED_BACK_HREF: Record<string, string> = {
   preview: "/mobile-listing/settings",
   "buyer-preview": "/mobile-listing/preview",
   review: "/mobile-listing/buyer-preview",
-  submitted: "/mobile-listing/review",
-  "share-external": "/mobile-listing/submitted",
-  "share-community": "/mobile-listing/share/external",
-  "share-confirmation": "/mobile-listing/share/community",
+  submitted: "/mobile-listing/buyer-preview",
+  "share-external": "/profile?tab=listings",
+  "share-community": "/profile?tab=listings",
+  "share-confirmation": "/profile?tab=listings",
   "race-summary": "/mobile-listing/details",
   "race-biography": "/mobile-listing/race/summary",
   "race-specifications": "/mobile-listing/race/biography",

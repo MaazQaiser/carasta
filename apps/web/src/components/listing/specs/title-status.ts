@@ -4,7 +4,11 @@ export const TITLE_STATUS_OPTIONS = ["Clean", "Salvage", "Rebuilt", "Lien", "Unk
 
 export type TitleStatusOption = (typeof TITLE_STATUS_OPTIONS)[number];
 
+/** Mutually exclusive primary title states. */
 const PRIMARY = new Set<TitleStatusOption>(["Clean", "Salvage", "Rebuilt"]);
+
+export const TITLE_STATUS_RULES_COPY =
+  "Select Clean, Salvage, or Rebuilt (one only). Lien can be paired with any of those. Unknown cannot be combined.";
 
 export function parseTitleStatuses(value: string | undefined | null): TitleStatusOption[] {
   if (!value?.trim()) return [];
@@ -26,6 +30,13 @@ export function formatTitleStatuses(values: TitleStatusOption[]): string {
   return normalizeTitleStatuses(values).join(", ");
 }
 
+/**
+ * Allowed sets:
+ * - Unknown alone
+ * - Clean | Salvage | Rebuilt alone
+ * - Lien alone
+ * - Clean + Lien | Salvage + Lien | Rebuilt + Lien
+ */
 export function normalizeTitleStatuses(values: TitleStatusOption[]): TitleStatusOption[] {
   if (values.includes("Unknown")) return ["Unknown"];
   const primary = values.find((value) => PRIMARY.has(value));
@@ -36,7 +47,7 @@ export function normalizeTitleStatuses(values: TitleStatusOption[]): TitleStatus
   return next;
 }
 
-/** Toggle one option while enforcing mutual exclusivity. */
+/** Toggle one option while enforcing mutual exclusivity + Lien pairing only. */
 export function toggleTitleStatus(
   current: TitleStatusOption[],
   option: TitleStatusOption
@@ -51,10 +62,11 @@ export function toggleTitleStatus(
     if (next.includes("Lien")) {
       return next.filter((value) => value !== "Lien");
     }
-    return [...next, "Lien"];
+    // Lien may stand alone or pair with one primary.
+    return normalizeTitleStatuses([...next, "Lien"]);
   }
 
-  // Primary statuses: Clean / Salvage / Rebuilt
+  // Primary statuses: Clean / Salvage / Rebuilt — mutually exclusive.
   if (next.includes(option)) {
     return next.filter((value) => value !== option);
   }
@@ -70,4 +82,8 @@ export function isTitleStatusSelected(
   option: TitleStatusOption
 ): boolean {
   return current.includes(option);
+}
+
+export function isTitleStatusComplete(value: string | undefined | null): boolean {
+  return parseTitleStatuses(value).length > 0;
 }

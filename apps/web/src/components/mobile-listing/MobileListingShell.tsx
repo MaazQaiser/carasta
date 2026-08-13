@@ -13,6 +13,7 @@ interface MobileListingShellProps {
   onBack?: () => void;
   continueHref?: string;
   continueDisabled?: boolean;
+  backDisabled?: boolean;
   hideFooter?: boolean;
   hideProgress?: boolean;
   hideSaveDraftExit?: boolean;
@@ -31,6 +32,7 @@ export function MobileListingShell({
   onBack,
   continueHref,
   continueDisabled = false,
+  backDisabled = false,
   hideFooter = false,
   hideProgress = false,
   hideSaveDraftExit = false,
@@ -48,6 +50,7 @@ export function MobileListingShell({
       stepId,
       continueHref,
       continueDisabled,
+      backDisabled,
       hideFooter,
       hideProgress,
       hideSaveDraftExit,
@@ -61,6 +64,7 @@ export function MobileListingShell({
     stepId,
     continueHref,
     continueDisabled,
+    backDisabled,
     hideFooter,
     hideProgress,
     hideSaveDraftExit,

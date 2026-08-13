@@ -1,16 +1,30 @@
 "use client";
 
+import * as React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
-import { MobileListingShell } from "../MobileListingShell";
-import { MOBILE_LISTING_TYPES } from "../config";
+import { LISTING_TYPES, getListingTypeById } from "@/components/listing/config";
+import { ListingTypeChangeDialog } from "@/components/listing/ListingTypeChangeDialog";
+import { hasCategorySpecificListingAnswers } from "@/components/listing/listing-type-utils";
 import type { ListingTypeId } from "@/components/listing/types";
+import { MobileListingShell } from "../MobileListingShell";
+import { MOBILE_LISTING_TYPE_ICONS } from "../config";
 
 export function MobileVehicleTypeScreen() {
   const { draft, setListingType } = useListingBuilder();
+  const [pendingTypeId, setPendingTypeId] = React.useState<ListingTypeId | null>(null);
 
   const selected = draft.listingTypeId as ListingTypeId | null;
+
+  const requestTypeChange = (id: ListingTypeId) => {
+    if (selected === id) return;
+    if (selected && hasCategorySpecificListingAnswers(draft)) {
+      setPendingTypeId(id);
+      return;
+    }
+    setListingType(id);
+  };
 
   return (
     <MobileListingShell
@@ -19,7 +33,6 @@ export function MobileVehicleTypeScreen() {
       continueDisabled={!selected}
     >
       <div className="flex flex-col gap-6 px-6 pt-4 pb-6">
-        {/* Heading */}
         <div className="flex flex-col gap-2">
           <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
             What kind of vehicle are you listing?
@@ -29,15 +42,15 @@ export function MobileVehicleTypeScreen() {
           </p>
         </div>
 
-        {/* Radio cards */}
         <div className="flex flex-col gap-3">
-          {MOBILE_LISTING_TYPES.map((type) => {
+          {LISTING_TYPES.map((type) => {
             const isSelected = selected === type.id;
+            const icon = MOBILE_LISTING_TYPE_ICONS[type.id];
             return (
               <button
                 key={type.id}
                 type="button"
-                onClick={() => setListingType(type.id)}
+                onClick={() => requestTypeChange(type.id)}
                 className={cn(
                   "relative flex items-center gap-4 p-5 rounded-2xl border text-left w-full transition-all",
                   isSelected
@@ -45,10 +58,9 @@ export function MobileVehicleTypeScreen() {
                     : "border-[#e5e5ea] border bg-white hover:border-[#c7c7cc]"
                 )}
               >
-                {/* Icon */}
                 <div className="shrink-0 w-6 h-6">
                   <Image
-                    src={type.icon}
+                    src={icon}
                     alt=""
                     width={24}
                     height={24}
@@ -56,7 +68,6 @@ export function MobileVehicleTypeScreen() {
                   />
                 </div>
 
-                {/* Text */}
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
                   <p
                     className={cn(
@@ -71,7 +82,6 @@ export function MobileVehicleTypeScreen() {
                   </p>
                 </div>
 
-                {/* Radio indicator */}
                 <div className="shrink-0 w-5 h-5">
                   {isSelected ? (
                     <div className="w-5 h-5 rounded-full bg-[#1b1464] flex items-center justify-center">
@@ -96,6 +106,19 @@ export function MobileVehicleTypeScreen() {
           })}
         </div>
       </div>
+
+      <ListingTypeChangeDialog
+        open={pendingTypeId != null}
+        onOpenChange={(open) => {
+          if (!open) setPendingTypeId(null);
+        }}
+        fromLabel={getListingTypeById(draft.listingTypeId)?.label}
+        toLabel={pendingTypeId ? getListingTypeById(pendingTypeId)?.label : undefined}
+        onConfirm={() => {
+          if (pendingTypeId) setListingType(pendingTypeId);
+          setPendingTypeId(null);
+        }}
+      />
     </MobileListingShell>
   );
 }

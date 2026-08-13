@@ -2,38 +2,32 @@
 
 import { ChevronRight } from "lucide-react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
+import { useCompletion } from "@/components/listing/hooks/useCompletion";
+import { ListingReviewIssues } from "@/components/listing/ListingReviewIssues";
+import {
+  listingReviewAuctionSettingsSummary,
+  listingReviewBuildRestorationSummary,
+  listingReviewDescriptionSummary,
+  listingReviewDocumentsSummary,
+  listingReviewHeroUrl,
+  listingReviewModificationsSummary,
+  listingReviewPhotosSummary,
+  listingReviewSpecsLine,
+  listingReviewVehicleTitle,
+  showListingReviewBuildRestoration,
+  showListingReviewModifications,
+} from "@/components/listing/listing-review-summary";
 import { useMobileListingChrome } from "../MobileListingRuntime";
 import { MobileListingShell } from "../MobileListingShell";
 
-function modificationsSummary(draft: ReturnType<typeof useListingBuilder>["draft"]) {
-  const entries = draft.modificationWorkspace.entries.filter(
-    (entry) => entry.completed || entry.title.trim()
-  );
-  if (draft.modificationWorkspace.hasModifications === false || entries.length === 0) {
-    return "No modifications reported";
-  }
-  return `${entries.length} modification${entries.length === 1 ? "" : "s"} added`;
-}
-
 export function MobilePreviewScreen() {
   const { draft } = useListingBuilder();
+  const { validation } = useCompletion(draft);
   const { navigate } = useMobileListingChrome();
-  const title = [draft.details.year, draft.details.make, draft.details.model]
-    .filter(Boolean)
-    .join(" ") || "Your vehicle";
-  const photoCount = draft.vehiclePhotos.length;
+  const title = listingReviewVehicleTitle(draft);
   const hero =
-    draft.vehiclePhotos.find((p) => p.previewUrl)?.previewUrl ||
-    "https://picsum.photos/seed/carasta-preview/700/420";
-  const condition =
-    draft.condition.overallCondition.trim() || "Condition not set";
-  const description =
-    draft.aiDescription.trim() ||
-    draft.ownerNotes.trim() ||
-    "Pricing description and listing text";
-  const notesSummary = draft.ownerNotes.trim()
-    ? `${draft.ownerNotes.trim().slice(0, 80)}${draft.ownerNotes.trim().length > 80 ? "…" : ""}`
-    : "No owner notes yet";
+    listingReviewHeroUrl(draft) || "https://picsum.photos/seed/carasta-preview/700/420";
+  const condition = draft.condition.overallCondition.trim() || "Condition not set";
 
   const specsHref =
     draft.listingTypeId === "stock-lightly-modified"
@@ -49,21 +43,25 @@ export function MobilePreviewScreen() {
   return (
     <MobileListingShell
       stepId="preview"
-      continueDisabled={false}
-      continueHref="/mobile-listing/buyer-preview"
+      continueDisabled={!validation.isValid}
+      continueHref={validation.isValid ? "/mobile-listing/buyer-preview" : undefined}
     >
       <div className="flex flex-col gap-4 px-6 pt-4 pb-6">
         <h1 className="text-[28px] font-extrabold text-[#1c1c1e]">Listing Review</h1>
+        <p className="text-[14px] text-[#636366]">
+          Make sure everything looks good before continuing to Buyer View Preview.
+        </p>
+
+        <ListingReviewIssues validation={validation} draft={draft} mobile />
+
         <div className="overflow-hidden rounded-xl border border-[#e5e5ea]">
-          <img
-            src={hero}
-            alt="Vehicle preview"
-            className="aspect-[16/10] w-full object-cover"
-          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={hero} alt="Vehicle preview" className="aspect-[16/10] w-full object-cover" />
           <div className="p-3">
-            <p className="text-[12px] font-semibold text-[#1c1c1e]">{title}</p>
+            <p className="text-[15px] font-semibold text-[#1c1c1e]">{title}</p>
           </div>
         </div>
+
         <PreviewRow
           label="Vehicle Details"
           value={`${title}${draft.details.trim ? ` ${draft.details.trim}` : ""}`}
@@ -71,14 +69,26 @@ export function MobilePreviewScreen() {
         />
         <PreviewRow
           label="Specifications"
-          value={`${draft.details.engine || "Engine TBD"}, ${draft.details.transmission || "Transmission TBD"}, ${draft.details.drivetrain || "Drivetrain TBD"}`}
+          value={listingReviewSpecsLine(draft)}
           onPress={() => navigate(specsHref)}
         />
-        <PreviewRow
-          label="Modifications"
-          value={modificationsSummary(draft)}
-          onPress={() => navigate(specsHref)}
-        />
+
+        {showListingReviewModifications(draft) ? (
+          <PreviewRow
+            label="Modifications"
+            value={listingReviewModificationsSummary(draft)}
+            onPress={() => navigate(specsHref)}
+          />
+        ) : null}
+
+        {showListingReviewBuildRestoration(draft) ? (
+          <PreviewRow
+            label="Build / Restoration"
+            value={listingReviewBuildRestorationSummary(draft)}
+            onPress={() => navigate(specsHref)}
+          />
+        ) : null}
+
         <PreviewRow
           label="Condition"
           value={condition}
@@ -86,19 +96,24 @@ export function MobilePreviewScreen() {
         />
         <PreviewRow
           label="Photos"
-          value={
-            photoCount > 0
-              ? `${photoCount} photo${photoCount === 1 ? "" : "s"} uploaded`
-              : "No photos uploaded"
-          }
+          value={listingReviewPhotosSummary(draft)}
           onPress={() => navigate("/mobile-listing/photos")}
         />
         <PreviewRow
-          label="Owner's Notes"
-          value={notesSummary}
-          onPress={() => navigate("/mobile-listing/notes")}
+          label="Documents"
+          value={listingReviewDocumentsSummary(draft)}
+          onPress={() => navigate("/mobile-listing/photos")}
         />
-        <PreviewRow label="Description" value={description} />
+        <PreviewRow
+          label="Description"
+          value={listingReviewDescriptionSummary(draft)}
+          onPress={() => navigate("/mobile-listing/ai")}
+        />
+        <PreviewRow
+          label="Auction Settings"
+          value={listingReviewAuctionSettingsSummary(draft)}
+          onPress={() => navigate("/mobile-listing/settings")}
+        />
       </div>
     </MobileListingShell>
   );

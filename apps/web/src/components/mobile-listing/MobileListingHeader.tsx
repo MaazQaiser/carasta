@@ -16,8 +16,9 @@ export function MobileListingHeader({ onBack, saveStatus }: MobileListingHeaderP
         <button
           type="button"
           onClick={onBack}
+          disabled={!onBack}
           aria-label="Back"
-          className="flex items-center justify-center w-8 h-8 -ml-1 rounded-full hover:bg-black/5 transition-colors"
+          className="flex items-center justify-center w-8 h-8 -ml-1 rounded-full hover:bg-black/5 transition-colors disabled:pointer-events-none disabled:opacity-40"
         >
           <Image
             src="/mobile-listing/chevron-left.svg"

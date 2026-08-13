@@ -31,12 +31,14 @@ function createEmptyDraft(): ListingDraft {
       trim: "",
       mileage: "",
       exteriorColor: "",
+      secondaryExteriorColor: "",
       interiorColor: "",
       engine: "",
       transmission: "",
       drivetrain: "",
       vin: "",
     },
+    vinImportedFields: [],
     condition: {
       vehicleHistory: "",
       accidentHistory: "",
@@ -45,6 +47,8 @@ function createEmptyDraft(): ListingDraft {
       overallCondition: "",
       ownershipHistory: "",
       generalNotes: "",
+      numberOfKeys: "",
+      warranty: "",
     },
     vehiclePhotos: [],
     modificationPhotos: [],
@@ -61,7 +65,9 @@ function createEmptyDraft(): ListingDraft {
       auctionDuration: "",
       shipping: "",
       shippingLocation: "",
+      localPickup: "",
     },
+    auctionCoverPhotoId: null,
     modificationWorkspace: createModifiedPerformanceWorkspace(),
   };
 }
@@ -169,6 +175,16 @@ export const DraftService = {
       };
       parsed.draft = {
         ...parsed.draft,
+        details: {
+          ...parsed.draft.details,
+          secondaryExteriorColor: parsed.draft.details.secondaryExteriorColor ?? "",
+        },
+        vinImportedFields: parsed.draft.vinImportedFields ?? [],
+        condition: {
+          ...parsed.draft.condition,
+          numberOfKeys: parsed.draft.condition.numberOfKeys ?? "",
+          warranty: parsed.draft.condition.warranty ?? "",
+        },
         modificationWorkspace: {
           ...ws,
           hasModifications: ws.hasModifications ?? null,

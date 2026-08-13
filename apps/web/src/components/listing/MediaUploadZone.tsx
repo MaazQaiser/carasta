@@ -28,6 +28,9 @@ export interface MediaUploadZoneProps {
   onRemove: (id: string) => void;
   /** When provided, enables move-left / move-right reorder controls. */
   onReorder?: (fromIndex: number, toIndex: number) => void;
+  /** Auction cover photo id — shows COVER badge on matching item. */
+  coverItemId?: string | null;
+  onSetCover?: (id: string) => void;
   variant?: "image" | "file" | "video";
   compact?: boolean;
   className?: string;
@@ -45,6 +48,8 @@ export function MediaUploadZone({
   onAdd,
   onRemove,
   onReorder,
+  coverItemId,
+  onSetCover,
   variant = "image",
   compact = false,
   className,
@@ -145,6 +150,11 @@ export function MediaUploadZone({
                 key={item.id}
                 className="group relative rounded-xl border bg-card overflow-hidden"
               >
+                {coverItemId === item.id || (!coverItemId && index === 0 && onSetCover) ? (
+                  <span className="absolute left-2 top-2 z-10 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+                    Cover
+                  </span>
+                ) : null}
                 <div className="aspect-[4/3] bg-muted flex items-center justify-center">
                   {item.previewUrl && showVideo ? (
                     <video
@@ -223,14 +233,25 @@ export function MediaUploadZone({
                         Reorder
                       </span>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => onRemove(item.id)}
-                      className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Remove
-                    </button>
+                    <div className="inline-flex items-center gap-2">
+                      {onSetCover && coverItemId !== item.id ? (
+                        <button
+                          type="button"
+                          onClick={() => onSetCover(item.id)}
+                          className="text-[11px] text-muted-foreground hover:text-foreground"
+                        >
+                          Set cover
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => onRemove(item.id)}
+                        className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

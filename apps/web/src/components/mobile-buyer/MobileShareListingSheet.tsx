@@ -115,10 +115,11 @@ export function MobileShareListingSheet({
   };
 
   return (
-    <MobileOptionSheet open={open} title="External Share" onClose={onClose}>
+    <MobileOptionSheet open={open} title="Share Your Listing" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <p className="text-[14px] text-[#636366]">
-          Edit your caption, then choose where to share outside Carasta.
+          Edit your caption, then choose where to share. You can dismiss this anytime — sharing
+          stays available from the share icon on the auction page.
         </p>
 
         <div className="rounded-lg border border-[#e5e5ea] p-3 text-[12px] font-semibold text-[#1c1c1e]">

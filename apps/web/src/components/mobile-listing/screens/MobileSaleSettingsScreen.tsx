@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
+import { AUCTION_SETTINGS_COPY } from "@/components/listing/auction-settings-copy";
 import { MobileListingShell } from "../MobileListingShell";
 import { MobileOptionSheet } from "../MobileOptionSheet";
 
@@ -13,6 +14,12 @@ function formatMoneyDisplay(value: string) {
   const digits = digitsOnly(value);
   if (!digits) return "";
   return `$${Number(digits).toLocaleString("en-US")}`;
+}
+
+function deriveSaleType(buyNowPrice: string, reservePrice: string): string {
+  if (buyNowPrice) return "Buy Now";
+  if (reservePrice) return "Auction";
+  return "Auction";
 }
 
 export function MobileSaleSettingsScreen() {
@@ -29,31 +36,41 @@ export function MobileSaleSettingsScreen() {
       <div className="flex flex-col gap-5 px-6 pb-6 pt-4">
         <div className="space-y-2">
           <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
-            Auction Settings
+            {AUCTION_SETTINGS_COPY.title}
           </h1>
           <p className="text-[15px] leading-[1.4] text-[#636366]">
-            Choose how you would like your auction to run
+            {AUCTION_SETTINGS_COPY.subtext}
           </p>
         </div>
 
         <div className="space-y-2">
           <Toggle
-            label="Buy It Now"
+            label={AUCTION_SETTINGS_COPY.buyNowLabel}
             checked={Boolean(settings.buyNowPrice)}
             onChange={(checked) =>
-              updateSaleSettings({ buyNowPrice: checked ? "150000" : "" })
+              updateSaleSettings({
+                buyNowPrice: checked ? settings.buyNowPrice || "150000" : "",
+                reservePrice: checked ? "" : settings.reservePrice,
+                saleType: deriveSaleType(
+                  checked ? settings.buyNowPrice || "150000" : "",
+                  checked ? "" : settings.reservePrice
+                ),
+              })
             }
           />
           <p className="text-[12px] leading-relaxed text-[#636366]">
-            Set a premium Buy Now price that lets a buyer purchase your vehicle immediately and end
-            the auction early. Buy Now is only available during the first 24 hours of the auction
+            {AUCTION_SETTINGS_COPY.buyNowSubtext}
           </p>
           {settings.buyNowPrice ? (
             <Field label="Buy It Now price">
               <input
                 value={formatMoneyDisplay(settings.buyNowPrice)}
                 onChange={(event) =>
-                  updateSaleSettings({ buyNowPrice: digitsOnly(event.target.value) })
+                  updateSaleSettings({
+                    buyNowPrice: digitsOnly(event.target.value),
+                    reservePrice: "",
+                    saleType: deriveSaleType(digitsOnly(event.target.value), ""),
+                  })
                 }
                 inputMode="decimal"
                 className="h-10 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none"
@@ -64,32 +81,42 @@ export function MobileSaleSettingsScreen() {
 
         <div className="space-y-2">
           <Toggle
-            label="Reserve Price"
+            label={AUCTION_SETTINGS_COPY.reserveLabel}
             checked={Boolean(settings.reservePrice)}
             onChange={(checked) =>
-              updateSaleSettings({ reservePrice: checked ? "100000" : "" })
+              updateSaleSettings({
+                reservePrice: checked ? settings.reservePrice || "100000" : "",
+                buyNowPrice: checked ? "" : settings.buyNowPrice,
+                saleType: deriveSaleType(
+                  checked ? "" : settings.buyNowPrice,
+                  checked ? settings.reservePrice || "100000" : ""
+                ),
+              })
             }
           />
           <p className="text-[12px] leading-relaxed text-[#636366]">
-            Set the minimum price you’re willing to accept. Your reserve will be reflected on the
-            Reserve Meter until the reserve is lifted. If bidding does not meet the reserve, the
-            vehicle will not sell
+            {AUCTION_SETTINGS_COPY.reserveSubtext}
           </p>
           {settings.reservePrice ? (
-            <Field label="Reserve price">
+            <Field label="Reserve Price">
               <input
                 value={formatMoneyDisplay(settings.reservePrice)}
                 onChange={(event) =>
-                  updateSaleSettings({ reservePrice: digitsOnly(event.target.value) })
+                  updateSaleSettings({
+                    reservePrice: digitsOnly(event.target.value),
+                    buyNowPrice: "",
+                    saleType: deriveSaleType("", digitsOnly(event.target.value)),
+                  })
                 }
                 inputMode="decimal"
                 className="h-10 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none"
               />
             </Field>
           ) : null}
+          <p className="text-[11px] text-[#636366]">{AUCTION_SETTINGS_COPY.pricingNote}</p>
         </div>
 
-        <Field label="When do you want your auction to start?">
+        <Field label={AUCTION_SETTINGS_COPY.startPrompt}>
           <button
             type="button"
             onClick={() => setDateSheet(true)}
@@ -99,13 +126,31 @@ export function MobileSaleSettingsScreen() {
           </button>
         </Field>
 
-        <Toggle
-          label="Shipping Available"
-          checked={settings.shipping === "available"}
-          onChange={(checked) =>
-            updateSaleSettings({ shipping: checked ? "available" : "" })
-          }
-        />
+        <div className="space-y-2">
+          <Toggle
+            label={AUCTION_SETTINGS_COPY.shippingAvailableLabel}
+            checked={settings.shipping === "available"}
+            onChange={(checked) =>
+              updateSaleSettings({ shipping: checked ? "available" : "" })
+            }
+          />
+          <p className="text-[12px] leading-relaxed text-[#636366]">
+            {AUCTION_SETTINGS_COPY.shippingAvailableSubtext}
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Toggle
+            label={AUCTION_SETTINGS_COPY.localPickupLabel}
+            checked={settings.localPickup === "required"}
+            onChange={(checked) =>
+              updateSaleSettings({ localPickup: checked ? "required" : "" })
+            }
+          />
+          <p className="text-[12px] leading-relaxed text-[#636366]">
+            {AUCTION_SETTINGS_COPY.localPickupSubtext}
+          </p>
+        </div>
       </div>
 
       {dateSheet ? (

@@ -178,7 +178,8 @@ export function buildFactorySpecSections(
       id: "exterior",
       label: "Exterior",
       fields: [
-        field("exterior", "Exterior Color", "", "exteriorColor"),
+        field("exterior", "Primary Color", "", "exteriorColor"),
+        field("exterior", "Secondary Color", "", "secondaryExteriorColor"),
         field("exterior", "Body Style", ""),
       ],
     },

@@ -169,17 +169,7 @@ const RULES: Rule[] = [
           message: `Add at least ${MIN_LISTING_PHOTOS} vehicle photos.`,
           severity: "error",
         },
-  (draft) =>
-    draft.videos.length >= 1
-      ? null
-      : {
-          id: "videos-required",
-          stepId: "photos",
-          href: LISTING_PATHS.photos,
-          field: "videos",
-          message: "Add at least 1 video of your vehicle.",
-          severity: "error",
-        },
+  // Videos are optional (max enforced on upload).
   (draft) =>
     draft.ownerNotes.trim()
       ? null
@@ -192,25 +182,25 @@ const RULES: Rule[] = [
           severity: "error",
         },
   (draft) =>
-    draft.aiDescription.trim()
+    draft.aiDescription.trim().length >= 100
       ? null
       : {
           id: "ai-required",
           stepId: "ai",
           href: LISTING_PATHS.ai,
           field: "aiDescription",
-          message: "AI description is required to continue.",
+          message: "Add an AI description of at least 100 characters.",
           severity: "error",
         },
   (draft) =>
-    draft.saleSettings.saleType
+    draft.saleSettings.buyNowPrice || draft.saleSettings.reservePrice
       ? null
       : {
-          id: "sale-type-required",
+          id: "pricing-required",
           stepId: "settings",
           href: LISTING_PATHS.settings,
-          field: "saleType",
-          message: "Sale type is required before submit.",
+          field: "reservePrice",
+          message: "Set a Buy Now price or Reserve Price before submit.",
           severity: "error",
         },
   (draft) =>

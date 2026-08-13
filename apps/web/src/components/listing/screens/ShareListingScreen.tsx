@@ -1,46 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { Globe2, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ListingStep } from "../ListingStep";
+import { Button } from "@/components/ui/button";
 
+/**
+ * Legacy share hub from the old post-submit flow.
+ * Sharing is available after approval from the live auction page (one-time prompt + share icon).
+ */
 export function ShareListingScreen() {
   return (
     <ListingStep
-      title="Share Listing"
-      description="Choose where to share your newly submitted listing."
+      title="Share Your Listing"
+      description="Sharing is available after Carasta approves and schedules your auction — not immediately after submission."
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl">
-        <div className="rounded-2xl border bg-card p-5 space-y-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Globe2 className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="font-semibold">External Share</h3>
-            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-              Share to Instagram, Facebook, X, Email, or copy a link with an editable caption.
-            </p>
-          </div>
-          <Button type="button" asChild>
-            <Link href="/listing/share/external">Continue</Link>
-          </Button>
-        </div>
-
-        <div className="rounded-2xl border bg-card p-5 space-y-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Users className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="font-semibold">Carasta Community</h3>
-            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-              Publish to Carmunity with tags, location, and photos from your listing.
-            </p>
-          </div>
-          <Button type="button" asChild>
-            <Link href="/listing/share/community">Continue</Link>
-          </Button>
-        </div>
+      <div className="max-w-xl space-y-4 rounded-2xl border bg-card p-5">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          After approval, the first time you open your live auction you may see a dismissible share
+          menu. After that, use the share icon on the auction page. Live-auction viewers can share
+          from the same control.
+        </p>
+        <Button type="button" asChild>
+          <Link href="/profile?tab=listings">Go to Auctions on your profile</Link>
+        </Button>
       </div>
     </ListingStep>
   );

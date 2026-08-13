@@ -9,6 +9,7 @@ import { MobileListingHeader } from "./MobileListingHeader";
 import { MobileStepProgress } from "./MobileStepProgress";
 import { MobileListingFooter } from "./MobileListingFooter";
 import { getMobileStep, MOBILE_SHARED_BACK_HREF } from "./config";
+import { afterDetailsHrefMobile } from "@/components/listing/shared-finish-sequence";
 import { ShopBuilderSession } from "./shop-builder/shop-builder-session";
 
 export type MobileListingChromeConfig = {
@@ -17,6 +18,7 @@ export type MobileListingChromeConfig = {
   onBack?: () => void;
   continueHref?: string;
   continueDisabled?: boolean;
+  backDisabled?: boolean;
   hideFooter?: boolean;
   hideProgress?: boolean;
   hideSaveDraftExit?: boolean;
@@ -89,17 +91,7 @@ function prefetchForPath(
     candidates.add("/mobile-listing/identify/manual");
   }
   if (pathname.includes("/details")) {
-    if (listingTypeId === "stock-lightly-modified") {
-      candidates.add("/mobile-listing/stock/specifications");
-    } else if (listingTypeId === "modified-performance") {
-      candidates.add("/mobile-listing/modified/specifications");
-    } else if (listingTypeId === "restored-restomod-custom") {
-      candidates.add("/mobile-listing/restored/specifications");
-    } else if (listingTypeId === "race-track-car") {
-      candidates.add("/mobile-listing/race/summary");
-    } else {
-      candidates.add("/mobile-listing/specifications");
-    }
+    candidates.add(afterDetailsHrefMobile(listingTypeId as Parameters<typeof afterDetailsHrefMobile>[0]));
   }
   if (pathname.includes("/race/summary")) candidates.add("/mobile-listing/race/biography");
   if (pathname.includes("/race/biography")) candidates.add("/mobile-listing/race/specifications");
@@ -112,7 +104,7 @@ function prefetchForPath(
   if (pathname.includes("/buyer-preview")) candidates.add("/mobile-listing/review");
   else if (pathname.includes("/preview")) candidates.add("/mobile-listing/buyer-preview");
   if (pathname.includes("/review")) candidates.add("/mobile-listing/submitted");
-  if (pathname.includes("/submitted")) candidates.add("/mobile-listing/share/external");
+  // Do not prefetch share after submission — share opens after approval, not here.
   if (pathname.includes("/share/external")) candidates.add("/mobile-listing/share/community");
   if (pathname.includes("/share/community")) candidates.add("/mobile-listing/share/confirmation");
   candidates.add("/mobile-listing/shop-builder");
@@ -202,7 +194,10 @@ export function MobileListingRuntime({ children }: { children: React.ReactNode }
     <ChromeContext.Provider value={ctx}>
       <div className="ml-phone-frame">
         <div className="ml-shell relative w-full" data-step={chrome.stepId}>
-          <MobileListingHeader onBack={handleBack} saveStatus={status} />
+          <MobileListingHeader
+            onBack={chrome.backDisabled ? undefined : handleBack}
+            saveStatus={status}
+          />
           {showProgress && step ? (
             <MobileStepProgress step={step.index} total={step.total} />
           ) : null}
@@ -215,6 +210,7 @@ export function MobileListingRuntime({ children }: { children: React.ReactNode }
               onContinue={chrome.onContinue}
               continueHref={chrome.continueHref}
               continueDisabled={chrome.continueDisabled}
+              backDisabled={chrome.backDisabled}
               backLabel={chrome.backLabel}
               continueLabel={chrome.continueLabel}
               hideSaveDraftExit={chrome.hideSaveDraftExit}

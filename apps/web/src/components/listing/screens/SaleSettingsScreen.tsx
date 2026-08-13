@@ -1,117 +1,168 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { FieldHint, FieldLabel } from "../fields";
 import { ListingStep } from "../ListingStep";
 import { ListingSection } from "../ListingSection";
 import { useListingBuilder } from "../ListingBuilderContext";
-import type { ListingSaleSettings } from "../types";
+import { AUCTION_SETTINGS_COPY } from "../auction-settings-copy";
+import { cn } from "@/lib/utils";
 
-const SALE_TYPES = ["Auction", "Buy Now", "Auction + Buy Now", "Make Offer"];
-const SHIPPING_OPTIONS = [
-  "Buyer arranged",
-  "Seller arranged",
-  "Enclosed transport available",
-  "Local pickup only",
-];
+function deriveSaleType(buyNowPrice: string, reservePrice: string): string {
+  if (buyNowPrice && reservePrice) return "Auction + Buy Now";
+  if (buyNowPrice) return "Buy Now";
+  if (reservePrice) return "Auction";
+  return "Auction";
+}
 
 export function SaleSettingsScreen() {
   const { draft, updateSaleSettings } = useListingBuilder();
   const s = draft.saleSettings;
-
-  const set = (key: keyof ListingSaleSettings, value: string) =>
-    updateSaleSettings({ [key]: value });
+  const buyNowOn = Boolean(s.buyNowPrice);
+  const reserveOn = Boolean(s.reservePrice);
+  const shippingOn = s.shipping === "available";
+  const localPickupOn = s.localPickup === "required";
 
   return (
-    <ListingStep
-      title="Auction Settings"
-      description="Choose how you would like your auction to run"
-    >
+    <ListingStep title={AUCTION_SETTINGS_COPY.title} description={AUCTION_SETTINGS_COPY.subtext}>
       <div className="space-y-6">
-        <ListingSection title="Sale type">
-          <FieldLabel htmlFor="sale-type">Sale Type</FieldLabel>
-          <Select value={s.saleType || undefined} onValueChange={(v) => set("saleType", v)}>
-            <SelectTrigger id="sale-type">
-              <SelectValue placeholder="Select sale type" />
-            </SelectTrigger>
-            <SelectContent>
-              {SALE_TYPES.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </ListingSection>
-
-        <ListingSection title="Buy It Now">
-          <FieldHint>
-            Set a premium Buy Now price that lets a buyer purchase your vehicle immediately and end
-            the auction early. Buy Now is only available during the first 24 hours of the auction
-          </FieldHint>
-          <div className="mt-3">
-            <FieldLabel htmlFor="buy-now-price">Buy Now Price</FieldLabel>
-            <Input
-              id="buy-now-price"
-              value={s.buyNowPrice}
-              onChange={(e) => set("buyNowPrice", e.target.value)}
-              placeholder="e.g. 95000"
-              inputMode="decimal"
+        <ListingSection title={AUCTION_SETTINGS_COPY.buyNowLabel}>
+          <div className="flex items-start justify-between gap-4">
+            <FieldHint>{AUCTION_SETTINGS_COPY.buyNowSubtext}</FieldHint>
+            <Toggle
+              checked={buyNowOn}
+              onChange={(checked) =>
+                updateSaleSettings({
+                  buyNowPrice: checked ? s.buyNowPrice || "150000" : "",
+                  // Only one pricing option can be active.
+                  reservePrice: checked ? "" : s.reservePrice,
+                  saleType: deriveSaleType(checked ? s.buyNowPrice || "150000" : "", checked ? "" : s.reservePrice),
+                })
+              }
             />
           </div>
+          {buyNowOn ? (
+            <div className="mt-3">
+              <FieldLabel htmlFor="buy-now-price">Buy Now Price</FieldLabel>
+              <Input
+                id="buy-now-price"
+                value={s.buyNowPrice}
+                onChange={(e) =>
+                  updateSaleSettings({
+                    buyNowPrice: e.target.value,
+                    reservePrice: "",
+                    saleType: deriveSaleType(e.target.value, ""),
+                  })
+                }
+                placeholder="e.g. 95000"
+                inputMode="decimal"
+              />
+            </div>
+          ) : null}
         </ListingSection>
 
-        <ListingSection title="Reserve Price">
-          <FieldHint>
-            Set the minimum price you’re willing to accept. Your reserve will be reflected on the
-            Reserve Meter until the reserve is lifted. If bidding does not meet the reserve, the
-            vehicle will not sell
-          </FieldHint>
-          <div className="mt-3">
-            <FieldLabel htmlFor="reserve-price">Reserve Price</FieldLabel>
-            <Input
-              id="reserve-price"
-              value={s.reservePrice}
-              onChange={(e) => set("reservePrice", e.target.value)}
-              placeholder="e.g. 75000"
-              inputMode="decimal"
+        <ListingSection title={AUCTION_SETTINGS_COPY.reserveLabel}>
+          <div className="flex items-start justify-between gap-4">
+            <FieldHint>{AUCTION_SETTINGS_COPY.reserveSubtext}</FieldHint>
+            <Toggle
+              checked={reserveOn}
+              onChange={(checked) =>
+                updateSaleSettings({
+                  reservePrice: checked ? s.reservePrice || "100000" : "",
+                  buyNowPrice: checked ? "" : s.buyNowPrice,
+                  saleType: deriveSaleType(checked ? "" : s.buyNowPrice, checked ? s.reservePrice || "100000" : ""),
+                })
+              }
             />
           </div>
+          {reserveOn ? (
+            <div className="mt-3">
+              <FieldLabel htmlFor="reserve-price">Reserve Price</FieldLabel>
+              <Input
+                id="reserve-price"
+                value={s.reservePrice}
+                onChange={(e) =>
+                  updateSaleSettings({
+                    reservePrice: e.target.value,
+                    buyNowPrice: "",
+                    saleType: deriveSaleType("", e.target.value),
+                  })
+                }
+                placeholder="e.g. 75000"
+                inputMode="decimal"
+              />
+            </div>
+          ) : null}
+          <p className="mt-2 text-xs text-muted-foreground">{AUCTION_SETTINGS_COPY.pricingNote}</p>
         </ListingSection>
 
-        <ListingSection title="When do you want your auction to start?">
+        <ListingSection title={AUCTION_SETTINGS_COPY.startPrompt}>
           <FieldLabel htmlFor="start-date">Start date</FieldLabel>
           <Input
             id="start-date"
             type="date"
             value={s.preferredStartDate}
-            onChange={(e) => set("preferredStartDate", e.target.value)}
+            onChange={(e) => updateSaleSettings({ preferredStartDate: e.target.value })}
           />
         </ListingSection>
 
-        <ListingSection title="Shipping Available">
-          <FieldLabel htmlFor="shipping">Shipping</FieldLabel>
-          <Select value={s.shipping || undefined} onValueChange={(v) => set("shipping", v)}>
-            <SelectTrigger id="shipping">
-              <SelectValue placeholder="Select shipping option" />
-            </SelectTrigger>
-            <SelectContent>
-              {SHIPPING_OPTIONS.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <ListingSection title="Shipping & pickup">
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold">{AUCTION_SETTINGS_COPY.shippingAvailableLabel}</p>
+                <FieldHint>{AUCTION_SETTINGS_COPY.shippingAvailableSubtext}</FieldHint>
+              </div>
+              <Toggle
+                checked={shippingOn}
+                onChange={(checked) =>
+                  updateSaleSettings({ shipping: checked ? "available" : "" })
+                }
+              />
+            </div>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold">{AUCTION_SETTINGS_COPY.localPickupLabel}</p>
+                <FieldHint>{AUCTION_SETTINGS_COPY.localPickupSubtext}</FieldHint>
+              </div>
+              <Toggle
+                checked={localPickupOn}
+                onChange={(checked) =>
+                  updateSaleSettings({ localPickup: checked ? "required" : "" })
+                }
+              />
+            </div>
+          </div>
         </ListingSection>
       </div>
     </ListingStep>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "h-6 w-11 shrink-0 rounded-full p-0.5 transition-colors",
+        checked ? "bg-primary" : "bg-muted"
+      )}
+    >
+      <span
+        className={cn(
+          "block h-5 w-5 rounded-full bg-white shadow transition-transform",
+          checked ? "translate-x-5" : "translate-x-0"
+        )}
+      />
+    </button>
   );
 }

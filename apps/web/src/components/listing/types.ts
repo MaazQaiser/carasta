@@ -38,7 +38,10 @@ export interface ListingVehicleDetails {
   model: string;
   trim: string;
   mileage: string;
+  /** Primary exterior color. */
   exteriorColor: string;
+  /** Optional secondary / accent exterior color. */
+  secondaryExteriorColor: string;
   interiorColor: string;
   engine: string;
   transmission: string;
@@ -54,6 +57,10 @@ export interface ListingConditionHistory {
   overallCondition: string;
   ownershipHistory: string;
   generalNotes: string;
+  /** Number of keys included with the vehicle: None | 1 | 2 | 3+ */
+  numberOfKeys: string;
+  /** Optional warranty notes (seller-entered). */
+  warranty: string;
 }
 
 export interface ListingSaleSettings {
@@ -62,8 +69,12 @@ export interface ListingSaleSettings {
   buyNowPrice: string;
   preferredStartDate: string;
   auctionDuration: string;
+  /** Shipping Available toggle: "available" | "". */
   shipping: string;
+  /** Seller location (not freeform shipping terms — KeySavvy handles terms). */
   shippingLocation: string;
+  /** Local Pickup Required toggle: "required" | "". */
+  localPickup: string;
 }
 
 export type MeasurementStatus =
@@ -336,6 +347,8 @@ export interface ListingDraft {
   listingTypeId: ListingTypeId | null;
   vinInput: string;
   details: ListingVehicleDetails;
+  /** Detail field keys populated by VIN decode — shown as “VIN imported”, still editable. */
+  vinImportedFields: (keyof ListingVehicleDetails)[];
   condition: ListingConditionHistory;
   vehiclePhotos: ListingMediaItem[];
   modificationPhotos: ListingMediaItem[];
@@ -345,6 +358,8 @@ export interface ListingDraft {
   aiDescription: string;
   aiSummary: string;
   saleSettings: ListingSaleSettings;
+  /** Selected auction cover photo id (from general vehicle photos). */
+  auctionCoverPhotoId: string | null;
   /** Config-driven modification workspace (Modified / Restomod / Race). */
   modificationWorkspace: ModificationWorkspaceState;
 }

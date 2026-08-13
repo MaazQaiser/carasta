@@ -40,6 +40,8 @@ export interface VehicleSpec {
   driveType: DriveType;
   mileage: number;
   exteriorColor: string;
+  /** Optional secondary / accent exterior color from listing builder. */
+  secondaryExteriorColor?: string;
   interiorColor: string;
   vin?: string;
   doors?: number;
@@ -56,6 +58,8 @@ export interface VehicleConditionHistory {
   overallCondition?: string;
   ownershipHistory?: string;
   generalNotes?: string;
+  numberOfKeys?: string;
+  warranty?: string;
 }
 
 /** Media asset captured during listing upload. */

@@ -10,9 +10,7 @@ import {
   Eye,
   CheckCircle2,
   Tags,
-  Gauge,
   Wrench,
-  Trophy,
   Flag,
 } from "lucide-react";
 import type { ListingStepDefinition, ListingTypeDefinition } from "./types";
@@ -22,30 +20,37 @@ import {
   specsEditHref,
 } from "./listing-route-map";
 
-/** Supported listing categories for every future flow. */
+/**
+ * Shared listing categories — single source for web + mobile beginning screen.
+ * Selection here is the main adaptive routing decision for every flow.
+ */
 export const LISTING_TYPES: ListingTypeDefinition[] = [
   {
     id: "stock-lightly-modified",
     label: "Stock / Lightly Modified",
-    description: "Mostly factory vehicles with minimal or cosmetic changes.",
+    description:
+      "Stock or mostly stock, with only minor performance upgrades or cosmetic changes.",
     icon: Car,
   },
   {
     id: "modified-performance",
     label: "Modified / Performance",
-    description: "Tuned builds with performance or aftermarket upgrades.",
-    icon: Gauge,
+    description:
+      "Significantly modified, with major upgrades to the powertrain, suspension, brakes, or exterior.",
+    icon: Wrench,
   },
   {
     id: "restored-restomod-custom",
     label: "Restored / Restomod / Custom",
-    description: "Restorations, restomods, and fully custom builds.",
-    icon: Wrench,
+    description:
+      "Restored, modernized, or custom-built, with extensive work completed on the body, chassis, powertrain, or interior.",
+    icon: History,
   },
   {
     id: "race-track-car",
     label: "Race / Track Car",
-    description: "Purpose-built race and track-focused vehicles.",
+    description:
+      "Purpose-built or heavily modified for racing, track use, or competition.",
     icon: Flag,
   },
 ];
@@ -64,42 +69,42 @@ export const LISTING_STEPS: ListingStepDefinition[] = [
   },
   {
     id: "identify",
-    label: "Identify",
+    label: "Vehicle Information",
     href: "/listing/identify",
-    description: "Identify the vehicle by VIN.",
+    description: "Scan, enter, or continue without a VIN.",
     icon: Car,
   },
   {
     id: "details",
-    label: "Details",
+    label: "Vehicle Details",
     href: "/listing/details",
-    description: "Editable vehicle details.",
+    description: "Confirm and complete vehicle information.",
     icon: ClipboardList,
   },
   {
     id: "specifications",
     label: "Specifications",
     href: "/listing/specifications",
-    description: "Specifications & modifications.",
+    description: "Adaptive vehicle-specific section.",
     icon: FileText,
   },
   {
     id: "history",
-    label: "Condition",
+    label: "Condition & History",
     href: LISTING_PATHS.condition,
     description: "Condition & history.",
     icon: History,
   },
   {
     id: "photos",
-    label: "Photos",
+    label: "Photos, Videos & Documents",
     href: "/listing/photos",
-    description: "Photos & documents.",
+    description: "Photos, videos & documents.",
     icon: Camera,
   },
   {
     id: "notes",
-    label: "Owner Notes",
+    label: "Owner's Notes",
     href: "/listing/notes",
     description: "Owner notes and story.",
     icon: NotebookPen,
@@ -135,8 +140,8 @@ export const LISTING_STEPS: ListingStepDefinition[] = [
   {
     id: "review",
     label: "Submit to Carasta",
-    href: "/listing/review",
-    description: "Submit listing for review.",
+    href: "/listing/buyer-preview",
+    description: "Submit from Buyer View Preview after re-validation.",
     icon: CheckCircle2,
   },
 ];

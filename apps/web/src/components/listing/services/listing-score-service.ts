@@ -79,10 +79,10 @@ export function evaluateListingScore(draft: ListingDraft): ListingScoreReport {
       impact: "medium",
     });
   }
-  if (!draft.saleSettings.saleType || !draft.saleSettings.reservePrice) {
+  if (!draft.saleSettings.buyNowPrice && !draft.saleSettings.reservePrice) {
     recommendations.push({
       id: "settings",
-      label: "Finish sale settings",
+      label: "Finish auction settings",
       href: "/listing/settings",
       impact: "high",
     });

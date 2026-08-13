@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
+import { VIN_IDENTIFY_COPY } from "@/components/listing/vin-identify-copy";
 import { MobileListingShell } from "../MobileListingShell";
 
 type ScreenState = "entry" | "loading" | "review" | "failed";
@@ -37,7 +38,7 @@ function isVinStyleIdentity(identityType: string) {
 export function MobileVinEntryScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { draft, setVinInput, updateDetails, updateWorkspace, addActivity } =
+  const { draft, setVinInput, updateDetails, updateWorkspace, addActivity, setVinImportedFields } =
     useListingBuilder();
   const [state, setState] = React.useState<ScreenState>("entry");
 
@@ -114,6 +115,18 @@ export function MobileVinEntryScreen() {
         exteriorColor: decoded.exteriorColor,
         interiorColor: decoded.interiorColor,
       });
+      setVinImportedFields([
+        "vin",
+        "year",
+        "make",
+        "model",
+        "trim",
+        "exteriorColor",
+        "interiorColor",
+        "engine",
+        "transmission",
+        "drivetrain",
+      ]);
       updateWorkspace({
         factorySpecOverrides: {
           ...(draft.modificationWorkspace.factorySpecOverrides ?? {}),
@@ -140,6 +153,7 @@ export function MobileVinEntryScreen() {
     identityType,
     isRestored,
     persistIdentity,
+    setVinImportedFields,
     updateDetails,
     updateWorkspace,
   ]);
@@ -149,15 +163,20 @@ export function MobileVinEntryScreen() {
     ? draft.vinInput.length === 17
     : identityReady && vinStyle;
 
+  // Failure uses in-screen Continue Manually — footer Continue stays disabled (Figma).
+  // Review enables footer Continue. Manual Entry / non-VIN restored can continue from entry.
   const allowContinueWithoutReview =
-    state === "failed" ||
     identityType === "Manual Entry" ||
     (isRestored && state === "entry" && (identityReady || !vinStyle));
 
   return (
     <MobileListingShell
       stepId="identify-manual"
-      continueDisabled={state === "loading" || (state !== "review" && !allowContinueWithoutReview)}
+      continueDisabled={
+        state === "loading" ||
+        state === "failed" ||
+        (state !== "review" && !allowContinueWithoutReview)
+      }
       continueHref={state === "review" ? "/mobile-listing/details" : undefined}
       onContinue={state === "review" ? undefined : continueManually}
     >
@@ -176,18 +195,16 @@ export function MobileVinEntryScreen() {
           <>
             <div className="flex flex-col gap-2">
               <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
-                {isRestored ? identityType : "Vehicle Information"}
+                {isRestored && identityType !== "Modern VIN"
+                  ? identityType
+                  : VIN_IDENTIFY_COPY.title}
               </h1>
               <p className="text-[15px] leading-[1.4] text-[#636366]">
                 {state === "review"
-                  ? "Verify the vehicle details below."
+                  ? "Confirm or correct the details below."
                   : state === "failed"
-                    ? "We couldn’t automatically decode this identifier. You can continue and enter details manually."
-                    : isRestored
-                      ? vinStyle
-                        ? "Enter the identifier. Decode is optional and never blocks listing creation."
-                        : "Enter the identifier value, then continue to vehicle details."
-                      : "Enter your 17-character identification number below."}
+                    ? VIN_IDENTIFY_COPY.failure.banner
+                    : VIN_IDENTIFY_COPY.subtext}
               </p>
             </div>
 
@@ -196,9 +213,8 @@ export function MobileVinEntryScreen() {
             ) : (
               <div className="flex flex-col gap-4">
                 {state === "failed" ? (
-                  <div className="rounded-xl bg-[#fff2e6] px-4 py-3 text-[13px] text-[#9b4a00]">
-                    Decode failed. Listing creation is not blocked — continue manually whenever you
-                    are ready.
+                  <div className="rounded-xl border border-[#fdba74] bg-[#fff2e6] px-4 py-3 text-[13px] text-[#9b4a00]">
+                    {VIN_IDENTIFY_COPY.failure.banner}
                   </div>
                 ) : null}
 
@@ -210,7 +226,9 @@ export function MobileVinEntryScreen() {
                 ) : (
                   <div className="space-y-1.5">
                     <label htmlFor="vin" className="text-[12px] font-semibold text-[#636366]">
-                      {isRestored ? identityType : "Vehicle Identification Number (VIN)"}
+                      {isRestored && identityType !== "Modern VIN"
+                        ? identityType
+                        : "Vehicle Identification Number (VIN)"}
                     </label>
                     <input
                       id="vin"
@@ -230,40 +248,65 @@ export function MobileVinEntryScreen() {
                             ? "Enter older VIN"
                             : `Enter ${identityType.toLowerCase()}`
                       }
-                      className="h-11 w-full rounded-lg border border-[#e5e5ea] px-3 font-mono text-[13px] uppercase outline-none focus:border-[#1b1464] focus:ring-2 focus:ring-[#1b1464]/15"
+                      className={cn(
+                        "h-11 w-full rounded-lg border px-3 font-mono text-[13px] uppercase outline-none focus:ring-2",
+                        state === "failed"
+                          ? "border-[#ef4444] focus:border-[#ef4444] focus:ring-[#ef4444]/15"
+                          : "border-[#e5e5ea] focus:border-[#1b1464] focus:ring-[#1b1464]/15"
+                      )}
                     />
                     <p className="text-[11px] text-[#636366]">
-                      {isRestored
-                        ? "You can continue even if decode is unavailable."
-                        : "Typically found on the driver’s side door or pillar."}
+                      Typically found on the driver’s side door or pillar. Decode failure never
+                      blocks listing creation.
                     </p>
                   </div>
                 )}
 
-                {vinStyle && identityType !== "Manual Entry" ? (
-                  <button
-                    type="button"
-                    onClick={decode}
-                    disabled={!canDecode}
-                    className={cn(
-                      "h-11 rounded-lg text-[14px] font-semibold transition-colors",
-                      canDecode ? "bg-[#1b1464] text-white" : "bg-[#e5e5ea] text-[#9ca3af]"
-                    )}
-                  >
-                    Decode VIN
-                  </button>
-                ) : null}
+                {state === "failed" ? (
+                  <div className="flex flex-col gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setState("entry")}
+                      className="h-11 rounded-lg border border-[#1c1c1e] bg-white text-[14px] font-semibold text-[#1c1c1e]"
+                    >
+                      {VIN_IDENTIFY_COPY.failure.tryAgain}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={continueManually}
+                      className="h-11 rounded-lg bg-[#1b1464] text-[14px] font-semibold text-white"
+                    >
+                      {VIN_IDENTIFY_COPY.failure.continueManually}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {vinStyle && identityType !== "Manual Entry" ? (
+                      <button
+                        type="button"
+                        onClick={decode}
+                        disabled={!canDecode}
+                        className={cn(
+                          "h-11 rounded-lg text-[14px] font-semibold transition-colors",
+                          canDecode ? "bg-[#1b1464] text-white" : "bg-[#e5e5ea] text-[#9ca3af]"
+                        )}
+                      >
+                        Decode VIN
+                      </button>
+                    ) : null}
 
-                <div className="flex items-center gap-3 text-[12px] text-[#636366] before:h-px before:flex-1 before:bg-[#e5e5ea] after:h-px after:flex-1 after:bg-[#e5e5ea]">
-                  OR
-                </div>
-                <button
-                  type="button"
-                  onClick={continueManually}
-                  className="text-[13px] font-medium text-[#1b1464] underline"
-                >
-                  Continue Without Decode
-                </button>
+                    <div className="flex items-center gap-3 text-[12px] text-[#636366] before:h-px before:flex-1 before:bg-[#e5e5ea] after:h-px after:flex-1 after:bg-[#e5e5ea]">
+                      OR
+                    </div>
+                    <button
+                      type="button"
+                      onClick={continueManually}
+                      className="text-[13px] font-medium text-[#1b1464] underline"
+                    >
+                      {VIN_IDENTIFY_COPY.withoutVin.title}
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </>
@@ -284,12 +327,17 @@ function VinReviewForm() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-lg bg-[#e7f7e8] px-3 py-2 text-[12px] text-[#26742d]">
-        Vehicle found — auto-populated from decode
+      <div className="flex items-center gap-2 rounded-lg bg-[#e7f7e8] px-3 py-2 text-[12px] font-medium text-[#26742d]">
+        {VIN_IDENTIFY_COPY.found.banner}
       </div>
       {fields.map(([label, key]) => (
         <label key={key} className="space-y-1">
-          <span className="text-[12px] font-semibold text-[#636366]">{label}</span>
+          <span className="flex items-center gap-2 text-[12px] font-semibold text-[#636366]">
+            {label}
+            <span className="rounded-full bg-[#ecebff] px-2 py-0.5 text-[10px] font-semibold text-[#1b1464]">
+              {VIN_IDENTIFY_COPY.found.importedBadge}
+            </span>
+          </span>
           <input
             value={draft.details[key]}
             onChange={(event) => updateDetails({ [key]: event.target.value })}

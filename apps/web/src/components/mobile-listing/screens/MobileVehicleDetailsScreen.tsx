@@ -12,6 +12,13 @@ import type { RestorationBuildTypeId } from "@/components/listing/types";
 import { MobileListingShell } from "../MobileListingShell";
 import { MobileOptionList, MobileOptionSheet } from "../MobileOptionSheet";
 import { MobileRaceIdentityFields } from "./MobileRaceIdentityFields";
+import {
+  EXTERIOR_COLOR_OPTIONS,
+  INTERIOR_COLOR_OPTIONS,
+  VEHICLE_DETAILS_COPY,
+} from "@/components/listing/vehicle-details-copy";
+import { afterDetailsHrefMobile } from "@/components/listing/shared-finish-sequence";
+import type { ListingVehicleDetails } from "@/components/listing/types";
 
 const RESTORED_MILEAGE_STATUS_OPTIONS = [
   "Actual",
@@ -21,20 +28,40 @@ const RESTORED_MILEAGE_STATUS_OPTIONS = [
   "Unknown",
 ] as const;
 
-const SELECT_FIELDS = [
-  { label: "Year", key: "year", placeholder: "Select year" },
-  { label: "Make", key: "make", placeholder: "Select make" },
-  { label: "Model", key: "model", placeholder: "Select model" },
-  { label: "Exterior Color", key: "exteriorColor", placeholder: "Select color" },
-  { label: "Interior Color", key: "interiorColor", placeholder: "Select color" },
+const IDENTITY_SELECT_FIELDS = [
+  { label: "Year", key: "year" as const, placeholder: "Select year" },
+  { label: "Make", key: "make" as const, placeholder: "Select make" },
+  { label: "Model", key: "model" as const, placeholder: "Select model" },
+];
+
+const COLOR_PICKERS = [
+  {
+    label: VEHICLE_DETAILS_COPY.primaryColor,
+    key: "exteriorColor" as const,
+    placeholder: VEHICLE_DETAILS_COPY.primaryColorPlaceholder,
+  },
+  {
+    label: VEHICLE_DETAILS_COPY.secondaryColor,
+    key: "secondaryExteriorColor" as const,
+    placeholder: VEHICLE_DETAILS_COPY.secondaryColorPlaceholder,
+  },
+  {
+    label: "Interior Color",
+    key: "interiorColor" as const,
+    placeholder: "Select color",
+  },
 ] as const;
+
+type ColorPickerKey = (typeof COLOR_PICKERS)[number]["key"];
+type DetailsPickerKey = (typeof IDENTITY_SELECT_FIELDS)[number]["key"] | ColorPickerKey;
 
 const FIELD_OPTIONS: Record<string, string[]> = {
   year: ["2024", "2023", "2022", "2021", "2020", "2019", "2018"],
   make: ["Porsche", "BMW", "Ford", "Audi", "Mercedes-Benz", "Toyota"],
   model: ["911 GT3", "M3", "Mustang", "RS 6", "AMG GT"],
-  exteriorColor: ["British Racing Green", "Silver", "Black", "White", "Guards Red", "Miami Blue"],
-  interiorColor: ["Black Leather", "Tan Leather", "Red Leather", "Alcantara"],
+  exteriorColor: [...EXTERIOR_COLOR_OPTIONS],
+  secondaryExteriorColor: ["None", ...EXTERIOR_COLOR_OPTIONS],
+  interiorColor: [...INTERIOR_COLOR_OPTIONS],
 };
 
 const FACTORY_EQUIPMENT_KEY = "factory-equipment:Packages";
@@ -52,11 +79,14 @@ export function MobileVehicleDetailsScreen() {
   const { draft, updateDetails, updateWorkspace, updatePerformanceSummary } =
     useListingBuilder();
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
-  const [picker, setPicker] = React.useState<(typeof SELECT_FIELDS)[number]["key"] | null>(null);
+  const [picker, setPicker] = React.useState<DetailsPickerKey | null>(null);
   const [statusSheet, setStatusSheet] = React.useState<"horsepower" | "torque" | null>(null);
   const [restoredPicker, setRestoredPicker] = React.useState<"buildType" | "mileageStatus" | null>(
     null
   );
+
+  const imported = new Set(draft.vinImportedFields ?? []);
+  const noVin = !draft.details.vin && !draft.vinInput;
 
   const isStock = draft.listingTypeId === "stock-lightly-modified";
   const isModified = draft.listingTypeId === "modified-performance";
@@ -85,15 +115,7 @@ export function MobileVehicleDetailsScreen() {
 
   const continueHref = !isValid
     ? undefined
-    : draft.listingTypeId === "race-track-car"
-      ? "/mobile-listing/race/summary"
-      : isStock
-        ? "/mobile-listing/stock/specifications"
-        : isModified
-          ? "/mobile-listing/modified/specifications"
-          : isRestored
-            ? "/mobile-listing/restored/specifications"
-            : "/mobile-listing/specifications";
+    : afterDetailsHrefMobile(draft.listingTypeId);
 
   return (
     <MobileListingShell
@@ -104,31 +126,29 @@ export function MobileVehicleDetailsScreen() {
       <div className="flex flex-col gap-5 px-6 pt-4 pb-6">
         <div className="space-y-2">
           <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
-            Vehicle Details
+            {VEHICLE_DETAILS_COPY.title}
           </h1>
           <p className="text-[15px] leading-[1.4] text-[#636366]">
-            {isStock
-              ? "Confirm VIN-imported factory information. All fields remain editable."
-              : isModified
-                ? "Confirm vehicle identity and current performance specifications."
-                : isRestored
-                  ? "Confirm vehicle identity, build type, and mileage status."
-                  : isRace
-                    ? "Organize race identity, numbers, builder details, and legal status."
-                    : "Confirm and complete your vehicle information."}
+            {VEHICLE_DETAILS_COPY.subtext}
           </p>
+          {noVin ? (
+            <p className="text-[12px] text-[#636366]">
+              No VIN on file — enter identity details manually on this same screen.
+            </p>
+          ) : null}
         </div>
 
         {isRace ? (
           <MobileRaceIdentityFields />
         ) : (
         <div className="flex flex-col gap-3">
-          {SELECT_FIELDS.slice(0, 3).map(({ label, key, placeholder }) => (
+          {IDENTITY_SELECT_FIELDS.map(({ label, key, placeholder }) => (
             <SelectField
               key={key}
               label={label}
               value={draft.details[key]}
               placeholder={placeholder}
+              vinImported={imported.has(key) && Boolean(draft.details[key])}
               active={focusedField === key}
               onFocus={() => setPicker(key)}
               onChange={(value) => updateDetails({ [key]: value })}
@@ -139,18 +159,57 @@ export function MobileVehicleDetailsScreen() {
             label="Trim"
             value={draft.details.trim}
             placeholder="Enter trim"
+            vinImported={imported.has("trim") && Boolean(draft.details.trim)}
             onChange={(value) => updateDetails({ trim: value })}
           />
 
           <TextField
             label="Mileage"
             value={draft.details.mileage}
-            placeholder="Enter mileage"
+            placeholder={VEHICLE_DETAILS_COPY.mileagePlaceholder}
             inputMode="numeric"
             required
             active={focusedField === "mileage"}
             onFocus={() => setFocusedField("mileage")}
             onChange={(value) => updateDetails({ mileage: value.replace(/[^\d,]/g, "") })}
+          />
+
+          {COLOR_PICKERS.map(({ label, key, placeholder }) => (
+            <SelectField
+              key={key}
+              label={label}
+              value={
+                key === "secondaryExteriorColor" && !draft.details.secondaryExteriorColor
+                  ? ""
+                  : draft.details[key]
+              }
+              placeholder={placeholder}
+              vinImported={
+                key === "exteriorColor" &&
+                imported.has("exteriorColor") &&
+                Boolean(draft.details.exteriorColor)
+              }
+              active={focusedField === key}
+              onFocus={() => setPicker(key)}
+              onChange={(value) =>
+                updateDetails({
+                  [key]:
+                    key === "secondaryExteriorColor" && value === "None" ? "" : value,
+                } as Partial<ListingVehicleDetails>)
+              }
+            />
+          ))}
+
+          <TextField
+            label="VIN"
+            value={draft.details.vin}
+            placeholder={
+              noVin
+                ? "Optional for classics, race, kit, or custom vehicles"
+                : "Vehicle VIN"
+            }
+            vinImported={imported.has("vin") && Boolean(draft.details.vin)}
+            onChange={(value) => updateDetails({ vin: value.toUpperCase() })}
           />
 
           {isStock ? (
@@ -311,31 +370,31 @@ export function MobileVehicleDetailsScreen() {
               </label>
             </>
           ) : null}
-
-          {SELECT_FIELDS.slice(3).map(({ label, key, placeholder }) => (
-            <SelectField
-              key={key}
-              label={label}
-              value={draft.details[key]}
-              placeholder={placeholder}
-              active={focusedField === key}
-              onFocus={() => setPicker(key)}
-              onChange={(value) => updateDetails({ [key]: value })}
-            />
-          ))}
         </div>
         )}
       </div>
 
       {picker ? (
         <SelectSheet
-          label={SELECT_FIELDS.find((field) => field.key === picker)?.label ?? "Select"}
+          label={
+            IDENTITY_SELECT_FIELDS.find((field) => field.key === picker)?.label ??
+            COLOR_PICKERS.find((field) => field.key === picker)?.label ??
+            "Select"
+          }
           options={FIELD_OPTIONS[picker] ?? []}
-          value={draft.details[picker]}
-          allowCustom={picker === "exteriorColor"}
+          value={
+            picker === "secondaryExteriorColor" && !draft.details.secondaryExteriorColor
+              ? "None"
+              : draft.details[picker]
+          }
+          allowCustom={picker === "exteriorColor" || picker === "secondaryExteriorColor" || picker === "interiorColor"}
           onClose={() => setPicker(null)}
           onSelect={(value) => {
-            updateDetails({ [picker]: value });
+            if (picker === "secondaryExteriorColor") {
+              updateDetails({ secondaryExteriorColor: value === "None" ? "" : value });
+            } else {
+              updateDetails({ [picker]: value });
+            }
             setPicker(null);
           }}
         />
@@ -469,6 +528,7 @@ interface FieldProps {
   active?: boolean;
   required?: boolean;
   invalid?: boolean;
+  vinImported?: boolean;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   onFocus?: () => void;
   onChange: (value: string) => void;
@@ -481,14 +541,20 @@ function TextField({
   active,
   required,
   invalid,
+  vinImported,
   inputMode,
   onFocus,
   onChange,
 }: FieldProps) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-[12px] font-semibold text-[#636366]">
+      <span className="flex items-center gap-2 text-[12px] font-semibold text-[#636366]">
         {label} {required ? <span className="text-[#c44]">*</span> : null}
+        {vinImported ? (
+          <span className="rounded-full bg-[#ecebff] px-2 py-0.5 text-[10px] font-semibold text-[#1b1464]">
+            {VEHICLE_DETAILS_COPY.vinImportedBadge}
+          </span>
+        ) : null}
       </span>
       <input
         value={value}
@@ -510,10 +576,17 @@ function TextField({
   );
 }
 
-function SelectField({ value, placeholder, onFocus, ...props }: FieldProps) {
+function SelectField({ value, placeholder, onFocus, vinImported, ...props }: FieldProps) {
   return (
     <div className="block space-y-1.5">
-      <span className="text-[12px] font-semibold text-[#636366]">{props.label}</span>
+      <span className="flex items-center gap-2 text-[12px] font-semibold text-[#636366]">
+        {props.label}
+        {vinImported ? (
+          <span className="rounded-full bg-[#ecebff] px-2 py-0.5 text-[10px] font-semibold text-[#1b1464]">
+            {VEHICLE_DETAILS_COPY.vinImportedBadge}
+          </span>
+        ) : null}
+      </span>
       <button
         type="button"
         onClick={onFocus}

@@ -1,4 +1,6 @@
 import type { ListingDraft, ListingTypeId } from "./types";
+import { isTitleStatusComplete } from "./specs/title-status";
+import { LISTING_MEDIA_LIMITS } from "./listing-media-library";
 
 export const LISTING_BASE = "/listing";
 
@@ -37,7 +39,7 @@ export const LISTING_PATHS = {
   shopBuilderAdd: `${LISTING_BASE}/shop-builder/add`,
 } as const;
 
-const MIN_PHOTOS = 20;
+const MIN_PHOTOS = LISTING_MEDIA_LIMITS.minPhotos;
 
 /** After details — type-specific specs entry (race starts at summary). */
 export function afterDetailsHref(typeId: ListingTypeId | null | undefined): string {
@@ -205,14 +207,33 @@ export function canContinueOnPath(pathname: string, draft: ListingDraft): boolea
     return true;
   }
 
-  if (pathEquals(path, LISTING_PATHS.condition)) return true;
+  if (pathEquals(path, LISTING_PATHS.condition)) {
+    return (
+      Boolean(draft.condition.overallCondition) &&
+      isTitleStatusComplete(draft.condition.titleStatus)
+    );
+  }
   if (pathEquals(path, LISTING_PATHS.photos)) {
-    return draft.vehiclePhotos.length >= MIN_PHOTOS && draft.videos.length >= 1;
+    return draft.vehiclePhotos.length >= MIN_PHOTOS;
   }
   if (pathEquals(path, LISTING_PATHS.notes)) return Boolean(draft.ownerNotes.trim());
-  if (pathEquals(path, LISTING_PATHS.ai)) return Boolean(draft.aiDescription.trim());
+  if (pathEquals(path, LISTING_PATHS.ai)) {
+    return draft.aiDescription.trim().length >= 100;
+  }
   if (pathEquals(path, LISTING_PATHS.settings)) return true;
-  if (pathEquals(path, LISTING_PATHS.preview)) return true;
+  if (pathEquals(path, LISTING_PATHS.preview)) {
+    // Lightweight gate only — avoid importing validation-service (circular with this module).
+    return (
+      Boolean(draft.listingTypeId) &&
+      Boolean(draft.details.year && draft.details.make && draft.details.model) &&
+      draft.vehiclePhotos.length >= MIN_PHOTOS &&
+      draft.aiDescription.trim().length >= 100 &&
+      Boolean(draft.ownerNotes.trim()) &&
+      Boolean(draft.saleSettings.buyNowPrice || draft.saleSettings.reservePrice) &&
+      Boolean(draft.condition.overallCondition) &&
+      isTitleStatusComplete(draft.condition.titleStatus)
+    );
+  }
   if (pathEquals(path, LISTING_PATHS.buyerPreview)) return true;
 
   return true;
@@ -244,7 +265,9 @@ export function getContinueHref(
   if (pathEquals(path, LISTING_PATHS.ai)) return LISTING_PATHS.settings;
   if (pathEquals(path, LISTING_PATHS.settings)) return LISTING_PATHS.preview;
   if (pathEquals(path, LISTING_PATHS.preview)) return LISTING_PATHS.buyerPreview;
-  if (pathEquals(path, LISTING_PATHS.buyerPreview)) return LISTING_PATHS.review;
+  // Submit is handled on Buyer View Preview (re-validates); do not skip via footer Continue.
+  if (pathEquals(path, LISTING_PATHS.buyerPreview)) return undefined;
+  if (pathEquals(path, LISTING_PATHS.review)) return LISTING_PATHS.buyerPreview;
 
   return undefined;
 }
