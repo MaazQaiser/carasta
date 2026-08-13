@@ -26,6 +26,10 @@ import {
 } from "../sections";
 import { getBuyerListing } from "../demo-listings";
 import type { BuyerListingType } from "../types";
+import { MobileShareListingSheet } from "../MobileShareListingSheet";
+import { useAuth } from "@/lib/context/auth-context";
+import { useListingApprovalWatcher } from "@/components/listing/services/use-listing-approval-watcher";
+import type { PublishedListingRecord } from "@/components/listing/services/published-listing-service";
 
 function reserveProgressFor(listing: BuyerListingView, auction?: Auction | null) {
   if (listing.reserveMet || auction?.reserveMet) return 1;
@@ -41,12 +45,27 @@ function ListingBody({
   galleryBase,
   sellerHref,
   onAuctionUpdate,
+  shareEnabled = true,
+  autoOpenShare = false,
+  pendingReview = false,
+  approvalNotice = null,
+  previewMode = false,
+  onSharePromptHandled,
 }: {
   listing: BuyerListingView;
   auction?: Auction | null;
   galleryBase: string;
   sellerHref: string;
   onAuctionUpdate?: (auction: Auction) => void;
+  /** Share control on gallery — live auctions only. */
+  shareEnabled?: boolean;
+  /** One-time post-approval share menu for the seller. */
+  autoOpenShare?: boolean;
+  pendingReview?: boolean;
+  approvalNotice?: string | null;
+  /** Seller draft preview — same layout, bidding/Buy Now disabled. */
+  previewMode?: boolean;
+  onSharePromptHandled?: () => void;
 }) {
   const router = useRouter();
   const { openPrimary, openSecondary, openContact, openActions, sheets } = useMobileBuyerActions(
@@ -55,6 +74,8 @@ function ListingBody({
     onAuctionUpdate
   );
   const [saved, setSaved] = React.useState(false);
+  const [shareOpen, setShareOpen] = React.useState(false);
+  const sharePromptHandled = React.useRef(false);
   const isAuction = listing.saleMode === "auction" || listing.saleMode === "hybrid";
   const currentBid = auction?.currentBid ?? listing.currentBid ?? listing.askingPrice ?? 0;
   const highestBid = Math.max(
@@ -62,8 +83,21 @@ function ListingBody({
     auction?.bids?.reduce((max, bid) => Math.max(max, bid.amount), 0) ?? 0
   );
   const reserveProgress = reserveProgressFor(listing, auction);
+  const actionsDisabled = pendingReview || previewMode;
+
+  React.useEffect(() => {
+    if (!autoOpenShare || sharePromptHandled.current || previewMode) return;
+    sharePromptHandled.current = true;
+    setShareOpen(true);
+  }, [autoOpenShare, previewMode]);
+
+  const closeShare = () => {
+    setShareOpen(false);
+    onSharePromptHandled?.();
+  };
 
   const openGallery = (index: number) => {
+    if (previewMode) return;
     router.push(`${galleryBase}?i=${index}`);
   };
 
@@ -73,15 +107,16 @@ function ListingBody({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  return (
+  const shell = (
     <MobileBuyerShell
-      title="Carasta Listing"
-      stickyPrimary={isAuction ? "Bid Now" : listing.primaryCta}
-      stickySecondary={listing.secondaryCta}
-      onPrimary={openPrimary}
-      onSecondary={openSecondary}
+      title={previewMode ? "Buyer View Preview" : "Carasta Listing"}
+      stickyPrimary={actionsDisabled ? undefined : isAuction ? "Bid Now" : listing.primaryCta}
+      stickySecondary={actionsDisabled ? undefined : listing.secondaryCta}
+      onPrimary={actionsDisabled ? undefined : openPrimary}
+      onSecondary={actionsDisabled ? undefined : openSecondary}
+      hideSticky={actionsDisabled}
       auctionSticky={
-        isAuction
+        !actionsDisabled && isAuction
           ? {
               currentBid,
               endsAt: listing.auctionEndsAt ?? auction?.endTime,
@@ -92,7 +127,28 @@ function ListingBody({
       }
     >
       <div className="flex flex-col gap-6 px-5 pb-6 pt-4">
-        <div className="space-y-3">
+        {previewMode ? (
+          <div className="rounded-xl border border-[#1b1464]/30 bg-[#f4f5fc] px-3 py-3 text-[13px] leading-relaxed text-[#1b1464]">
+            <p className="text-[11px] font-bold uppercase tracking-wide">Preview Mode</p>
+            <p className="mt-1">
+              This is how buyers will see your listing from Auctions. Bidding and Buy Now are
+              disabled here.
+            </p>
+          </div>
+        ) : null}
+        {approvalNotice ? (
+          <div className="rounded-xl border border-[#b7e4c7] bg-[#edf9f1] px-3 py-2 text-[12px] text-[#1b7a3d]">
+            {approvalNotice}
+          </div>
+        ) : null}
+        {pendingReview ? (
+          <div className="rounded-xl border border-[#f5d78e] bg-[#fff8e8] px-3 py-3 text-[13px] leading-relaxed text-[#8b6500]">
+            This listing is pending Carasta review. It is not live for buyers yet. We&apos;ll notify
+            you in the app and by email once it&apos;s approved.
+          </div>
+        ) : null}
+
+          <div className="space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-[24px] font-extrabold leading-tight text-[#1c1c1e]">
@@ -100,7 +156,7 @@ function ListingBody({
               </h1>
               <p className="mt-1 text-[13px] text-[#636366]">{listing.subtitle}</p>
             </div>
-            {!isAuction ? (
+            {!isAuction && !pendingReview ? (
               <p className="shrink-0 text-[18px] font-extrabold text-[#1b1464]">
                 {listing.priceLabel}
               </p>
@@ -109,7 +165,7 @@ function ListingBody({
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex h-7 items-center rounded-full bg-[#1b1464] px-2.5 text-[11px] font-semibold text-white">
-              {listing.sellerBadge}
+              {previewMode ? "Preview" : pendingReview ? "Pending review" : listing.sellerBadge}
             </span>
             <span className="inline-flex items-center gap-1 text-[12px] text-[#636366]">
               <MapPin className="h-3.5 w-3.5" />
@@ -164,20 +220,16 @@ function ListingBody({
             >
               <Heart className={`h-4 w-4 ${saved ? "fill-current" : ""}`} />
             </button>
-            <button
-              type="button"
-              aria-label="Share listing"
-              onClick={() => {
-                if (typeof navigator !== "undefined" && navigator.share) {
-                  void navigator.share({ title: listing.title, url: window.location.href });
-                } else if (typeof navigator !== "undefined") {
-                  void navigator.clipboard?.writeText(window.location.href);
-                }
-              }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#1b1464] shadow-sm"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
+            {shareEnabled ? (
+              <button
+                type="button"
+                aria-label="Share listing"
+                onClick={() => setShareOpen(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#1b1464] shadow-sm"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -274,30 +326,34 @@ function ListingBody({
           </div>
           <button
             type="button"
+            disabled={actionsDisabled}
             onClick={openContact}
-            className="mt-3 h-11 w-full rounded-lg border border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
+            className="mt-3 h-11 w-full rounded-lg border border-[#1b1464] text-[13px] font-semibold text-[#1b1464] disabled:opacity-50"
           >
             Contact Seller
           </button>
           <button
             type="button"
+            disabled={actionsDisabled}
             onClick={openActions}
-            className="mt-2 h-11 w-full rounded-lg border border-[#e5e5ea] text-[13px] font-semibold text-[#1c1c1e]"
+            className="mt-2 h-11 w-full rounded-lg border border-[#e5e5ea] text-[13px] font-semibold text-[#1c1c1e] disabled:opacity-50"
           >
             More purchase options
           </button>
           <button
             type="button"
+            disabled={actionsDisabled}
             onClick={openPrimary}
-            className="mt-2 h-11 w-full rounded-lg bg-[#1b1464] text-[13px] font-semibold text-white"
+            className="mt-2 h-11 w-full rounded-lg bg-[#1b1464] text-[13px] font-semibold text-white disabled:opacity-50"
           >
             {isAuction ? "Bid Now" : listing.primaryCta}
           </button>
           {!isAuction ? (
             <button
               type="button"
+              disabled={actionsDisabled}
               onClick={openSecondary}
-              className="mt-2 h-11 w-full rounded-lg border border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
+              className="mt-2 h-11 w-full rounded-lg border border-[#1b1464] text-[13px] font-semibold text-[#1b1464] disabled:opacity-50"
             >
               {listing.secondaryCta}
             </button>
@@ -305,8 +361,30 @@ function ListingBody({
         </Section>
       </div>
       {sheets}
+      <MobileShareListingSheet
+        open={shareOpen}
+        onClose={closeShare}
+        vehicleLabel={listing.title}
+      />
     </MobileBuyerShell>
   );
+
+  if (previewMode) {
+    // Avoid nesting another phone frame — listing chrome already wraps this step.
+    const children = React.Children.toArray(
+      (shell as React.ReactElement<{ children?: React.ReactNode }>).props.children
+    );
+    return <>{children}</>;
+  }
+
+  return shell;
+}
+
+/** Exported for seller Buyer View Preview (draft → buyer layout). */
+export function BuyerListingBody(
+  props: React.ComponentProps<typeof ListingBody>
+) {
+  return <ListingBody {...props} />;
 }
 
 /** Demo type detail (design samples). */
@@ -360,19 +438,44 @@ export function MobileBuyerDetailScreen({ type }: { type: BuyerListingType }) {
 
 /** Live published listing detail by vehicle/auction id. */
 export function MobileBuyerLiveDetailScreen({ id }: { id: string }) {
+  const { user } = useAuth();
   const [listing, setListing] = React.useState<BuyerListingView | null | undefined>(undefined);
   const [auction, setAuction] = React.useState<Auction | null>(null);
+  const [record, setRecord] = React.useState<PublishedListingRecord | null>(null);
+  const [approvalNotice, setApprovalNotice] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    const record = PublishedListingService.resolve(id);
-    if (!record) {
+  const refresh = React.useCallback(() => {
+    const next = PublishedListingService.resolve(id);
+    if (!next) {
       setListing(null);
       setAuction(null);
+      setRecord(null);
       return;
     }
-    setAuction(record.auction);
-    setListing(mapAuctionToBuyerListing(record.auction));
+    setRecord(next);
+    setAuction(next.auction);
+    setListing(mapAuctionToBuyerListing(next.auction));
   }, [id]);
+
+  React.useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  useListingApprovalWatcher({
+    onApproved: (approved) => {
+      const match = approved.find(
+        (r) => r.auction.id === id || r.auction.vehicle.id === id
+      );
+      if (match) {
+        setApprovalNotice(
+          `Approved — we also emailed you. Open this auction anytime from your profile Auctions/Listings tab.`
+        );
+        refresh();
+      } else if (approved.length) {
+        refresh();
+      }
+    },
+  });
 
   if (listing === undefined) {
     return (
@@ -382,7 +485,7 @@ export function MobileBuyerLiveDetailScreen({ id }: { id: string }) {
     );
   }
 
-  if (!listing) {
+  if (!listing || !record) {
     return (
       <MobileBuyerShell title="Listing" hideSticky>
         <div className="px-6 py-10 text-[14px] text-[#636366]">
@@ -392,12 +495,29 @@ export function MobileBuyerLiveDetailScreen({ id }: { id: string }) {
     );
   }
 
+  const pendingReview = (record.moderationStatus ?? "approved") === "pending";
+  const isSeller =
+    Boolean(user?.id) &&
+    (user!.id === record.sellerId || user!.id === record.auction.vehicle.seller.id);
+  const shareEnabled = !pendingReview && auction?.status === "live";
+  const autoOpenShare = Boolean(
+    isSeller && !pendingReview && record.sharePromptPending && shareEnabled
+  );
+
   return (
     <ListingBody
       listing={listing}
       auction={auction}
       galleryBase={`/m/listings/v/${listing.vehicleId}/gallery`}
       sellerHref={`/m/listings/v/${listing.vehicleId}/seller`}
+      shareEnabled={shareEnabled}
+      autoOpenShare={autoOpenShare}
+      pendingReview={pendingReview}
+      approvalNotice={approvalNotice}
+      onSharePromptHandled={() => {
+        PublishedListingService.clearSharePrompt(record.auction.id);
+        setRecord((prev) => (prev ? { ...prev, sharePromptPending: false } : prev));
+      }}
       onAuctionUpdate={(next) => {
         setAuction(next);
         setListing(mapAuctionToBuyerListing(next));

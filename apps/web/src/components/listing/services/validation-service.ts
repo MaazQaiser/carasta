@@ -154,7 +154,7 @@ const RULES: Rule[] = [
           stepId: "specifications",
           href: LISTING_PATHS.stockSpecs,
           field: "hasModifications",
-          message: "Confirm whether the vehicle is factory original.",
+          message: "Confirm whether the vehicle is stock.",
           severity: "error",
         };
   },
@@ -167,6 +167,17 @@ const RULES: Rule[] = [
           href: LISTING_PATHS.photos,
           field: "vehiclePhotos",
           message: `Add at least ${MIN_LISTING_PHOTOS} vehicle photos.`,
+          severity: "error",
+        },
+  (draft) =>
+    draft.videos.length >= 1
+      ? null
+      : {
+          id: "videos-required",
+          stepId: "photos",
+          href: LISTING_PATHS.photos,
+          field: "videos",
+          message: "Add at least 1 video of your vehicle.",
           severity: "error",
         },
   (draft) =>

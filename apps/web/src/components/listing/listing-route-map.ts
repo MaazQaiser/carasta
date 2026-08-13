@@ -26,6 +26,7 @@ export const LISTING_PATHS = {
   ai: `${LISTING_BASE}/ai`,
   settings: `${LISTING_BASE}/settings`,
   preview: `${LISTING_BASE}/preview`,
+  buyerPreview: `${LISTING_BASE}/buyer-preview`,
   review: `${LISTING_BASE}/review`,
   submitted: `${LISTING_BASE}/submitted`,
   share: `${LISTING_BASE}/share`,
@@ -124,6 +125,7 @@ export function resolveListingProgressStepId(pathname: string): string | null {
   if (path.startsWith(LISTING_PATHS.ai)) return "ai";
   if (path.startsWith(LISTING_PATHS.settings)) return "settings";
   if (path.startsWith(LISTING_PATHS.preview)) return "preview";
+  if (path.startsWith(LISTING_PATHS.buyerPreview)) return "buyer-preview";
   if (path.startsWith(LISTING_PATHS.review)) return "review";
 
   return null;
@@ -205,12 +207,13 @@ export function canContinueOnPath(pathname: string, draft: ListingDraft): boolea
 
   if (pathEquals(path, LISTING_PATHS.condition)) return true;
   if (pathEquals(path, LISTING_PATHS.photos)) {
-    return draft.vehiclePhotos.length >= MIN_PHOTOS;
+    return draft.vehiclePhotos.length >= MIN_PHOTOS && draft.videos.length >= 1;
   }
   if (pathEquals(path, LISTING_PATHS.notes)) return Boolean(draft.ownerNotes.trim());
   if (pathEquals(path, LISTING_PATHS.ai)) return Boolean(draft.aiDescription.trim());
   if (pathEquals(path, LISTING_PATHS.settings)) return true;
   if (pathEquals(path, LISTING_PATHS.preview)) return true;
+  if (pathEquals(path, LISTING_PATHS.buyerPreview)) return true;
 
   return true;
 }
@@ -240,7 +243,8 @@ export function getContinueHref(
   if (pathEquals(path, LISTING_PATHS.notes)) return LISTING_PATHS.ai;
   if (pathEquals(path, LISTING_PATHS.ai)) return LISTING_PATHS.settings;
   if (pathEquals(path, LISTING_PATHS.settings)) return LISTING_PATHS.preview;
-  if (pathEquals(path, LISTING_PATHS.preview)) return LISTING_PATHS.review;
+  if (pathEquals(path, LISTING_PATHS.preview)) return LISTING_PATHS.buyerPreview;
+  if (pathEquals(path, LISTING_PATHS.buyerPreview)) return LISTING_PATHS.review;
 
   return undefined;
 }
@@ -280,7 +284,8 @@ export function getBackHref(
   if (pathEquals(path, LISTING_PATHS.ai)) return LISTING_PATHS.notes;
   if (pathEquals(path, LISTING_PATHS.settings)) return LISTING_PATHS.ai;
   if (pathEquals(path, LISTING_PATHS.preview)) return LISTING_PATHS.settings;
-  if (pathEquals(path, LISTING_PATHS.review)) return LISTING_PATHS.preview;
+  if (pathEquals(path, LISTING_PATHS.buyerPreview)) return LISTING_PATHS.preview;
+  if (pathEquals(path, LISTING_PATHS.review)) return LISTING_PATHS.buyerPreview;
 
   return null;
 }

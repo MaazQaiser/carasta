@@ -5,10 +5,35 @@ import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import { useMobileListingChrome } from "../MobileListingRuntime";
 import { MobileListingShell } from "../MobileListingShell";
 
+function modificationsSummary(draft: ReturnType<typeof useListingBuilder>["draft"]) {
+  const entries = draft.modificationWorkspace.entries.filter(
+    (entry) => entry.completed || entry.title.trim()
+  );
+  if (draft.modificationWorkspace.hasModifications === false || entries.length === 0) {
+    return "No modifications reported";
+  }
+  return `${entries.length} modification${entries.length === 1 ? "" : "s"} added`;
+}
+
 export function MobilePreviewScreen() {
   const { draft } = useListingBuilder();
   const { navigate } = useMobileListingChrome();
-  const title = `${draft.details.year || "2018"} ${draft.details.make || "Porsche"} ${draft.details.model || "911 GT3 RS"}`;
+  const title = [draft.details.year, draft.details.make, draft.details.model]
+    .filter(Boolean)
+    .join(" ") || "Your vehicle";
+  const photoCount = draft.vehiclePhotos.length;
+  const hero =
+    draft.vehiclePhotos.find((p) => p.previewUrl)?.previewUrl ||
+    "https://picsum.photos/seed/carasta-preview/700/420";
+  const condition =
+    draft.condition.overallCondition.trim() || "Condition not set";
+  const description =
+    draft.aiDescription.trim() ||
+    draft.ownerNotes.trim() ||
+    "Pricing description and listing text";
+  const notesSummary = draft.ownerNotes.trim()
+    ? `${draft.ownerNotes.trim().slice(0, 80)}${draft.ownerNotes.trim().length > 80 ? "…" : ""}`
+    : "No owner notes yet";
 
   const specsHref =
     draft.listingTypeId === "stock-lightly-modified"
@@ -22,48 +47,58 @@ export function MobilePreviewScreen() {
             : "/mobile-listing/specifications";
 
   return (
-    <MobileListingShell stepId="preview" continueDisabled={false} continueHref="/mobile-listing/review">
+    <MobileListingShell
+      stepId="preview"
+      continueDisabled={false}
+      continueHref="/mobile-listing/buyer-preview"
+    >
       <div className="flex flex-col gap-4 px-6 pt-4 pb-6">
-        <h1 className="text-[28px] font-extrabold text-[#1c1c1e]">Listing Preview</h1>
+        <h1 className="text-[28px] font-extrabold text-[#1c1c1e]">Listing Review</h1>
         <div className="overflow-hidden rounded-xl border border-[#e5e5ea]">
           <img
-            src="https://picsum.photos/seed/carasta-preview/700/420"
+            src={hero}
             alt="Vehicle preview"
             className="aspect-[16/10] w-full object-cover"
           />
           <div className="p-3">
             <p className="text-[12px] font-semibold text-[#1c1c1e]">{title}</p>
-            <p className="mt-1 text-[18px] font-extrabold text-[#1b1464]">
-              ${draft.saleSettings.buyNowPrice || "125,000"}
-            </p>
           </div>
         </div>
         <PreviewRow
           label="Vehicle Details"
-          value={`${title} Coupe`}
+          value={`${title}${draft.details.trim ? ` ${draft.details.trim}` : ""}`}
           onPress={() => navigate("/mobile-listing/details")}
         />
         <PreviewRow
           label="Specifications"
-          value={`${draft.details.engine || "4.0L Flat-6"}, ${draft.details.transmission || "7-Speed PDK"}, RWD`}
+          value={`${draft.details.engine || "Engine TBD"}, ${draft.details.transmission || "Transmission TBD"}, ${draft.details.drivetrain || "Drivetrain TBD"}`}
+          onPress={() => navigate(specsHref)}
+        />
+        <PreviewRow
+          label="Modifications"
+          value={modificationsSummary(draft)}
           onPress={() => navigate(specsHref)}
         />
         <PreviewRow
           label="Condition"
-          value="Excellent (no cosmetic or mechanical flaws)"
+          value={condition}
           onPress={() => navigate("/mobile-listing/condition")}
         />
         <PreviewRow
           label="Photos"
-          value={`${draft.vehiclePhotos.length || 12} photos uploaded`}
+          value={
+            photoCount > 0
+              ? `${photoCount} photo${photoCount === 1 ? "" : "s"} uploaded`
+              : "No photos uploaded"
+          }
           onPress={() => navigate("/mobile-listing/photos")}
         />
         <PreviewRow
           label="Owner's Notes"
-          value="5 facts attached"
+          value={notesSummary}
           onPress={() => navigate("/mobile-listing/notes")}
         />
-        <PreviewRow label="Description" value="Pricing description and listing text" />
+        <PreviewRow label="Description" value={description} />
       </div>
     </MobileListingShell>
   );

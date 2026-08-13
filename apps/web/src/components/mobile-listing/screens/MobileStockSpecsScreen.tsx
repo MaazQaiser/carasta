@@ -54,17 +54,12 @@ export function MobileStockSpecsScreen() {
             Specifications &amp; Light Modifications
           </h1>
           <p className="mt-2 text-[14px] text-[#636366]">
-            Confirm whether this vehicle is factory original, then document any light changes.
+            Confirm whether this vehicle is stock or if it has been lightly modified.
           </p>
         </div>
 
         <section className="rounded-xl border border-[#e5e5ea] p-4">
-          <h2 className="text-[15px] font-bold text-[#1c1c1e]">
-            Is this vehicle essentially factory original?
-          </h2>
-          <p className="mt-1 text-[12px] text-[#636366]">
-            Choose Yes if it remains essentially as delivered from the factory.
-          </p>
+          <h2 className="text-[15px] font-bold text-[#1c1c1e]">Is this vehicle stock?</h2>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -95,7 +90,7 @@ export function MobileStockSpecsScreen() {
 
         {hasModifications === false ? (
           <div className="rounded-xl bg-[#f4f5fc] px-4 py-3 text-[13px] text-[#1b1464]">
-            Factory original selected — light modification entries are hidden.
+            Stock vehicle selected - no modifications will be able to be added
           </div>
         ) : null}
 
@@ -104,15 +99,15 @@ export function MobileStockSpecsScreen() {
             <div>
               <h2 className="text-[16px] font-bold text-[#1c1c1e]">Light Modifications</h2>
               <p className="text-[12px] text-[#636366]">
-                Add each light change with category, work details, and documents.
+                Add modifications by category with details and documents
               </p>
             </div>
 
             {entries.length === 0 ? (
               <div className="rounded-xl border border-dashed border-[#d1d1d6] px-4 py-8 text-center">
-                <p className="text-[14px] font-semibold text-[#1c1c1e]">No light modifications yet</p>
+                <p className="text-[14px] font-semibold text-[#1c1c1e]">No modifications added</p>
                 <p className="mt-1 text-[12px] text-[#636366]">
-                  Document wheels, stereo upgrades, or other light changes.
+                  Add wheels, exhaust, window tint, wrap, etc.
                 </p>
                 <button
                   type="button"

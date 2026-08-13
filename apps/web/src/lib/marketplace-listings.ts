@@ -86,7 +86,7 @@ export function mergePublishedAuctions(
   seed: Auction[],
   options: { filters?: AuctionFilters; sort?: AuctionSortField } = {}
 ): Auction[] {
-  const published = PublishedListingService.load()
+  const published = PublishedListingService.loadApproved()
     .map((r) => r.auction)
     .filter((auction) => auctionMatchesFilters(auction, options.filters ?? {}));
 
@@ -98,7 +98,7 @@ export function mergePublishedAuctions(
 /** Prepend published vehicles for search / compare surfaces. */
 export function mergePublishedVehicles(seed: Vehicle[], query?: string): Vehicle[] {
   const q = query?.trim().toLowerCase() ?? "";
-  let published = PublishedListingService.load().map((r) => r.auction.vehicle);
+  let published = PublishedListingService.loadApproved().map((r) => r.auction.vehicle);
 
   if (q) {
     published = published.filter((v) => {
@@ -126,7 +126,7 @@ export function mergePublishedVehicles(seed: Vehicle[], query?: string): Vehicle
 export function searchPublishedAuctions(query: string, limit = 8): Auction[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
-  return PublishedListingService.load()
+  return PublishedListingService.loadApproved()
     .filter((r) => {
       const a = r.auction;
       const text = [
@@ -169,6 +169,9 @@ export function placePublishedBid(
   }
 
   const auction = record.auction;
+  if ((record.moderationStatus ?? "approved") === "pending" || auction.status === "upcoming") {
+    throw new Error("This auction is not live yet.");
+  }
   if (auction.status === "completed" || auction.status === "cancelled") {
     throw new Error("This auction is no longer accepting bids.");
   }

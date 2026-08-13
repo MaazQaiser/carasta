@@ -15,7 +15,7 @@ export interface MobileListingStep {
   href: string;
 }
 
-export const MOBILE_LISTING_TOTAL_STEPS = 15;
+export const MOBILE_LISTING_TOTAL_STEPS = 16;
 
 export const MOBILE_LISTING_TYPES: MobileListingType[] = [
   {
@@ -76,13 +76,14 @@ export const MOBILE_LISTING_STEPS: MobileListingStep[] = [
   { index: 6, total: MOBILE_LISTING_TOTAL_STEPS, id: "photos", label: "Photos & Documents", href: "/mobile-listing/photos" },
   { index: 7, total: MOBILE_LISTING_TOTAL_STEPS, id: "notes", label: "Owner Notes", href: "/mobile-listing/notes" },
   { index: 8, total: MOBILE_LISTING_TOTAL_STEPS, id: "ai", label: "AI Description", href: "/mobile-listing/ai" },
-  { index: 9, total: MOBILE_LISTING_TOTAL_STEPS, id: "settings", label: "Sale Settings", href: "/mobile-listing/settings" },
-  { index: 10, total: MOBILE_LISTING_TOTAL_STEPS, id: "preview", label: "Listing Preview", href: "/mobile-listing/preview" },
-  { index: 11, total: MOBILE_LISTING_TOTAL_STEPS, id: "review", label: "Review & Submit", href: "/mobile-listing/review" },
-  { index: 12, total: MOBILE_LISTING_TOTAL_STEPS, id: "submitted", label: "Listing Submitted", href: "/mobile-listing/submitted" },
-  { index: 13, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-external", label: "External Share", href: "/mobile-listing/share/external" },
-  { index: 14, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-community", label: "Carasta Community Share", href: "/mobile-listing/share/community" },
-  { index: 15, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-confirmation", label: "Share Confirmation", href: "/mobile-listing/share/confirmation" },
+  { index: 9, total: MOBILE_LISTING_TOTAL_STEPS, id: "settings", label: "Auction Settings", href: "/mobile-listing/settings" },
+  { index: 10, total: MOBILE_LISTING_TOTAL_STEPS, id: "preview", label: "Listing Review", href: "/mobile-listing/preview" },
+  { index: 11, total: MOBILE_LISTING_TOTAL_STEPS, id: "buyer-preview", label: "Buyer View Preview", href: "/mobile-listing/buyer-preview" },
+  { index: 12, total: MOBILE_LISTING_TOTAL_STEPS, id: "review", label: "Submit to Carasta", href: "/mobile-listing/review" },
+  { index: 13, total: MOBILE_LISTING_TOTAL_STEPS, id: "submitted", label: "Listing Submitted", href: "/mobile-listing/submitted" },
+  { index: 14, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-external", label: "External Share", href: "/mobile-listing/share/external" },
+  { index: 15, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-community", label: "Carasta Community Share", href: "/mobile-listing/share/community" },
+  { index: 16, total: MOBILE_LISTING_TOTAL_STEPS, id: "share-confirmation", label: "Share Confirmation", href: "/mobile-listing/share/confirmation" },
 ];
 
 /** Canonical shared back navigation for consistent cross-type routing. */
@@ -106,7 +107,8 @@ export const MOBILE_SHARED_BACK_HREF: Record<string, string> = {
   ai: "/mobile-listing/notes",
   settings: "/mobile-listing/ai",
   preview: "/mobile-listing/settings",
-  review: "/mobile-listing/preview",
+  "buyer-preview": "/mobile-listing/preview",
+  review: "/mobile-listing/buyer-preview",
   submitted: "/mobile-listing/review",
   "share-external": "/mobile-listing/submitted",
   "share-community": "/mobile-listing/share/external",

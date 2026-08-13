@@ -8,21 +8,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { FieldLabel, textareaClassName } from "../fields";
 import { ListingStep } from "../ListingStep";
 import { ListingSection } from "../ListingSection";
 import { useListingBuilder } from "../ListingBuilderContext";
 import type { ListingConditionHistory } from "../types";
+import {
+  formatTitleStatuses,
+  parseTitleStatuses,
+  TITLE_STATUS_OPTIONS,
+  toggleTitleStatus,
+  type TitleStatusOption,
+} from "../specs/title-status";
 
-const TITLE_STATUSES = ["Clean", "Rebuilt", "Salvage", "Lemon", "Other / Unknown"];
 const OVERALL_CONDITIONS = ["Excellent", "Very Good", "Good", "Fair", "Project"];
 
 export function ConditionHistoryScreen() {
   const { draft, updateCondition } = useListingBuilder();
   const c = draft.condition;
+  const titleStatuses = parseTitleStatuses(c.titleStatus);
 
   const set = (key: keyof ListingConditionHistory, value: string) =>
     updateCondition({ [key]: value });
+
+  const onToggleTitle = (option: TitleStatusOption) => {
+    const next = toggleTitleStatus(titleStatuses, option);
+    set("titleStatus", formatTitleStatuses(next));
+  };
 
   return (
     <ListingStep
@@ -50,19 +63,35 @@ export function ConditionHistoryScreen() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ListingSection title="Title Status">
-            <FieldLabel htmlFor="title-status">Status</FieldLabel>
-            <Select value={c.titleStatus || undefined} onValueChange={(v) => set("titleStatus", v)}>
-              <SelectTrigger id="title-status">
-                <SelectValue placeholder="Select title status" />
-              </SelectTrigger>
-              <SelectContent>
-                {TITLE_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FieldLabel>Status</FieldLabel>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Select one of Clean, Salvage, or Rebuilt. Lien can be combined. Unknown stands alone.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {TITLE_STATUS_OPTIONS.map((option) => {
+                const selected = titleStatuses.includes(option);
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => onToggleTitle(option)}
+                    className={cn(
+                      "h-9 rounded-lg border px-3 text-sm font-medium transition-colors",
+                      selected
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-input bg-background text-foreground hover:bg-muted"
+                    )}
+                  >
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+            {titleStatuses.length ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Selected: {formatTitleStatuses(titleStatuses)}
+              </p>
+            ) : null}
           </ListingSection>
 
           <ListingSection title="Overall Condition">

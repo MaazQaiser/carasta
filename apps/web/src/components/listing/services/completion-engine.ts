@@ -162,11 +162,13 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
       label: "Photos",
       href: LISTING_PATHS.photos,
       weight: 15,
-      done: draft.vehiclePhotos.length >= MIN_LISTING_PHOTOS,
-      requiredMissing:
-        draft.vehiclePhotos.length < MIN_LISTING_PHOTOS
+      done: draft.vehiclePhotos.length >= MIN_LISTING_PHOTOS && draft.videos.length >= 1,
+      requiredMissing: [
+        ...(draft.vehiclePhotos.length < MIN_LISTING_PHOTOS
           ? [`At least ${MIN_LISTING_PHOTOS} vehicle photos`]
-          : [],
+          : []),
+        ...(draft.videos.length < 1 ? ["At least 1 vehicle video"] : []),
+      ],
       warnings: [],
     },
     {
@@ -198,7 +200,7 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
     },
     {
       id: "settings",
-      label: "Sale Settings",
+      label: "Auction Settings",
       href: LISTING_PATHS.settings,
       weight: 10,
       done: Boolean(draft.saleSettings.saleType && draft.saleSettings.reservePrice),
@@ -215,10 +217,12 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
   const overallPercent = totalWeight === 0 ? 0 : Math.round((earned / totalWeight) * 100);
 
   const missingRequiredFields = categories.flatMap((c) => c.requiredMissing);
-  const missingPhotos =
-    draft.vehiclePhotos.length < MIN_LISTING_PHOTOS
+  const missingPhotos = [
+    ...(draft.vehiclePhotos.length < MIN_LISTING_PHOTOS
       ? [`At least ${MIN_LISTING_PHOTOS} vehicle photos`]
-      : [];
+      : []),
+    ...(draft.videos.length < 1 ? ["At least 1 vehicle video"] : []),
+  ];
   const missingDocuments = draft.documents.length === 0 ? ["Supporting documents"] : [];
   const incompleteSections = categories
     .filter((c) => !c.done)

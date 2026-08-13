@@ -168,6 +168,7 @@ export function ModificationEntryCard({
           <p className="text-sm text-muted-foreground">No description yet.</p>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <Meta label="Completed during" value={entry.completedDuring} />
           <Meta label="Type of work" value={entry.typeOfWork} />
           <Meta label="Parts / brand" value={entry.partsBrand} />
           <Meta label="Manufacturer" value={entry.manufacturer} />

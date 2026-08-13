@@ -24,6 +24,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { PostCard } from "@/components/community/PostCard";
 import { PublishedListingService } from "@/components/listing/services/published-listing-service";
+import { useListingApprovalWatcher } from "@/components/listing/services/use-listing-approval-watcher";
 import { cn, formatPrice, formatMileage } from "@/lib/utils";
 
 type ProfileMode = "system" | "community";
@@ -96,9 +97,11 @@ function GarageCard({ entry }: { entry: GarageEntry }) {
 
 function ListingCard({ auction }: { auction: Auction }) {
   const img = auction.vehicle.images[0];
+  const pending = auction.status === "upcoming" || auction.vehicle.status === "pending-review";
+  const href = `/m/listings/v/${auction.vehicle.id}`;
   return (
     <Link
-      href={`/vehicles/${auction.vehicle.id}`}
+      href={href}
       className="rounded-2xl border bg-card overflow-hidden hover:shadow-md transition-all duration-200 block"
     >
       <div className="aspect-[16/10] bg-muted overflow-hidden">
@@ -110,12 +113,18 @@ function ListingCard({ auction }: { auction: Auction }) {
       <div className="p-4">
         <div className="flex items-center gap-2 mb-1">
           <Badge variant="secondary" className="capitalize text-[10px]">
-            {auction.status.replace("-", " ")}
+            {pending ? "Pending review" : auction.status.replace("-", " ")}
           </Badge>
         </div>
         <p className="font-semibold text-sm line-clamp-2">{auction.vehicle.title}</p>
-        <p className="text-sm font-medium mt-2">{formatPrice(auction.currentBid)}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{auction.bidCount} bids</p>
+        {pending ? (
+          <p className="text-xs text-muted-foreground mt-2">Awaiting Carasta approval</p>
+        ) : (
+          <>
+            <p className="text-sm font-medium mt-2">{formatPrice(auction.currentBid)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{auction.bidCount} bids</p>
+          </>
+        )}
       </div>
     </Link>
   );
@@ -204,9 +213,9 @@ export function ProfileClient({ user, isOwn, tabs }: Props) {
 
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab === "listings" || tab === "garage" || tab === "bids" || tab === "purchases" || tab === "saved" || tab === "followers" || tab === "following") {
+    if (tab === "listings" || tab === "auctions" || tab === "garage" || tab === "bids" || tab === "purchases" || tab === "saved" || tab === "followers" || tab === "following") {
       setMode("system");
-      setSystemTab(tab);
+      setSystemTab(tab === "auctions" ? "listings" : tab);
     }
   }, [searchParams]);
 
@@ -217,6 +226,13 @@ export function ProfileClient({ user, isOwn, tabs }: Props) {
     }
     setPublishedListings(PublishedListingService.getAuctionsForSeller(user.id));
   }, [isOwn, user.id]);
+
+  useListingApprovalWatcher({
+    onApproved: () => {
+      if (!isOwn) return;
+      setPublishedListings(PublishedListingService.getAuctionsForSeller(user.id));
+    },
+  });
 
   const listings = useMemo(() => {
     const builderListings = isOwn
@@ -390,7 +406,7 @@ export function ProfileClient({ user, isOwn, tabs }: Props) {
         <Tabs value={systemTab} onValueChange={setSystemTab} key="system">
           <TabsList className="mb-6">
             <TabsTrigger value="garage">Garage</TabsTrigger>
-            <TabsTrigger value="listings">Listings</TabsTrigger>
+            <TabsTrigger value="listings">Auctions</TabsTrigger>
             {isOwn && <TabsTrigger value="bids">My Bids</TabsTrigger>}
             {isOwn && <TabsTrigger value="purchases">Purchases</TabsTrigger>}
             {isOwn && <TabsTrigger value="saved">Saved</TabsTrigger>}

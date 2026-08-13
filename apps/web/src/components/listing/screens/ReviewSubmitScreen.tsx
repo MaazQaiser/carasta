@@ -81,7 +81,7 @@ export function ReviewSubmitScreen() {
 
   return (
     <ListingStep
-      title="Review & Submit"
+      title="Submit to Carasta"
       description="Final check before publishing. Validation and scoring use the shared production services."
     >
       <div
@@ -203,7 +203,7 @@ export function ReviewSubmitScreen() {
                 Submitting…
               </>
             ) : (
-              "Submit Listing"
+              "Submit to Carasta"
             )}
           </Button>
         </div>

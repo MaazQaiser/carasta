@@ -100,6 +100,8 @@ export interface ModificationEntry {
   manufacturer: string;
   specifications: string;
   workPerformedBy: string;
+  /** When the modification was completed (stock light-mod flow). */
+  completedDuring: string;
   shopBuilder: string;
   installationDate: string;
   dateStatus: string;

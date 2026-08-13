@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input";
 import { ListingStep } from "../ListingStep";
 import { useListingBuilder } from "../ListingBuilderContext";
 import { LISTING_PATHS } from "../listing-route-map";
-import { ShopBuilderService, type ShopBuilderRecord } from "@/components/mobile-listing/shop-builder/shop-builder-service";
+import {
+  ShopBuilderService,
+  type ShopBuilderRecord,
+} from "@/components/mobile-listing/shop-builder/shop-builder-service";
 import {
   applyShopBuilderSelection,
   ShopBuilderSession,
@@ -63,8 +66,8 @@ export function ListingShopBuilderScreen() {
 
   return (
     <ListingStep
-      title={session.label || "Shop / Builder / Company"}
-      description="Search existing shops or add a new Shop / Builder / Company."
+      title={session.label || "Shop / Builder"}
+      description="Search and select an existing shop first to avoid duplicates. Only add a new one if it isn’t listed."
     >
       <div className="max-w-xl space-y-4">
         <div className="relative">
@@ -78,23 +81,13 @@ export function ListingShopBuilderScreen() {
           />
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={() => router.push(LISTING_PATHS.shopBuilderAdd)}
-        >
-          <Plus className="h-4 w-4" />
-          Add new Shop / Builder / Company
-        </Button>
-
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {results.length} result{results.length === 1 ? "" : "s"}
           </p>
           {results.length === 0 ? (
             <div className="rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-              No matches. Add a new Shop / Builder / Company to continue.
+              No matches. Try another search, then add a new Shop / Builder if needed.
             </div>
           ) : (
             <ul className="divide-y rounded-xl border">
@@ -108,6 +101,7 @@ export function ListingShopBuilderScreen() {
                     <span className="font-medium">{shop.name}</span>
                     <span className="text-xs text-muted-foreground">
                       {[shop.city, shop.state, shop.type].filter(Boolean).join(" · ")}
+                      {shop.custom ? " · Added by you" : ""}
                     </span>
                   </button>
                 </li>
@@ -115,6 +109,16 @@ export function ListingShopBuilderScreen() {
             </ul>
           )}
         </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => router.push(LISTING_PATHS.shopBuilderAdd)}
+        >
+          <Plus className="h-4 w-4" />
+          Add New Shop / Builder
+        </Button>
 
         <Button
           type="button"

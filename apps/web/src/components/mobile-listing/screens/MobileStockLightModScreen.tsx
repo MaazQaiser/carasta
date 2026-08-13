@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Plus } from "lucide-react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import type { ListingMediaItem, ModificationEntry } from "@/components/listing/types";
 import {
-  STOCK_DATE_STATUS_OPTIONS,
+  STOCK_COMPLETED_DURING_OPTIONS,
   STOCK_MODIFICATION_CATEGORIES,
-  STOCK_TYPE_OF_WORK_OPTIONS,
+  STOCK_PROFESSIONAL_SHOP_OPTION,
   STOCK_WORK_PERFORMED_BY_OPTIONS,
 } from "@/components/listing/specs/stock-lightly-modified";
 import { ORIGINAL_PARTS_OPTIONS } from "@/components/listing/specs/options";
@@ -93,6 +94,13 @@ export function MobileStockLightModScreen() {
   const patch = (partial: Partial<ModificationEntry>) =>
     setForm((prev) => (prev ? { ...prev, ...partial } : prev));
 
+  const setWorkPerformedBy = (value: string) => {
+    patch({
+      workPerformedBy: value,
+      ...(value !== STOCK_PROFESSIONAL_SHOP_OPTION ? { shopBuilder: "" } : null),
+    });
+  };
+
   const addFiles = (key: "photos" | "receipt", files: FileList | null) => {
     if (!files?.length) return;
     const items: ListingMediaItem[] = Array.from(files).map((file) => ({
@@ -108,6 +116,7 @@ export function MobileStockLightModScreen() {
   };
 
   const canSave = Boolean(form.categoryId && form.title.trim());
+  const showShopBuilder = form.workPerformedBy === STOCK_PROFESSIONAL_SHOP_OPTION;
 
   const onSave = () => {
     if (!canSave) return;
@@ -118,6 +127,15 @@ export function MobileStockLightModScreen() {
   const onCancel = () => {
     cancelEntryEdit();
     router.push("/mobile-listing/stock/specifications");
+  };
+
+  const openShopPicker = () => {
+    openShopBuilder({
+      target: "entry.shopBuilder",
+      entry: form,
+      label: "Shop / Builder",
+      returnTo: `/mobile-listing/stock/modifications/add?id=${form.id}`,
+    });
   };
 
   return (
@@ -135,7 +153,7 @@ export function MobileStockLightModScreen() {
         <div>
           <h1 className="text-[28px] font-extrabold text-[#1c1c1e]">Light Modification</h1>
           <p className="mt-2 text-[14px] text-[#636366]">
-            Document a light change with category, work details, and supporting media.
+            Add modifications by category with details and documents
           </p>
         </div>
 
@@ -153,83 +171,72 @@ export function MobileStockLightModScreen() {
         />
 
         <FieldInput
-          label="Entry Title"
+          label="Modification"
           value={form.title}
           placeholder="e.g. Aftermarket wheels"
           onChange={(value) => patch({ title: value })}
         />
 
         <FieldTextarea
-          label="Description"
+          label="Modification Details"
           value={form.description}
-          placeholder="What was done?"
+          placeholder="Describe what was modified, replaced, upgraded or added. Include and details about the parts used and changes made"
           onChange={(value) => patch({ description: value })}
         />
 
         <FieldSelect
-          label="Type of Work"
-          value={form.typeOfWork}
-          options={STOCK_TYPE_OF_WORK_OPTIONS.map((option) => ({
+          label="Modification Completed During"
+          value={form.completedDuring ?? ""}
+          options={STOCK_COMPLETED_DURING_OPTIONS.map((option) => ({
             value: option,
             label: option,
           }))}
-          onChange={(value) => patch({ typeOfWork: value })}
-        />
-
-        <FieldInput
-          label="Brand / Parts"
-          value={form.partsBrand}
-          placeholder="e.g. BBS, OEM"
-          onChange={(value) => patch({ partsBrand: value })}
+          onChange={(value) => patch({ completedDuring: value })}
         />
 
         <FieldSelect
           label="Work Performed By"
-          value={form.workPerformedBy}
+          value={form.workPerformedBy ?? ""}
           options={STOCK_WORK_PERFORMED_BY_OPTIONS.map((option) => ({
             value: option,
             label: option,
           }))}
-          onChange={(value) => patch({ workPerformedBy: value })}
+          onChange={setWorkPerformedBy}
         />
 
-        <MobileShopBuilderField
-          label="Shop / Builder"
-          value={form.shopBuilder}
-          placeholder="Search or add a shop"
-          onPress={() =>
-            openShopBuilder({
-              target: "entry.shopBuilder",
-              entry: form,
-              label: "Shop / Builder",
-            })
-          }
-          busy={opening}
-        />
+        {showShopBuilder ? (
+          form.shopBuilder.trim() ? (
+            <MobileShopBuilderField
+              label="Shop / Builder"
+              value={form.shopBuilder}
+              placeholder="Add Shop / Builder"
+              onPress={openShopPicker}
+              busy={opening}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={openShopPicker}
+              disabled={opening}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#1b1464] text-[13px] font-semibold text-[#1b1464] disabled:opacity-70"
+            >
+              <Plus className="h-4 w-4" />
+              {opening ? "Opening…" : "Add Shop / Builder"}
+            </button>
+          )
+        ) : null}
 
-        <FieldSelect
-          label="Date Status"
-          value={form.dateStatus}
-          options={STOCK_DATE_STATUS_OPTIONS.map((option) => ({
-            value: option,
-            label: option,
-          }))}
+        <FieldInput
+          label="Date"
+          type="date"
+          value={form.installationDate}
           onChange={(value) =>
             patch({
-              dateStatus: value,
-              installationDate: value === "Exact Date" ? form.installationDate : "",
+              installationDate: value,
+              dateStatus: value ? "Exact Date" : "",
             })
           }
         />
-
-        {form.dateStatus === "Exact Date" ? (
-          <FieldInput
-            label="Exact Date"
-            type="date"
-            value={form.installationDate}
-            onChange={(value) => patch({ installationDate: value })}
-          />
-        ) : null}
 
         <FieldInput
           label="Mileage"
@@ -257,7 +264,8 @@ export function MobileStockLightModScreen() {
         />
 
         <MediaField
-          label="Supporting Document"
+          label="Supporting Documents"
+          description="Upload receipts or any other supporting documentation about modification"
           accept=".pdf,.png,.jpg,.jpeg"
           items={form.receipt}
           onAdd={(files) => addFiles("receipt", files)}
@@ -270,7 +278,6 @@ export function MobileStockLightModScreen() {
           placeholder="Anything else buyers should know"
           onChange={(value) => patch({ additionalNotes: value })}
         />
-
       </div>
     </MobileListingShell>
   );
@@ -345,12 +352,14 @@ function FieldSelect({
 
 function MediaField({
   label,
+  description,
   accept,
   items,
   onAdd,
   onRemove,
 }: {
   label: string;
+  description?: string;
   accept: string;
   items: ListingMediaItem[];
   onAdd: (files: FileList | null) => void;
@@ -358,7 +367,12 @@ function MediaField({
 }) {
   return (
     <div className="space-y-2">
-      <span className="text-[12px] font-semibold text-[#636366]">{label}</span>
+      <div>
+        <span className="text-[12px] font-semibold text-[#636366]">{label}</span>
+        {description ? (
+          <p className="mt-0.5 text-[12px] text-[#636366]">{description}</p>
+        ) : null}
+      </div>
       <label className="flex h-11 cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#1b1464] text-[13px] font-semibold text-[#1b1464]">
         Upload {label}
         <input

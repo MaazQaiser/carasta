@@ -26,57 +26,70 @@ export function MobileSaleSettingsScreen() {
       continueDisabled={false}
       continueHref="/mobile-listing/preview"
     >
-      <div className="flex flex-col gap-4 px-6 pt-4 pb-6">
+      <div className="flex flex-col gap-5 px-6 pb-6 pt-4">
         <div className="space-y-2">
           <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
-            Sale Settings
+            Auction Settings
           </h1>
           <p className="text-[15px] leading-[1.4] text-[#636366]">
-            Set your preferred sale details.
+            Choose how you would like your auction to run
           </p>
         </div>
 
-        <Toggle
-          label="Buy It Now"
-          checked={Boolean(settings.buyNowPrice)}
-          onChange={(checked) =>
-            updateSaleSettings({ buyNowPrice: checked ? "150000" : "" })
-          }
-        />
-        {settings.buyNowPrice ? (
-          <Field label="Buy It Now price">
-            <input
-              value={formatMoneyDisplay(settings.buyNowPrice)}
-              onChange={(event) =>
-                updateSaleSettings({ buyNowPrice: digitsOnly(event.target.value) })
-              }
-              inputMode="decimal"
-              className="h-10 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none"
-            />
-          </Field>
-        ) : null}
+        <div className="space-y-2">
+          <Toggle
+            label="Buy It Now"
+            checked={Boolean(settings.buyNowPrice)}
+            onChange={(checked) =>
+              updateSaleSettings({ buyNowPrice: checked ? "150000" : "" })
+            }
+          />
+          <p className="text-[12px] leading-relaxed text-[#636366]">
+            Set a premium Buy Now price that lets a buyer purchase your vehicle immediately and end
+            the auction early. Buy Now is only available during the first 24 hours of the auction
+          </p>
+          {settings.buyNowPrice ? (
+            <Field label="Buy It Now price">
+              <input
+                value={formatMoneyDisplay(settings.buyNowPrice)}
+                onChange={(event) =>
+                  updateSaleSettings({ buyNowPrice: digitsOnly(event.target.value) })
+                }
+                inputMode="decimal"
+                className="h-10 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none"
+              />
+            </Field>
+          ) : null}
+        </div>
 
-        <Toggle
-          label="Set Reserve Price"
-          checked={Boolean(settings.reservePrice)}
-          onChange={(checked) =>
-            updateSaleSettings({ reservePrice: checked ? "100000" : "" })
-          }
-        />
-        {settings.reservePrice ? (
-          <Field label="Reserve price">
-            <input
-              value={formatMoneyDisplay(settings.reservePrice)}
-              onChange={(event) =>
-                updateSaleSettings({ reservePrice: digitsOnly(event.target.value) })
-              }
-              inputMode="decimal"
-              className="h-10 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none"
-            />
-          </Field>
-        ) : null}
+        <div className="space-y-2">
+          <Toggle
+            label="Reserve Price"
+            checked={Boolean(settings.reservePrice)}
+            onChange={(checked) =>
+              updateSaleSettings({ reservePrice: checked ? "100000" : "" })
+            }
+          />
+          <p className="text-[12px] leading-relaxed text-[#636366]">
+            Set the minimum price you’re willing to accept. Your reserve will be reflected on the
+            Reserve Meter until the reserve is lifted. If bidding does not meet the reserve, the
+            vehicle will not sell
+          </p>
+          {settings.reservePrice ? (
+            <Field label="Reserve price">
+              <input
+                value={formatMoneyDisplay(settings.reservePrice)}
+                onChange={(event) =>
+                  updateSaleSettings({ reservePrice: digitsOnly(event.target.value) })
+                }
+                inputMode="decimal"
+                className="h-10 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none"
+              />
+            </Field>
+          ) : null}
+        </div>
 
-        <Field label="Auction Schedule">
+        <Field label="When do you want your auction to start?">
           <button
             type="button"
             onClick={() => setDateSheet(true)}
@@ -93,17 +106,6 @@ export function MobileSaleSettingsScreen() {
             updateSaleSettings({ shipping: checked ? "available" : "" })
           }
         />
-
-        <Field label="Terms / Shipping">
-          <textarea
-            value={settings.shippingLocation}
-            onChange={(event) =>
-              updateSaleSettings({ shippingLocation: event.target.value })
-            }
-            placeholder="Add any shipping, pickup, or sale terms…"
-            className="min-h-32 w-full rounded-lg border border-[#e5e5ea] p-3 text-[13px] outline-none focus:border-[#1b1464]"
-          />
-        </Field>
       </div>
 
       {dateSheet ? (
@@ -138,12 +140,12 @@ function Toggle({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-3">
       <span className="text-[13px] font-semibold text-[#1c1c1e]">{label}</span>
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`h-5 w-9 rounded-full p-0.5 transition-colors ${
+        className={`h-5 w-9 shrink-0 rounded-full p-0.5 transition-colors ${
           checked ? "bg-[#1b1464]" : "bg-[#d1d1d6]"
         }`}
       >

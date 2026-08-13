@@ -72,6 +72,7 @@ export { OwnerNotesScreen } from "./screens/OwnerNotesScreen";
 export { AiDescriptionScreen } from "./screens/AiDescriptionScreen";
 export { SaleSettingsScreen } from "./screens/SaleSettingsScreen";
 export { ListingPreviewScreen } from "./screens/ListingPreviewScreen";
+export { ListingBuyerViewPreviewScreen } from "./screens/ListingBuyerViewPreviewScreen";
 export { ReviewSubmitScreen } from "./screens/ReviewSubmitScreen";
 export { ListingSubmittedScreen } from "./screens/ListingSubmittedScreen";
 export { ShareListingScreen } from "./screens/ShareListingScreen";

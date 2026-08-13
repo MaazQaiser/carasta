@@ -66,7 +66,8 @@ export function MobileShopBuilderScreen() {
             {session.label || "Shop / Builder / Company"}
           </h1>
           <p className="mt-2 text-[14px] text-[#636366]">
-            Search existing shops or add a new Shop / Builder / Company.
+            Search and select an existing shop first to avoid duplicates. Only add a new one if it
+            isn&apos;t listed.
           </p>
         </div>
 
@@ -81,22 +82,13 @@ export function MobileShopBuilderScreen() {
           />
         </label>
 
-        <button
-          type="button"
-          onClick={() => navigate("/mobile-listing/shop-builder/add")}
-          className="flex h-11 items-center justify-center gap-2 rounded-lg border border-dashed border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
-        >
-          <Plus className="h-4 w-4" />
-          Add new Shop / Builder / Company
-        </button>
-
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[#636366]">
             {results.length} result{results.length === 1 ? "" : "s"}
           </p>
           {results.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[#d1d1d6] px-4 py-8 text-center text-[13px] text-[#636366]">
-              No matches. Add a new Shop / Builder / Company to continue.
+              No matches. Try another search, then add a new Shop / Builder if needed.
             </div>
           ) : (
             results.map((shop) => (
@@ -118,6 +110,15 @@ export function MobileShopBuilderScreen() {
             ))
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={() => navigate("/mobile-listing/shop-builder/add")}
+          className="flex h-11 items-center justify-center gap-2 rounded-lg border border-dashed border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
+        >
+          <Plus className="h-4 w-4" />
+          Add New Shop / Builder
+        </button>
 
         <button
           type="button"

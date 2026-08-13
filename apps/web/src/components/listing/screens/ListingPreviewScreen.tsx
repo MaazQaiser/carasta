@@ -51,10 +51,9 @@ export function ListingPreviewScreen() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Listing Preview</h2>
+        <h2 className="text-xl font-semibold">Listing Review</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Desktop preview of the listing draft. Use Edit to jump back to any step. Score and
-          completion live in the summary panel.
+          Review each section of your listing draft. Use Edit to jump back and make changes.
         </p>
       </div>
 
@@ -211,6 +210,23 @@ export function ListingPreviewScreen() {
           )}
         </PreviewBlock>
 
+        <PreviewBlock
+          title="Modifications"
+          href={getListingSpecsEditHref(draft.listingTypeId)}
+        >
+          <p className="text-sm font-medium">
+            {(() => {
+              const count = draft.modificationWorkspace.entries.filter(
+                (e) => e.completed || e.title.trim()
+              ).length;
+              if (draft.modificationWorkspace.hasModifications === false || count === 0) {
+                return "No modifications reported";
+              }
+              return `${count} modification${count === 1 ? "" : "s"} added`;
+            })()}
+          </p>
+        </PreviewBlock>
+
         <PreviewBlock title="Condition & History" href={LISTING_EDIT_HREFS.history}>
           <ValueRow label="Title status" value={draft.condition.titleStatus} />
           <ValueRow label="Overall condition" value={draft.condition.overallCondition} />
@@ -270,7 +286,7 @@ export function ListingPreviewScreen() {
           </p>
         </PreviewBlock>
 
-        <PreviewBlock title="Sale Settings" href={LISTING_EDIT_HREFS.settings}>
+        <PreviewBlock title="Auction Settings" href={LISTING_EDIT_HREFS.settings}>
           <ValueRow label="Sale type" value={draft.saleSettings.saleType} />
           <ValueRow label="Reserve price" value={draft.saleSettings.reservePrice} />
           <ValueRow label="Buy now price" value={draft.saleSettings.buyNowPrice} />
@@ -279,6 +295,12 @@ export function ListingPreviewScreen() {
           <ValueRow label="Shipping" value={draft.saleSettings.shipping} />
           <ValueRow label="Location" value={draft.saleSettings.shippingLocation} />
         </PreviewBlock>
+
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Button type="button" asChild>
+            <Link href="/listing/buyer-preview">Continue to Buyer View Preview</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );

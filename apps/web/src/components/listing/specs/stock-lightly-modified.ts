@@ -25,7 +25,7 @@ export const STOCK_FACTORY_CATEGORIES: SpecsCategoryDefinition[] = [
 ];
 
 export const STOCK_MODIFICATION_CATEGORIES: SpecsCategoryDefinition[] = [
-  ...STOCK_FACTORY_CATEGORIES,
+  ...STOCK_FACTORY_CATEGORIES.filter((category) => category.id !== "factory-equipment"),
   { id: "other", label: "Other", description: "Anything that doesn’t fit above", icon: MoreHorizontal },
 ];
 
@@ -39,12 +39,20 @@ export const STOCK_TYPE_OF_WORK_OPTIONS = [
   "Other",
 ];
 
+export const STOCK_COMPLETED_DURING_OPTIONS = [
+  "Current ownership",
+  "Previous Ownership",
+  "Unknown",
+];
+
+/** Value that reveals the Add Shop / Builder control on the light-mod form. */
+export const STOCK_PROFESSIONAL_SHOP_OPTION = "Professional Shop / Builder";
+
 export const STOCK_WORK_PERFORMED_BY_OPTIONS = [
-  "Current Owner / DIY",
-  "Professional Shop",
-  "Current Owner + Shop",
+  "Current Owner",
   "Previous Owner",
-  "Factory",
+  STOCK_PROFESSIONAL_SHOP_OPTION,
+  "Other Individual",
   "Unknown",
 ];
 
@@ -58,35 +66,39 @@ export const STOCK_DATE_STATUS_OPTIONS = [
 ] as const;
 
 export const STOCK_ENTRY_FORM_CONFIG: EntryFormConfig = {
-  entryTitleLabel: "Modification Name",
-  descriptionPlaceholder: "What was done?",
-  typeOfWorkLabel: "Type of Work",
-  typeOfWorkPlaceholder: "Select type of work",
-  typeOfWorkOptions: STOCK_TYPE_OF_WORK_OPTIONS,
-  partsBrandLabel: "Brand / Parts Used",
+  entryTitleLabel: "Modification",
+  descriptionLabel: "Modification Details",
+  descriptionPlaceholder:
+    "Describe what was modified, replaced, upgraded or added. Include and details about the parts used and changes made",
+  hideTypeOfWork: true,
+  hidePartsBrand: true,
   hideManufacturer: true,
   hideSpecifications: true,
-  shopBuilderLabel: "Shop / Builder",
+  completedDuringLabel: "Modification Completed During",
+  completedDuringOptions: STOCK_COMPLETED_DURING_OPTIONS,
+  shopBuilderLabel: "Add Shop / Builder",
+  shopBuilderWhenWorkPerformedBy: STOCK_PROFESSIONAL_SHOP_OPTION,
+  useShopBuilderPicker: true,
   workPerformedByLabel: "Work Performed By",
   workPerformedByOptions: STOCK_WORK_PERFORMED_BY_OPTIONS,
-  installationDateLabel: "Installation Date",
-  dateStatusOptions: [...STOCK_DATE_STATUS_OPTIONS],
-  gateDatePickerOnExact: true,
+  installationDateLabel: "Date",
+  simpleDateOnly: true,
   showOriginalPartsIncluded: true,
   saveButtonLabel: "Save Modification",
-  notesLabel: "Additional Notes",
+  notesLabel: "Notes",
   documentSlots: [
     {
       key: "photos",
-      title: "Upload Photos",
+      title: "Photos",
       description: "Browse files or drag images. Multiple images supported.",
       accept: "image/*",
       variant: "image",
     },
     {
       key: "receipt",
-      title: "Upload Receipt",
-      description: "Optional PDF, image, or invoice.",
+      title: "Supporting Documents",
+      description:
+        "Upload receipts or any other supporting documentation about modification",
       accept: ".pdf,.png,.jpg,.jpeg",
       variant: "file",
     },

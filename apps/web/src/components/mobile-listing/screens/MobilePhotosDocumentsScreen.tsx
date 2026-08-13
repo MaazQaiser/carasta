@@ -1,13 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { MobileOptionSheet } from "../MobileOptionSheet";
-import { Camera, FolderOpen, ImageIcon, Move, Replace, Star, Trash2 } from "lucide-react";
+import { Camera, FolderOpen, ImageIcon, Move, Replace, Star, Trash2, Video } from "lucide-react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import type { ListingMediaItem } from "@/components/listing/types";
 import { MobileListingShell } from "../MobileListingShell";
+import { MobileOptionSheet } from "../MobileOptionSheet";
 
 const MIN_PHOTOS = 20;
+const MIN_VIDEOS = 1;
+const MAX_VIDEOS = 5;
+
+type MediaTab = "general" | "modifications" | "video" | "documents";
 
 function createLocalId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -16,9 +20,78 @@ function createLocalId(prefix: string) {
 export function MobilePhotosDocumentsScreen() {
   const { draft, addMediaItems } = useListingBuilder();
   const photos = draft.vehiclePhotos;
+  const modPhotos = draft.modificationPhotos;
+  const videos = draft.videos;
+  const documents = draft.documents;
+
+  const isStock =
+    draft.listingTypeId === "stock-lightly-modified" &&
+    draft.modificationWorkspace.hasModifications === false;
+
+  const [tab, setTab] = React.useState<MediaTab>("general");
   const [sheet, setSheet] = React.useState<"add" | "actions" | null>(null);
 
-  const addPhotos = () => {
+  React.useEffect(() => {
+    if (isStock && tab === "modifications") setTab("general");
+  }, [isStock, tab]);
+
+  const tabs: { id: MediaTab; label: string }[] = [
+    { id: "general", label: "General" },
+    ...(!isStock ? [{ id: "modifications" as const, label: "Modifications" }] : []),
+    { id: "video", label: "Video" },
+    { id: "documents", label: "Documents" },
+  ];
+
+  const canContinue = photos.length >= MIN_PHOTOS && videos.length >= MIN_VIDEOS;
+
+  const addBatch = (bucket: "vehiclePhotos" | "modificationPhotos" | "documents" | "videos") => {
+    if (bucket === "videos") {
+      const room = MAX_VIDEOS - videos.length;
+      if (room <= 0) {
+        setSheet(null);
+        return;
+      }
+      const count = Math.min(1, room);
+      const batch: ListingMediaItem[] = Array.from({ length: count }, (_, index) => ({
+        id: createLocalId("video"),
+        name: `Vehicle video ${videos.length + index + 1}`,
+        previewUrl: `https://picsum.photos/seed/carasta-video-${videos.length + index + 1}/400/225`,
+      }));
+      addMediaItems("videos", batch);
+      setSheet(null);
+      return;
+    }
+
+    if (bucket === "documents") {
+      const start = documents.length;
+      const batch: ListingMediaItem[] = Array.from({ length: 2 }, (_, index) => {
+        const n = start + index + 1;
+        return {
+          id: createLocalId("doc"),
+          name: `Document ${n}`,
+          previewUrl: `https://picsum.photos/seed/carasta-doc-${n}/200/150`,
+        };
+      });
+      addMediaItems("documents", batch);
+      setSheet(null);
+      return;
+    }
+
+    if (bucket === "modificationPhotos") {
+      const start = modPhotos.length;
+      const batch: ListingMediaItem[] = Array.from({ length: 4 }, (_, index) => {
+        const n = start + index + 1;
+        return {
+          id: createLocalId("mod-photo"),
+          name: `Modification photo ${n}`,
+          previewUrl: `https://picsum.photos/seed/carasta-mod-${n}/200/150`,
+        };
+      });
+      addMediaItems("modificationPhotos", batch);
+      setSheet(null);
+      return;
+    }
+
     const start = photos.length;
     const batch: ListingMediaItem[] = Array.from({ length: 8 }, (_, index) => {
       const n = start + index + 1;
@@ -32,64 +105,113 @@ export function MobilePhotosDocumentsScreen() {
     setSheet(null);
   };
 
-  const progressPct = Math.min((photos.length / MIN_PHOTOS) * 100, 100);
+  const activeBucket =
+    tab === "general"
+      ? "vehiclePhotos"
+      : tab === "modifications"
+        ? "modificationPhotos"
+        : tab === "video"
+          ? "videos"
+          : "documents";
+
+  const activeItems =
+    tab === "general"
+      ? photos
+      : tab === "modifications"
+        ? modPhotos
+        : tab === "video"
+          ? videos
+          : documents;
+
+  const heading =
+    tab === "general"
+      ? `Add at least ${MIN_PHOTOS} photos of your vehicle.`
+      : tab === "modifications"
+        ? "Add photos of modifications and custom work."
+        : tab === "video"
+          ? `Add at least ${MIN_VIDEOS} video of your vehicle. Limit ${MAX_VIDEOS} videos.`
+          : "Add photos of documents associated with this vehicle.";
+
+  const progressLabel =
+    tab === "general"
+      ? `${photos.length} / ${MIN_PHOTOS} Photos Uploaded`
+      : tab === "modifications"
+        ? `${modPhotos.length} Modification Photos`
+        : tab === "video"
+          ? `${videos.length} / ${MAX_VIDEOS} Videos Uploaded`
+          : `${documents.length} Documents Uploaded`;
+
+  const progressPct =
+    tab === "general"
+      ? Math.min((photos.length / MIN_PHOTOS) * 100, 100)
+      : tab === "video"
+        ? Math.min((videos.length / MAX_VIDEOS) * 100, 100)
+        : Math.min(activeItems.length * 20, 100);
+
+  const addDisabled = tab === "video" && videos.length >= MAX_VIDEOS;
 
   return (
     <MobileListingShell
       stepId="photos"
-      continueDisabled={photos.length < MIN_PHOTOS}
-      continueHref={photos.length >= MIN_PHOTOS ? "/mobile-listing/notes" : undefined}
+      continueDisabled={!canContinue}
+      continueHref={canContinue ? "/mobile-listing/notes" : undefined}
     >
-      <div className="flex flex-col gap-5 px-6 pt-4 pb-6">
+      <div className="flex flex-col gap-5 px-6 pb-6 pt-4">
         <div className="space-y-2">
           <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
             Photos &amp; Documents
           </h1>
-          <p className="text-[15px] leading-[1.4] text-[#636366]">
-            Add at least {MIN_PHOTOS} photos of your vehicle.
-          </p>
+          <p className="text-[15px] leading-[1.4] text-[#636366]">{heading}</p>
         </div>
-        <div className="flex gap-4 border-b border-[#e5e5ea] text-[13px] font-semibold">
-          <button type="button" className="border-b-2 border-[#1b1464] px-1 pb-2 text-[#1b1464]">
-            General
-          </button>
-          <button type="button" className="pb-2 text-[#636366]">
-            Modifications
-          </button>
-          <button type="button" className="pb-2 text-[#636366]">
-            Video
-          </button>
-          <button type="button" className="pb-2 text-[#636366]">
-            Docs
-          </button>
+
+        <div className="flex gap-4 overflow-x-auto border-b border-[#e5e5ea] text-[13px] font-semibold">
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={
+                tab === item.id
+                  ? "shrink-0 border-b-2 border-[#1b1464] px-1 pb-2 text-[#1b1464]"
+                  : "shrink-0 px-1 pb-2 text-[#636366]"
+              }
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
-        {photos.length ? (
+
+        {activeItems.length ? (
           <>
             <div className="flex items-center justify-between text-[11px] font-semibold text-[#1b1464]">
               <span>Upload Progress</span>
-              <span>
-                {photos.length} / {MIN_PHOTOS} Photos Uploaded
-              </span>
+              <span>{progressLabel}</span>
             </div>
             <div className="h-1 overflow-hidden rounded-full bg-[#e5e5ea]">
               <div className="h-full bg-[#1b1464]" style={{ width: `${progressPct}%` }} />
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {photos.map((photo, index) => (
+              {activeItems.map((item, index) => (
                 <button
-                  key={photo.id}
+                  key={item.id}
                   type="button"
                   onClick={() => setSheet("actions")}
                   className="relative aspect-[4/3] overflow-hidden rounded-lg bg-[#e5e5ea]"
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={photo.previewUrl || ""}
-                    alt={photo.name || `Vehicle photo ${index + 1}`}
+                    src={item.previewUrl || ""}
+                    alt={item.name || `Media ${index + 1}`}
                     className="h-full w-full object-cover"
                   />
-                  {index === 0 ? (
+                  {tab === "general" && index === 0 ? (
                     <span className="absolute left-1 top-1 rounded bg-[#1b1464] px-1 text-[8px] font-bold text-white">
                       COVER
+                    </span>
+                  ) : null}
+                  {tab === "video" ? (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+                      <Video className="h-5 w-5 text-white" />
                     </span>
                   ) : null}
                 </button>
@@ -97,10 +219,17 @@ export function MobilePhotosDocumentsScreen() {
             </div>
             <button
               type="button"
+              disabled={addDisabled}
               onClick={() => setSheet("add")}
-              className="h-10 w-full rounded-lg bg-[#f4f5fc] text-[12px] font-semibold text-[#1b1464]"
+              className="h-10 w-full rounded-lg bg-[#f4f5fc] text-[12px] font-semibold text-[#1b1464] disabled:opacity-50"
             >
-              + Add More Photos
+              {tab === "video"
+                ? videos.length >= MAX_VIDEOS
+                  ? `Video limit reached (${MAX_VIDEOS})`
+                  : "+ Add More Videos"
+                : tab === "documents"
+                  ? "+ Add More Documents"
+                  : "+ Add More Photos"}
             </button>
           </>
         ) : (
@@ -110,23 +239,49 @@ export function MobilePhotosDocumentsScreen() {
               onClick={() => setSheet("add")}
               className="flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-[#c7c7cc] bg-[#fafafa] text-center"
             >
-              <Camera className="mb-3 h-6 w-6 text-[#1b1464]" />
-              <span className="text-[13px] font-semibold text-[#1c1c1e]">Tap to add photos</span>
-              <span className="mt-1 text-[11px] text-[#636366]">Upload from your camera roll</span>
+              {tab === "video" ? (
+                <Video className="mb-3 h-6 w-6 text-[#1b1464]" />
+              ) : (
+                <Camera className="mb-3 h-6 w-6 text-[#1b1464]" />
+              )}
+              <span className="text-[13px] font-semibold text-[#1c1c1e]">
+                {tab === "video"
+                  ? "Tap to add video"
+                  : tab === "documents"
+                    ? "Tap to add documents"
+                    : "Tap to add photos"}
+              </span>
+              <span className="mt-1 px-6 text-[11px] text-[#636366]">
+                {tab === "video"
+                  ? `Upload at least ${MIN_VIDEOS} video (max ${MAX_VIDEOS})`
+                  : tab === "documents"
+                    ? "Add photos of documents associated with this vehicle"
+                    : "Upload from your camera roll"}
+              </span>
             </button>
-            <div className="rounded-lg bg-[#f4f5fc] p-3 text-[12px] leading-relaxed text-[#4b4877]">
-              Tips: Use a mix of exterior, interior, engine bay, wheels, and detail photos. Clear
-              photos build buyer confidence.
-            </div>
+            {tab === "general" ? (
+              <div className="rounded-lg bg-[#f4f5fc] p-3 text-[12px] leading-relaxed text-[#4b4877]">
+                Tips: Use a mix of exterior, interior, engine bay, wheels, and detail photos. Clear
+                photos build buyer confidence.
+              </div>
+            ) : null}
           </>
         )}
       </div>
+
       {sheet === "add" ? (
-        <PhotoSheet title="Add Photos" onClose={() => setSheet(null)} onChoose={addPhotos} />
+        <PhotoSheet
+          title={
+            tab === "video" ? "Add Video" : tab === "documents" ? "Add Documents" : "Add Photos"
+          }
+          onClose={() => setSheet(null)}
+          onChoose={() => addBatch(activeBucket)}
+          video={tab === "video"}
+        />
       ) : null}
       {sheet === "actions" ? (
         <PhotoSheet
-          title="Photo Actions"
+          title={tab === "video" ? "Video Actions" : "Media Actions"}
           onClose={() => setSheet(null)}
           onChoose={() => setSheet(null)}
           actions
@@ -141,11 +296,13 @@ function PhotoSheet({
   onClose,
   onChoose,
   actions = false,
+  video = false,
 }: {
   title: string;
   onClose: () => void;
   onChoose: () => void;
   actions?: boolean;
+  video?: boolean;
 }) {
   const choices = actions
     ? [
@@ -154,11 +311,16 @@ function PhotoSheet({
         [Replace, "Replace"],
         [Trash2, "Delete"],
       ]
-    : [
-        [Camera, "Camera"],
-        [ImageIcon, "Gallery"],
-        [FolderOpen, "Files"],
-      ];
+    : video
+      ? [
+          [Video, "Record Video"],
+          [FolderOpen, "Choose from Files"],
+        ]
+      : [
+          [Camera, "Camera"],
+          [ImageIcon, "Gallery"],
+          [FolderOpen, "Files"],
+        ];
 
   return (
     <MobileOptionSheet open title={title} onClose={onClose}>

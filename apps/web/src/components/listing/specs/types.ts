@@ -70,7 +70,22 @@ export interface EntryFormConfig {
   workPerformedByAsText?: boolean;
   /** Override default work-performed-by options. */
   workPerformedByOptions?: string[];
+  /** Hide Type of Work field (stock light-mod). */
+  hideTypeOfWork?: boolean;
+  /** Hide Parts / Brand field (details live in description). */
+  hidePartsBrand?: boolean;
+  completedDuringLabel?: string;
+  completedDuringOptions?: string[];
+  /**
+   * When set, Shop / Builder only appears if Work Performed By equals this value
+   * (e.g. "Professional Shop / Builder").
+   */
+  shopBuilderWhenWorkPerformedBy?: string;
+  /** Use searchable shop picker instead of a free-text input. */
+  useShopBuilderPicker?: boolean;
   installationDateLabel?: string;
+  /** Show a single Date field (no Date Status dropdown). */
+  simpleDateOnly?: boolean;
   dateStatusOptions?: string[];
   /** When true, date picker only shows if date status is Exact Date. */
   gateDatePickerOnExact?: boolean;

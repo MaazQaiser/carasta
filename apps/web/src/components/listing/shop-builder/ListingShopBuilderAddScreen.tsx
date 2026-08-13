@@ -30,7 +30,7 @@ export function ListingShopBuilderAddScreen() {
   const [state, setState] = React.useState("");
   const [type, setType] = React.useState<"Shop" | "Builder" | "Company">("Shop");
 
-  const canSave = name.trim().length > 1;
+  const canSave = name.trim().length > 1 && city.trim().length > 0 && state.trim().length > 0;
 
   const save = () => {
     const session = ShopBuilderSession.load();
@@ -54,12 +54,12 @@ export function ListingShopBuilderAddScreen() {
   return (
     <ListingStep
       title="Add Shop / Builder"
-      description="Create a custom shop, builder, or company for this listing."
+      description="Add name, city, and state. This shop will be searchable for future listings."
     >
       <ListingSection title="Details">
         <div className="grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <FieldLabel htmlFor="shop-name">Name</FieldLabel>
+            <FieldLabel htmlFor="shop-name">Shop / Builder Name</FieldLabel>
             <Input
               id="shop-name"
               value={name}

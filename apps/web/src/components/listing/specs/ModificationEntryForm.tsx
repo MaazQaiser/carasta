@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { FieldLabel, textareaClassName } from "../fields";
 import { MediaUploadZone } from "../MediaUploadZone";
+import { ListingShopBuilderField } from "../shop-builder/ListingShopBuilderField";
 import type { ListingMediaItem } from "../types";
 import type { EntryFormConfig, EntryMediaKey, ModificationEntry } from "./types";
 import { DEFAULT_ENTRY_FORM_CONFIG, ORIGINAL_PARTS_OPTIONS, WORK_PERFORMED_BY_OPTIONS } from "./options";
@@ -31,6 +32,10 @@ export function ModificationEntryForm({
   const config = { ...DEFAULT_ENTRY_FORM_CONFIG, ...formConfig };
   const documentSlots = config.documentSlots ?? DEFAULT_ENTRY_FORM_CONFIG.documentSlots ?? [];
   const dateStatusOptions = config.dateStatusOptions ?? DEFAULT_ENTRY_FORM_CONFIG.dateStatusOptions ?? [];
+  const shopGate = config.shopBuilderWhenWorkPerformedBy;
+  const showShopBuilder = shopGate
+    ? form.workPerformedBy === shopGate
+    : true;
 
   React.useEffect(() => {
     setForm(entry);
@@ -38,6 +43,14 @@ export function ModificationEntryForm({
 
   const patch = (partial: Partial<ModificationEntry>) =>
     setForm((prev) => ({ ...prev, ...partial }));
+
+  const setWorkPerformedBy = (value: string) => {
+    const next: Partial<ModificationEntry> = { workPerformedBy: value };
+    if (shopGate && value !== shopGate) {
+      next.shopBuilder = "";
+    }
+    patch(next);
+  };
 
   const addMedia = (key: EntryMediaKey, items: ListingMediaItem[]) =>
     patch({ [key]: [...form[key], ...items] });
@@ -74,54 +87,78 @@ export function ModificationEntryForm({
             }
           />
         </div>
-        <div className={config.typeOfWorkMultiline ? "sm:col-span-2" : undefined}>
-          <FieldLabel htmlFor={`work-type-${form.id}`}>
-            {config.typeOfWorkLabel}
-          </FieldLabel>
-          {config.typeOfWorkOptions?.length ? (
+        {config.completedDuringOptions?.length ? (
+          <div className="sm:col-span-2">
+            <FieldLabel htmlFor={`completed-during-${form.id}`}>
+              {config.completedDuringLabel ?? "Modification Completed During"}
+            </FieldLabel>
             <Select
-              value={form.typeOfWork || undefined}
-              onValueChange={(v) => patch({ typeOfWork: v })}
+              value={form.completedDuring || undefined}
+              onValueChange={(v) => patch({ completedDuring: v })}
             >
-              <SelectTrigger id={`work-type-${form.id}`}>
-                <SelectValue placeholder={config.typeOfWorkPlaceholder ?? "Select type of work"} />
+              <SelectTrigger id={`completed-during-${form.id}`}>
+                <SelectValue placeholder="Select when it was completed" />
               </SelectTrigger>
               <SelectContent>
-                {config.typeOfWorkOptions.map((option) => (
+                {config.completedDuringOptions.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          ) : config.typeOfWorkMultiline ? (
-            <textarea
-              id={`work-type-${form.id}`}
-              className={textareaClassName}
-              value={form.typeOfWork}
-              onChange={(e) => patch({ typeOfWork: e.target.value })}
-              placeholder={config.typeOfWorkPlaceholder}
-            />
-          ) : (
+          </div>
+        ) : null}
+        {!config.hideTypeOfWork ? (
+          <div className={config.typeOfWorkMultiline ? "sm:col-span-2" : undefined}>
+            <FieldLabel htmlFor={`work-type-${form.id}`}>{config.typeOfWorkLabel}</FieldLabel>
+            {config.typeOfWorkOptions?.length ? (
+              <Select
+                value={form.typeOfWork || undefined}
+                onValueChange={(v) => patch({ typeOfWork: v })}
+              >
+                <SelectTrigger id={`work-type-${form.id}`}>
+                  <SelectValue placeholder={config.typeOfWorkPlaceholder ?? "Select type of work"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {config.typeOfWorkOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : config.typeOfWorkMultiline ? (
+              <textarea
+                id={`work-type-${form.id}`}
+                className={textareaClassName}
+                value={form.typeOfWork}
+                onChange={(e) => patch({ typeOfWork: e.target.value })}
+                placeholder={config.typeOfWorkPlaceholder}
+              />
+            ) : (
+              <Input
+                id={`work-type-${form.id}`}
+                value={form.typeOfWork}
+                onChange={(e) => patch({ typeOfWork: e.target.value })}
+                placeholder={config.typeOfWorkPlaceholder}
+              />
+            )}
+          </div>
+        ) : null}
+        {!config.hidePartsBrand ? (
+          <div>
+            <FieldLabel htmlFor={`parts-${form.id}`}>
+              {config.partsBrandLabel ?? "Parts / Brand"}
+            </FieldLabel>
             <Input
-              id={`work-type-${form.id}`}
-              value={form.typeOfWork}
-              onChange={(e) => patch({ typeOfWork: e.target.value })}
-              placeholder={config.typeOfWorkPlaceholder}
+              id={`parts-${form.id}`}
+              value={form.partsBrand}
+              onChange={(e) => patch({ partsBrand: e.target.value })}
+              placeholder="e.g. Period-correct trim / aftermarket part"
             />
-          )}
-        </div>
-        <div>
-          <FieldLabel htmlFor={`parts-${form.id}`}>
-            {config.partsBrandLabel ?? "Parts / Brand"}
-          </FieldLabel>
-          <Input
-            id={`parts-${form.id}`}
-            value={form.partsBrand}
-            onChange={(e) => patch({ partsBrand: e.target.value })}
-            placeholder="e.g. Period-correct trim / aftermarket part"
-          />
-        </div>
+          </div>
+        ) : null}
         {!config.hideManufacturer ? (
           <div>
             <FieldLabel htmlFor={`mfr-${form.id}`}>
@@ -135,15 +172,6 @@ export function ModificationEntryForm({
             />
           </div>
         ) : null}
-        <div>
-          <FieldLabel htmlFor={`mileage-${form.id}`}>Mileage at Installation</FieldLabel>
-          <Input
-            id={`mileage-${form.id}`}
-            value={form.mileage}
-            onChange={(e) => patch({ mileage: e.target.value })}
-            placeholder="e.g. 62,000 mi"
-          />
-        </div>
         {!config.hideSpecifications ? (
           <div className="sm:col-span-2">
             <FieldLabel htmlFor={`specs-${form.id}`}>Specifications</FieldLabel>
@@ -156,7 +184,7 @@ export function ModificationEntryForm({
             />
           </div>
         ) : null}
-        <div>
+        <div className={shopGate ? "sm:col-span-2" : undefined}>
           <FieldLabel htmlFor={`work-by-${form.id}`}>
             {config.workPerformedByLabel ?? "Work Performed By"}
           </FieldLabel>
@@ -164,13 +192,13 @@ export function ModificationEntryForm({
             <Input
               id={`work-by-${form.id}`}
               value={form.workPerformedBy}
-              onChange={(e) => patch({ workPerformedBy: e.target.value })}
+              onChange={(e) => setWorkPerformedBy(e.target.value)}
               placeholder="e.g. Chassis builder name"
             />
           ) : (
             <Select
               value={form.workPerformedBy || undefined}
-              onValueChange={(v) => patch({ workPerformedBy: v })}
+              onValueChange={setWorkPerformedBy}
             >
               <SelectTrigger id={`work-by-${form.id}`}>
                 <SelectValue placeholder="Select who performed the work" />
@@ -185,21 +213,57 @@ export function ModificationEntryForm({
             </Select>
           )}
         </div>
-        <div>
-          <FieldLabel htmlFor={`shop-${form.id}`}>
-            {config.shopBuilderLabel ?? "Shop / Builder"}
-          </FieldLabel>
-          <Input
-            id={`shop-${form.id}`}
-            value={form.shopBuilder}
-            onChange={(e) => patch({ shopBuilder: e.target.value })}
-            placeholder="e.g. Heritage Restoration Co."
-          />
-        </div>
-        {config.gateDatePickerOnExact ? (
+        {showShopBuilder ? (
+          config.useShopBuilderPicker ? (
+            <div className="sm:col-span-2">
+              <ListingShopBuilderField
+                label={
+                  form.shopBuilder.trim()
+                    ? "Shop / Builder"
+                    : config.shopBuilderLabel ?? "Add Shop / Builder"
+                }
+                value={form.shopBuilder}
+                target="entry.shopBuilder"
+                entryId={form.id}
+                entry={form}
+                placeholder="Add Shop / Builder"
+              />
+            </div>
+          ) : (
+            <div>
+              <FieldLabel htmlFor={`shop-${form.id}`}>
+                {config.shopBuilderLabel ?? "Shop / Builder"}
+              </FieldLabel>
+              <Input
+                id={`shop-${form.id}`}
+                value={form.shopBuilder}
+                onChange={(e) => patch({ shopBuilder: e.target.value })}
+                placeholder="e.g. Heritage Restoration Co."
+              />
+            </div>
+          )
+        ) : null}
+        {config.simpleDateOnly ? (
+          <div>
+            <FieldLabel htmlFor={`date-${form.id}`}>
+              {config.installationDateLabel ?? "Date"}
+            </FieldLabel>
+            <Input
+              id={`date-${form.id}`}
+              type="date"
+              value={form.installationDate}
+              onChange={(e) =>
+                patch({
+                  installationDate: e.target.value,
+                  dateStatus: e.target.value ? "Exact Date" : "",
+                })
+              }
+            />
+          </div>
+        ) : config.gateDatePickerOnExact ? (
           <>
             <div>
-              <FieldLabel>Installation Date</FieldLabel>
+              <FieldLabel>Date Status</FieldLabel>
               <Select
                 value={form.dateStatus || undefined}
                 onValueChange={(v) =>
@@ -264,6 +328,15 @@ export function ModificationEntryForm({
             </div>
           </>
         )}
+        <div>
+          <FieldLabel htmlFor={`mileage-${form.id}`}>Mileage</FieldLabel>
+          <Input
+            id={`mileage-${form.id}`}
+            value={form.mileage}
+            onChange={(e) => patch({ mileage: e.target.value })}
+            placeholder="e.g. 62,000 mi"
+          />
+        </div>
         {config.showOriginalPartsIncluded !== false ? (
           <div>
             <FieldLabel>Original Parts Included</FieldLabel>

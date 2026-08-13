@@ -22,11 +22,23 @@ import {
 
 const STORAGE_KEY = "carasta.listing.published.v1";
 
+export type ListingModerationStatus = "pending" | "approved";
+
 export type PublishedListingRecord = {
   auction: Auction;
   reference: string;
   publishedAt: string;
   sellerId: string;
+  /** Carasta review before the auction goes live for buyers. */
+  moderationStatus?: ListingModerationStatus;
+  approvedAt?: string;
+  /** In-app + email approval notice already sent. */
+  approvalNotified?: boolean;
+  /**
+   * After approval, open the share menu once the seller first opens the auction.
+   * Cleared when they dismiss or complete share.
+   */
+  sharePromptPending?: boolean;
 };
 
 const PLACEHOLDER_IMAGE =
@@ -121,6 +133,7 @@ function mapModificationEntries(
       manufacturer: entry.manufacturer || undefined,
       specifications: entry.specifications || undefined,
       workPerformedBy: entry.workPerformedBy || undefined,
+      completedDuring: entry.completedDuring || undefined,
       shopBuilder: entry.shopBuilder || undefined,
       installationDate: entry.installationDate || undefined,
       additionalNotes: entry.additionalNotes || undefined,
@@ -303,7 +316,7 @@ export function draftToAuction(
       vin: draft.details.vin || draft.vinInput || undefined,
     },
     condition: mapCondition(draft.condition.overallCondition),
-    status: "in-auction",
+    status: "pending-review",
     description:
       draft.aiDescription.trim() ||
       draft.ownerNotes.trim() ||
@@ -332,7 +345,7 @@ export function draftToAuction(
   const auction: Auction = {
     id: auctionId,
     vehicle,
-    status: "live",
+    status: "upcoming",
     startingBid: starting,
     currentBid: starting,
     bidCount: 0,
@@ -350,6 +363,10 @@ export function draftToAuction(
   };
 
   return auction;
+}
+
+function isApproved(record: PublishedListingRecord) {
+  return (record.moderationStatus ?? "approved") === "approved";
 }
 
 export const PublishedListingService = {
@@ -377,10 +394,18 @@ export const PublishedListingService = {
       reference,
       publishedAt: new Date().toISOString(),
       sellerId: seller.id,
+      moderationStatus: "pending",
+      sharePromptPending: false,
+      approvalNotified: false,
     };
     const next = [record, ...this.load().filter((r) => r.auction.id !== auction.id)];
     this.saveAll(next);
     return record;
+  },
+
+  /** Buyer-facing catalog — only approved / live auctions. */
+  loadApproved(): PublishedListingRecord[] {
+    return this.load().filter(isApproved);
   },
 
   getAuctionsForSeller(sellerId: string): Auction[] {
@@ -404,5 +429,79 @@ export const PublishedListingService = {
         (r) => r.auction.id === id || r.auction.vehicle.id === id
       ) ?? null
     );
+  },
+
+  /**
+   * Approve a pending listing (Carasta review complete).
+   * Marks share prompt pending so the seller sees External Share once on first open.
+   */
+  approve(id: string): PublishedListingRecord | null {
+    const records = this.load();
+    const index = records.findIndex(
+      (r) => r.auction.id === id || r.auction.vehicle.id === id
+    );
+    if (index < 0) return null;
+    const current = records[index]!;
+    if (isApproved(current)) return current;
+
+    const now = new Date().toISOString();
+    const auction: Auction = {
+      ...current.auction,
+      status: "live",
+      startTime: now,
+      vehicle: {
+        ...current.auction.vehicle,
+        status: "in-auction",
+        updatedAt: now,
+      },
+    };
+    const next: PublishedListingRecord = {
+      ...current,
+      auction,
+      moderationStatus: "approved",
+      approvedAt: now,
+      sharePromptPending: true,
+    };
+    records[index] = next;
+    this.saveAll(records);
+    return next;
+  },
+
+  /**
+   * Demo / local review: approve pending listings older than `minAgeMs`.
+   * Returns newly approved records that still need seller notification.
+   */
+  approvePendingOlderThan(minAgeMs = 8_000): PublishedListingRecord[] {
+    const now = Date.now();
+    const newlyApproved: PublishedListingRecord[] = [];
+    for (const record of this.load()) {
+      if (isApproved(record)) continue;
+      const age = now - new Date(record.publishedAt).getTime();
+      if (age < minAgeMs) continue;
+      const approved = this.approve(record.auction.id);
+      if (approved) newlyApproved.push(approved);
+    }
+    return newlyApproved;
+  },
+
+  markApprovalNotified(id: string) {
+    const records = this.load();
+    const index = records.findIndex(
+      (r) => r.auction.id === id || r.auction.vehicle.id === id
+    );
+    if (index < 0) return;
+    records[index] = { ...records[index]!, approvalNotified: true };
+    this.saveAll(records);
+  },
+
+  /** Call when seller dismisses or finishes the one-time post-approval share sheet. */
+  clearSharePrompt(id: string) {
+    const records = this.load();
+    const index = records.findIndex(
+      (r) => r.auction.id === id || r.auction.vehicle.id === id
+    );
+    if (index < 0) return;
+    records[index] = { ...records[index]!, sharePromptPending: false };
+    this.saveAll(records);
   },
 };

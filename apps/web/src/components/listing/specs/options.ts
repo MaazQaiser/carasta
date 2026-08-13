@@ -388,6 +388,7 @@ export function createEmptyModificationEntry(
     manufacturer: "",
     specifications: "",
     workPerformedBy: "",
+    completedDuring: "",
     shopBuilder: "",
     installationDate: "",
     dateStatus: "",

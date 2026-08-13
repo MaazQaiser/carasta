@@ -109,7 +109,8 @@ function prefetchForPath(
   if (pathname.includes("/notes")) candidates.add("/mobile-listing/ai");
   if (pathname.includes("/ai")) candidates.add("/mobile-listing/settings");
   if (pathname.includes("/settings")) candidates.add("/mobile-listing/preview");
-  if (pathname.includes("/preview")) candidates.add("/mobile-listing/review");
+  if (pathname.includes("/buyer-preview")) candidates.add("/mobile-listing/review");
+  else if (pathname.includes("/preview")) candidates.add("/mobile-listing/buyer-preview");
   if (pathname.includes("/review")) candidates.add("/mobile-listing/submitted");
   if (pathname.includes("/submitted")) candidates.add("/mobile-listing/share/external");
   if (pathname.includes("/share/external")) candidates.add("/mobile-listing/share/community");

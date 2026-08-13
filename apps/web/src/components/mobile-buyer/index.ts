@@ -1,5 +1,5 @@
 export { MobileBuyerShell } from "./MobileBuyerShell";
-export { MobileBuyerDetailScreen, MobileBuyerLiveDetailScreen } from "./screens/MobileBuyerDetailScreen";
+export { MobileBuyerDetailScreen, MobileBuyerLiveDetailScreen, BuyerListingBody } from "./screens/MobileBuyerDetailScreen";
 export {
   MobileBuyerGalleryScreen,
   MobileBuyerLiveGalleryScreen,

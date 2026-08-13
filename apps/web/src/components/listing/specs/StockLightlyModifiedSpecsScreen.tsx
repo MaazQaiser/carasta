@@ -161,11 +161,7 @@ export function StockLightlyModifiedSpecsScreen() {
 
         <section className="rounded-2xl border bg-card p-4 sm:p-5 space-y-3">
           <div>
-            <h2 className="text-sm font-semibold">Is this vehicle essentially factory original?</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Choose Yes if it remains essentially as delivered from the factory. You must answer
-              before continuing.
-            </p>
+            <h2 className="text-sm font-semibold">Is this vehicle stock?</h2>
           </div>
           <div className="grid grid-cols-2 gap-3 max-w-md">
             <Button
@@ -184,6 +180,12 @@ export function StockLightlyModifiedSpecsScreen() {
             </Button>
           </div>
         </section>
+
+        {hasModifications === false ? (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+            Stock vehicle selected - no modifications will be able to be added
+          </div>
+        ) : null}
 
         <div className="rounded-2xl border bg-card p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-5 min-w-0">
           <SpecsCategoryTabs
@@ -276,7 +278,7 @@ export function StockLightlyModifiedSpecsScreen() {
                 <div className="min-w-0">
                   <h2 className="font-semibold text-sm">Modifications</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Add light changes by section — the form stays on this page.
+                    Add modifications by category with details and documents
                   </p>
                 </div>
                 <Button
@@ -319,8 +321,7 @@ export function StockLightlyModifiedSpecsScreen() {
                             : "Add Modification"}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Document a light modification with category, work details, and optional
-                          photos or receipts.
+                          Add modifications by category with details and documents
                         </p>
                       </div>
                       <div className="p-4 sm:p-5">
@@ -336,9 +337,9 @@ export function StockLightlyModifiedSpecsScreen() {
 
                   {!editingEntry && entriesInActiveCategory.length === 0 ? (
                     <div className="rounded-xl border border-dashed bg-muted/20 px-5 py-10 text-center h-full min-h-[178px] flex flex-col items-center justify-center">
-                      <p className="font-medium text-sm">No modifications in this section</p>
+                      <p className="font-medium text-sm">No modifications added</p>
                       <p className="text-sm text-muted-foreground mt-1 mb-4">
-                        Document wheels, stereo upgrades, or any other light changes.
+                        Add wheels, exhaust, window tint, wrap, etc.
                       </p>
                       <Button
                         type="button"

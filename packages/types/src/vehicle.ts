@@ -88,6 +88,7 @@ export interface VehicleModificationEntry {
   manufacturer?: string;
   specifications?: string;
   workPerformedBy?: string;
+  completedDuring?: string;
   shopBuilder?: string;
   installationDate?: string;
   additionalNotes?: string;

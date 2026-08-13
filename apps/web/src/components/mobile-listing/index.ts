@@ -23,6 +23,7 @@ export { MobileRaceSpecsScreen } from "./screens/MobileRaceSpecsScreen";
 export { MobileRaceModScreen } from "./screens/MobileRaceModScreen";
 export { MobileRaceIdentityFields } from "./screens/MobileRaceIdentityFields";
 export { MobilePreviewScreen } from "./screens/MobilePreviewScreen";
+export { MobileBuyerViewPreviewScreen } from "./screens/MobileBuyerViewPreviewScreen";
 export { MobileReviewSubmitScreen } from "./screens/MobileReviewSubmitScreen";
 export { MobileListingSubmittedScreen } from "./screens/MobileListingSubmittedScreen";
 export { MobileExternalShareScreen } from "./screens/MobileExternalShareScreen";

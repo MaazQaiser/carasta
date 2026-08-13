@@ -53,10 +53,10 @@ export function MobileReviewSubmitScreen() {
     <MobileListingShell stepId="review" continueDisabled>
       <div className="flex flex-col gap-4 px-6 pt-4 pb-6">
         <div>
-          <h1 className="text-[28px] font-extrabold text-[#1c1c1e]">Review &amp; Submit</h1>
+          <h1 className="text-[28px] font-extrabold text-[#1c1c1e]">Submit to Carasta</h1>
           <p className="mt-2 text-[14px] text-[#636366]">
-            Make sure everything looks good before submitting. Your listing will appear in
-            marketplace auctions for buyers.
+            Ready to send your listing for review? We&apos;ll notify you once it&apos;s approved
+            and scheduled.
           </p>
         </div>
         {checks.map((item) => (
@@ -87,7 +87,7 @@ export function MobileReviewSubmitScreen() {
               Submitting Listing
             </span>
           ) : (
-            "Submit Listing"
+            "Submit to Carasta"
           )}
         </button>
       </div>

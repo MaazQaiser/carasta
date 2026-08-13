@@ -275,6 +275,7 @@ export function ListingBuilderProvider({ children }: { children: React.ReactNode
           manufacturer: "",
           specifications: "",
           workPerformedBy: "",
+          completedDuring: "",
           shopBuilder: "",
           installationDate: "",
           dateStatus: "",
