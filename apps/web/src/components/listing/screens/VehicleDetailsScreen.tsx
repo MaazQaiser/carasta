@@ -8,14 +8,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FieldHint, FieldLabel } from "../fields";
+import { FieldHint, FieldLabel, textareaClassName } from "../fields";
 import { ListingStep } from "../ListingStep";
 import { ListingSection } from "../ListingSection";
 import { useListingBuilder } from "../ListingBuilderContext";
-import type { ListingVehicleDetails, RestorationBuildTypeId } from "../types";
+import type { ListingVehicleDetails, RestorationBuildTypeId, RestomodSubcategoryId } from "../types";
 import { getIssuesForStep } from "../services/validation-service";
-import { MILEAGE_STATUS_OPTIONS } from "../specs/options";
-import { RESTORATION_BUILD_TYPES } from "../specs/restored-restomod";
+import {
+  MILEAGE_STATUS_OPTIONS,
+  normalizeMileageStatus,
+  HORSEPOWER_STATUS_OPTIONS,
+  TORQUE_STATUS_OPTIONS,
+  WORK_PERFORMED_BY_OPTIONS,
+  BUILD_STATUS_OPTIONS,
+  shouldShowShopBuilder,
+  shouldShowCompletionYear,
+} from "../specs/options";
+import {
+  FLOW3_BUILD_OVERVIEW_COPY,
+  RESTORATION_BUILD_TYPES,
+  RESTOMODE_SUBCATEGORIES,
+  isRestomodBuild,
+  restorationBuildTypePatch,
+  restorationBuildStatusPatch,
+  restorationWorkPerformedByPatch,
+} from "../specs/restored-restomod";
+import { ListingShopBuilderField } from "../shop-builder/ListingShopBuilderField";
 import { RaceIdentityFields } from "./RaceIdentityFields";
 import {
   EXTERIOR_COLOR_OPTIONS,
@@ -278,8 +296,8 @@ export function VehicleDetailsScreen() {
 
         {isRestored ? (
           <ListingSection
-            title="Restoration Details"
-            description="Build type and mileage status are required for this listing type."
+            title={FLOW3_BUILD_OVERVIEW_COPY.title}
+            description={FLOW3_BUILD_OVERVIEW_COPY.description}
           >
             {restoration.identityType ? (
               <div className="rounded-xl border bg-muted/30 px-4 py-3 mb-4">
@@ -289,6 +307,9 @@ export function VehicleDetailsScreen() {
                 <p className="mt-1 text-sm font-semibold">{restoration.identityType}</p>
               </div>
             ) : null}
+            <p className="text-xs text-muted-foreground mb-4">
+              {FLOW3_BUILD_OVERVIEW_COPY.survivorHint}
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <FieldLabel>Build Type *</FieldLabel>
@@ -298,7 +319,10 @@ export function VehicleDetailsScreen() {
                     updateWorkspace({
                       restoration: {
                         ...restoration,
-                        buildType: v as RestorationBuildTypeId,
+                        ...restorationBuildTypePatch(
+                          restoration,
+                          v as RestorationBuildTypeId
+                        ),
                       },
                     })
                   }
@@ -314,11 +338,148 @@ export function VehicleDetailsScreen() {
                     ))}
                   </SelectContent>
                 </Select>
+                {RESTORATION_BUILD_TYPES.find((type) => type.id === restoration.buildType)
+                  ?.description ? (
+                  <FieldHint>
+                    {
+                      RESTORATION_BUILD_TYPES.find((type) => type.id === restoration.buildType)
+                        ?.description
+                    }
+                  </FieldHint>
+                ) : null}
               </div>
+              {isRestomodBuild(restoration.buildType) ? (
+                <div>
+                  <FieldLabel>{FLOW3_BUILD_OVERVIEW_COPY.restomodSubcategoryLabel}</FieldLabel>
+                  <Select
+                    value={restoration.restomodSubcategory || undefined}
+                    onValueChange={(v) =>
+                      updateWorkspace({
+                        restoration: {
+                          ...restoration,
+                          restomodSubcategory: v as RestomodSubcategoryId,
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subcategory" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RESTOMODE_SUBCATEGORIES.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldHint>{FLOW3_BUILD_OVERVIEW_COPY.restomodSubcategoryHint}</FieldHint>
+                </div>
+              ) : null}
+              <div>
+                <FieldLabel>Build Status *</FieldLabel>
+                <Select
+                  value={restoration.buildStatus || undefined}
+                  onValueChange={(v) =>
+                    updateWorkspace({
+                      restoration: {
+                        ...restoration,
+                        ...restorationBuildStatusPatch(restoration, v),
+                      },
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select build status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BUILD_STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {shouldShowCompletionYear(restoration.buildStatus) ? (
+                <>
+                  <div>
+                    <FieldLabel htmlFor="completion-year">Completion Year</FieldLabel>
+                    <Input
+                      id="completion-year"
+                      inputMode="numeric"
+                      value={restoration.completionYear}
+                      onChange={(e) =>
+                        updateWorkspace({
+                          restoration: {
+                            ...restoration,
+                            completionYear: e.target.value.replace(/\D/g, "").slice(0, 4),
+                          },
+                        })
+                      }
+                      placeholder="e.g. 2018"
+                    />
+                    <FieldHint>{FLOW3_BUILD_OVERVIEW_COPY.completionYearHint}</FieldHint>
+                  </div>
+                  <div>
+                    <FieldLabel htmlFor="completion-date">Exact Date</FieldLabel>
+                    <Input
+                      id="completion-date"
+                      type="date"
+                      value={restoration.completionDate}
+                      onChange={(e) =>
+                        updateWorkspace({
+                          restoration: {
+                            ...restoration,
+                            completionDate: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                    <FieldHint>Optional.</FieldHint>
+                  </div>
+                </>
+              ) : null}
+              <div>
+                <FieldLabel>Work Performed By *</FieldLabel>
+                <Select
+                  value={restoration.workPerformedBy || undefined}
+                  onValueChange={(v) =>
+                    updateWorkspace({
+                      restoration: {
+                        ...restoration,
+                        ...restorationWorkPerformedByPatch(restoration, v),
+                      },
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select who performed the work" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORK_PERFORMED_BY_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {shouldShowShopBuilder(restoration.workPerformedBy) ? (
+                <div>
+                  <ListingShopBuilderField
+                    label="Builder / Restoration Shop"
+                    value={restoration.shopBuilder || restoration.factoryCorrect.restorationShop}
+                    target="restoration.shop"
+                    placeholder="Search or add a shop"
+                  />
+                  <FieldHint>{FLOW3_BUILD_OVERVIEW_COPY.shopBuilderHint}</FieldHint>
+                </div>
+              ) : null}
               <div>
                 <FieldLabel>Mileage Status *</FieldLabel>
                 <Select
-                  value={restoration.mileageStatus || undefined}
+                  value={normalizeMileageStatus(restoration.mileageStatus) || undefined}
                   onValueChange={(v) =>
                     updateWorkspace({
                       restoration: { ...restoration, mileageStatus: v },
@@ -337,6 +498,20 @@ export function VehicleDetailsScreen() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="sm:col-span-2">
+                <FieldLabel htmlFor="restoration-build-summary">Build Summary</FieldLabel>
+                <textarea
+                  id="restoration-build-summary"
+                  className={textareaClassName}
+                  value={restoration.buildSummary}
+                  onChange={(e) =>
+                    updateWorkspace({
+                      restoration: { ...restoration, buildSummary: e.target.value },
+                    })
+                  }
+                  placeholder={FLOW3_BUILD_OVERVIEW_COPY.buildSummaryPlaceholder}
+                />
+              </div>
             </div>
           </ListingSection>
         ) : null}
@@ -344,7 +519,7 @@ export function VehicleDetailsScreen() {
         {isModified ? (
           <ListingSection
             title="Performance Specifications"
-            description="Current build output for this Modified / Performance listing."
+            description="Enter detailed output if you have it. Unsupported or unverified figures are shown as seller-reported."
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(
@@ -352,8 +527,6 @@ export function VehicleDetailsScreen() {
                   ["currentEngine", "Current Engine", performance.currentEngine],
                   ["transmission", "Current Transmission", performance.transmission],
                   ["drivetrain", "Current Drivetrain", performance.drivetrain],
-                  ["horsepower", "Horsepower", performance.horsepower],
-                  ["torque", "Torque", performance.torque],
                   ["fuelType", "Fuel Type", performance.fuelType],
                   ["tuningPlatform", "Tuning Platform", performance.tuningPlatform],
                 ] as const
@@ -363,16 +536,73 @@ export function VehicleDetailsScreen() {
                   <Input
                     id={`perf-${key}`}
                     value={value}
-                    onChange={(e) => {
-                      const next =
-                        key === "horsepower" || key === "torque"
-                          ? e.target.value.replace(/\D/g, "")
-                          : e.target.value;
-                      updatePerformanceSummary({ [key]: next });
-                    }}
+                    onChange={(e) => updatePerformanceSummary({ [key]: e.target.value })}
                   />
                 </div>
               ))}
+              <div>
+                <FieldLabel htmlFor="perf-horsepower">Horsepower</FieldLabel>
+                <Input
+                  id="perf-horsepower"
+                  value={performance.horsepower}
+                  onChange={(e) =>
+                    updatePerformanceSummary({
+                      horsepower: e.target.value.replace(/\D/g, ""),
+                      horsepowerStatus:
+                        performance.horsepowerStatus || "Seller Reported",
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <FieldLabel>Horsepower Status</FieldLabel>
+                <Select
+                  value={performance.horsepowerStatus || undefined}
+                  onValueChange={(v) => updatePerformanceSummary({ horsepowerStatus: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seller Reported" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HORSEPOWER_STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <FieldLabel htmlFor="perf-torque">Torque</FieldLabel>
+                <Input
+                  id="perf-torque"
+                  value={performance.torque}
+                  onChange={(e) =>
+                    updatePerformanceSummary({
+                      torque: e.target.value.replace(/\D/g, ""),
+                      torqueStatus: performance.torqueStatus || "Seller Reported",
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <FieldLabel>Torque Status</FieldLabel>
+                <Select
+                  value={performance.torqueStatus || undefined}
+                  onValueChange={(v) => updatePerformanceSummary({ torqueStatus: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seller Reported" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TORQUE_STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="sm:col-span-2">
                 <FieldLabel htmlFor="perf-summary">Build Summary</FieldLabel>
                 <Input
@@ -381,6 +611,10 @@ export function VehicleDetailsScreen() {
                   onChange={(e) => updatePerformanceSummary({ buildSummary: e.target.value })}
                   placeholder="Short summary of the current build"
                 />
+                <FieldHint>
+                  Dyno verified and factory-rated figures can be labeled as such. Anything else
+                  remains seller-reported.
+                </FieldHint>
               </div>
             </div>
           </ListingSection>

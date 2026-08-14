@@ -7,15 +7,23 @@ import { ListingReviewIssues } from "@/components/listing/ListingReviewIssues";
 import {
   listingReviewAuctionSettingsSummary,
   listingReviewBuildRestorationSummary,
+  listingReviewCompetitionHistorySummary,
   listingReviewDescriptionSummary,
+  listingReviewDocumentationSummary,
   listingReviewDocumentsSummary,
   listingReviewHeroUrl,
+  listingReviewKnownIssuesSummary,
   listingReviewModificationsSummary,
   listingReviewPhotosSummary,
+  listingReviewPrimaryUseSummary,
+  listingReviewRaceBuildSummary,
+  listingReviewSafetySummary,
+  listingReviewSparesSummary,
   listingReviewSpecsLine,
   listingReviewVehicleTitle,
   showListingReviewBuildRestoration,
   showListingReviewModifications,
+  showListingReviewPrimaryUse,
 } from "@/components/listing/listing-review-summary";
 import { useMobileListingChrome } from "../MobileListingRuntime";
 import { MobileListingShell } from "../MobileListingShell";
@@ -89,11 +97,66 @@ export function MobilePreviewScreen() {
           />
         ) : null}
 
+        {showListingReviewPrimaryUse(draft) ? (
+          <PreviewRow
+            label="Primary Use"
+            value={listingReviewPrimaryUseSummary(draft)}
+            onPress={() => navigate("/mobile-listing/race/summary")}
+          />
+        ) : null}
+
+        {showListingReviewPrimaryUse(draft) ? (
+          <PreviewRow
+            label="Race / Track Build"
+            value={listingReviewRaceBuildSummary(draft)}
+            onPress={() => navigate("/mobile-listing/race/specifications")}
+          />
+        ) : null}
+
+        {showListingReviewPrimaryUse(draft) ? (
+          <PreviewRow
+            label="Safety Equipment"
+            value={listingReviewSafetySummary(draft)}
+            onPress={() => navigate("/mobile-listing/race/safety")}
+          />
+        ) : null}
+
+        {showListingReviewPrimaryUse(draft) ? (
+          <PreviewRow
+            label="Competition History"
+            value={listingReviewCompetitionHistorySummary(draft)}
+            onPress={() => navigate("/mobile-listing/race/biography")}
+          />
+        ) : null}
+
+        {showListingReviewPrimaryUse(draft) ? (
+          <PreviewRow
+            label="Race / Track Documentation"
+            value={listingReviewDocumentationSummary(draft)}
+            onPress={() => navigate("/mobile-listing/race/documentation")}
+          />
+        ) : null}
+
+        {showListingReviewPrimaryUse(draft) ? (
+          <PreviewRow
+            label="Spares & Support Equipment"
+            value={listingReviewSparesSummary(draft)}
+            onPress={() => navigate("/mobile-listing/race/spares")}
+          />
+        ) : null}
+
         <PreviewRow
           label="Condition"
           value={condition}
           onPress={() => navigate("/mobile-listing/condition")}
         />
+        {showListingReviewPrimaryUse(draft) ? (
+          <PreviewRow
+            label="Known Race / Track Issues"
+            value={listingReviewKnownIssuesSummary(draft)}
+            onPress={() => navigate("/mobile-listing/condition")}
+          />
+        ) : null}
         <PreviewRow
           label="Photos"
           value={listingReviewPhotosSummary(draft)}

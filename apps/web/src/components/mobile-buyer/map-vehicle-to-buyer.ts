@@ -1,4 +1,5 @@
 import type { Auction, MarketplaceListingType, MarketplaceSaleType, Vehicle } from "@carasta/types";
+import { displayPerformanceClaimStatus } from "@/components/listing/specs/options";
 import type {
   BuyerAccordionItem,
   BuyerBadge,
@@ -151,7 +152,12 @@ function modsToAccordion(vehicle: Vehicle): BuyerAccordionItem[] {
       id: entry.id,
       title: entry.title,
       detail: entry.description || entry.specifications,
-      meta: [entry.partsBrand, entry.shopBuilder || entry.workPerformedBy, entry.installationDate]
+      meta: [
+        entry.partClassification,
+        entry.partsBrand,
+        entry.shopBuilder || entry.workPerformedBy,
+        entry.installationDate,
+      ]
         .filter(Boolean)
         .join(" · "),
     })),
@@ -213,11 +219,15 @@ function buildContent(vehicle: Vehicle, type: BuyerListingType): Record<string, 
         { label: "Drivetrain", value: perf?.drivetrain || vehicle.spec.driveType || "—" },
         {
           label: "Horsepower",
-          value: [perf?.horsepower, perf?.horsepowerStatus].filter(Boolean).join(" · ") || "—",
+          value: perf?.horsepower
+            ? `${perf.horsepower} · ${displayPerformanceClaimStatus(perf.horsepowerStatus)}`
+            : "—",
         },
         {
           label: "Torque",
-          value: [perf?.torque, perf?.torqueStatus].filter(Boolean).join(" · ") || "—",
+          value: perf?.torque
+            ? `${perf.torque} · ${displayPerformanceClaimStatus(perf.torqueStatus)}`
+            : "—",
         },
         { label: "Fuel", value: perf?.fuelType || vehicle.spec.fuelType || "—" },
         { label: "Tuning", value: perf?.tuningPlatform || "—" },
@@ -226,11 +236,11 @@ function buildContent(vehicle: Vehicle, type: BuyerListingType): Record<string, 
       dyno: [
         {
           label: "HP Status",
-          value: perf?.horsepowerStatus || "—",
+          value: displayPerformanceClaimStatus(perf?.horsepowerStatus),
         },
         {
           label: "Torque Status",
-          value: perf?.torqueStatus || "—",
+          value: displayPerformanceClaimStatus(perf?.torqueStatus),
         },
       ],
       builder:
@@ -249,19 +259,29 @@ function buildContent(vehicle: Vehicle, type: BuyerListingType): Record<string, 
         { label: "Identity", value: restoration?.identityType || "—" },
         { label: "Identity value", value: restoration?.identityValue || "—" },
         { label: "Build type", value: restoration?.buildType || "—" },
+        { label: "Build status", value: restoration?.buildStatus || "—" },
+        { label: "Work performed by", value: restoration?.workPerformedBy || "—" },
+        { label: "Shop / builder", value: restoration?.shopBuilder || "—" },
         { label: "Mileage status", value: restoration?.mileageStatus || "—" },
       ],
       matchingNumbers: recordToPairs(restoration?.factoryCorrect).slice(0, 8),
       authenticity: recordToPairs(restoration?.provenance).slice(0, 8),
       categories: modsToAccordion(vehicle),
       builder:
+        restoration?.shopBuilder ||
         restoration?.provenance?.Builder ||
         restoration?.provenance?.["Restoration Shop"] ||
         "—",
-      shop: restoration?.provenance?.["Restoration Shop"] || "—",
-      timeline: condition?.vehicleHistory
-        ? [{ id: "tl-1", title: "Vehicle history", detail: condition.vehicleHistory }]
-        : [],
+      shop:
+        restoration?.shopBuilder ||
+        restoration?.provenance?.["Restoration Shop"] ||
+        "—",
+      timeline: (restoration?.timelineEvents ?? []).map((event) => ({
+        id: event.id,
+        title: [event.dateYear, event.title].filter(Boolean).join(" "),
+        date: event.exactDate || event.dateYear,
+        detail: event.description,
+      })),
     };
   }
 
@@ -279,19 +299,34 @@ function buildContent(vehicle: Vehicle, type: BuyerListingType): Record<string, 
       detail: [h.track, h.className, h.position, h.notes].filter(Boolean).join(" · "),
     })),
     competitionProfile: recordToPairs(race?.competition),
-    biography: {
-      competitionHistory: race?.competition?.["Competition History Summary"] || vehicle.story || "",
-      vehicleHistory: condition?.vehicleHistory || "",
-      preparationNotes: race?.setup?.["Driver Notes"] || race?.setup?.["Crew Notes"] || "",
+    organizedCompetition: race?.organizedCompetition || "",
+    competitionHistory: race?.competitionHistory || "",
+    documentationTypes: race?.documentationTypes ?? [],
+    documentationOther: race?.documentationOther || "",
+    sparesIncluded: race?.sparesIncluded || "",
+    sparesDescription: race?.sparesDescription || "",
+    knownRaceTrackIssues: race?.knownRaceTrackIssues || condition?.knownRaceTrackIssues || "",
+    raceBuild: {
+      narrative: race?.buildNarrative || "",
+      workPerformedBy: race?.workPerformedBy || "",
+      shopBuilder: race?.shopBuilder || "",
     },
-    safetyChecklist: recordToPairs(race?.safety),
-    certifications: recordToPairs(race?.safety).filter((item) =>
-      /cert|inspect|logbook/i.test(item.label)
-    ),
+    biography: {
+      competitionHistory: race?.competitionHistory || vehicle.story || "",
+      vehicleHistory: condition?.vehicleHistory || "",
+      preparationNotes: race?.buildNarrative || race?.setup?.["Driver Notes"] || race?.setup?.["Crew Notes"] || "",
+    },
+    safetyChecklist: (race?.installedEquipment ?? []).map((label) => ({
+      label,
+      value: "Installed",
+    })),
+    safetyDates: recordToPairs(race?.safetyServiceDates),
+    safetyNotes: race?.safetyNotes || "",
+    certifications: [],
     modifications: modsToAccordion(vehicle),
     team: {
-      raceTeam: race?.competition?.["Sanctioning Body"] || "—",
-      builder: race?.competition?.Builder || "—",
+      raceTeam: race?.competition?.["Primary Use"] || "—",
+      builder: race?.shopBuilder || race?.workPerformedBy || "—",
       dealer: "—",
     },
   };

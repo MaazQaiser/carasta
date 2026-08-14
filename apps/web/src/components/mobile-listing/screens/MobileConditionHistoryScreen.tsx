@@ -13,6 +13,10 @@ import {
   toggleTitleStatus,
   type TitleStatusOption,
 } from "@/components/listing/specs/title-status";
+import {
+  FLOW4_KNOWN_ISSUES_COPY,
+  FLOW4_RACE_ACCIDENT_PLACEHOLDER,
+} from "@/components/listing/specs/race-track";
 import { MobileListingShell } from "../MobileListingShell";
 import { MobileOptionSheet } from "../MobileOptionSheet";
 
@@ -42,9 +46,11 @@ const HISTORY_SECTIONS = [
 ] as const;
 
 export function MobileConditionHistoryScreen() {
-  const { draft, updateCondition } = useListingBuilder();
+  const { draft, updateCondition, updateWorkspace } = useListingBuilder();
   const [openSection, setOpenSection] = React.useState<string | null>(null);
   const [sheet, setSheet] = React.useState<"title" | null>(null);
+  const isRace = draft.listingTypeId === "race-track-car";
+  const race = draft.modificationWorkspace.race;
 
   const titleStatuses = parseTitleStatuses(draft.condition.titleStatus);
   const titleLabel = formatTitleStatuses(titleStatuses) || "Select Status";
@@ -112,7 +118,11 @@ export function MobileConditionHistoryScreen() {
                       onChange={(event) =>
                         updateCondition({ [section.id]: event.target.value })
                       }
-                      placeholder={section.placeholder}
+                      placeholder={
+                        isRace && section.id === "accidentHistory"
+                          ? FLOW4_RACE_ACCIDENT_PLACEHOLDER
+                          : section.placeholder
+                      }
                       className="min-h-24 w-full resize-none rounded-lg border border-[#e5e5ea] p-3 text-[13px] outline-none focus:border-[#1b1464]"
                     />
                   </div>
@@ -121,6 +131,27 @@ export function MobileConditionHistoryScreen() {
             );
           })}
         </div>
+
+        {isRace ? (
+          <label className="block space-y-1.5">
+            <span className="text-[12px] font-semibold text-[#636366]">
+              {FLOW4_KNOWN_ISSUES_COPY.label}
+            </span>
+            <textarea
+              value={race.knownRaceTrackIssues ?? ""}
+              onChange={(event) =>
+                updateWorkspace({
+                  race: { ...race, knownRaceTrackIssues: event.target.value },
+                })
+              }
+              placeholder={FLOW4_KNOWN_ISSUES_COPY.prompt}
+              className="min-h-32 w-full resize-none rounded-lg border border-[#e5e5ea] p-3 text-[13px] leading-relaxed outline-none focus:border-[#1b1464]"
+            />
+            <p className="text-[11px] leading-relaxed text-[#636366]">
+              {FLOW4_KNOWN_ISSUES_COPY.prompt}
+            </p>
+          </label>
+        ) : null}
 
         <div className="space-y-2">
           <p className="text-[12px] font-semibold text-[#636366]">Vehicle Condition</p>

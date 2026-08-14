@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Auction, Vehicle } from "@carasta/types";
-import { VehicleDetailClient } from "@/app/vehicles/[id]/VehicleDetailClient";
+import { VehicleDetailClient } from "./VehicleDetailClient";
 import { PublishedListingService } from "@/components/listing/services/published-listing-service";
 import { Button } from "@/components/ui/button";
 
-export function PublishedAuctionFallback({ id }: { id: string }) {
+export function PublishedListingFallback({ id }: { id: string }) {
+  const router = useRouter();
   const [resolved, setResolved] = useState<{
     vehicle: Vehicle;
     auction: Auction;
@@ -19,11 +21,16 @@ export function PublishedAuctionFallback({ id }: { id: string }) {
       setResolved(null);
       return;
     }
+    const vehicleId = record.auction.vehicle.id;
+    if (vehicleId !== id) {
+      router.replace(`/vehicles/${vehicleId}`);
+      return;
+    }
     setResolved({
       vehicle: record.auction.vehicle,
       auction: record.auction,
     });
-  }, [id]);
+  }, [id, router]);
 
   if (resolved === undefined) {
     return (

@@ -9,6 +9,8 @@ import { useListingNotifications } from "../notifications/NotificationProvider";
 import type { ListingMediaItem } from "../types";
 import {
   collectBuildHistoryMedia,
+  listingPhotosHelper,
+  listingDocumentsHelper,
   LISTING_MEDIA_COPY,
   LISTING_MEDIA_LIMITS,
   showBuildHistorySection,
@@ -142,7 +144,7 @@ export function PhotosDocumentsScreen() {
 
         {tab === "photos" ? (
           <div className="space-y-8">
-            <p className="text-sm text-muted-foreground">{LISTING_MEDIA_COPY.photosHelper}</p>
+            <p className="text-sm text-muted-foreground">{listingPhotosHelper(draft)}</p>
 
             <ListingSection
               title={LISTING_MEDIA_COPY.generalPhotosTitle}
@@ -229,7 +231,7 @@ export function PhotosDocumentsScreen() {
 
         {tab === "documents" ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">{LISTING_MEDIA_COPY.documentsHelper}</p>
+            <p className="text-sm text-muted-foreground">{listingDocumentsHelper(draft)}</p>
             <ListingSection title="Documents" description={`${draft.documents.length} uploaded`}>
               <MediaUploadZone
                 accept="image/*,.pdf,application/pdf"

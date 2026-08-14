@@ -25,7 +25,7 @@ import { brand } from "@/theme/carastaTheme";
 
 const NAV_LINKS = [
   { href: "/", label: "Home", exact: true },
-  { href: "/auctions", label: "Auctions", alsoMatch: ["/marketplace"] },
+  { href: "/auctions", label: "Auctions", alsoMatch: ["/marketplace", "/vehicles"] },
   { href: "/shop", label: "Merch", alsoMatch: ["/merch"] },
   { href: "/carmunity", label: "Carmunity" },
 ];

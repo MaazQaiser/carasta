@@ -16,7 +16,7 @@ export interface MobileListingStep {
   href: string;
 }
 
-export const MOBILE_LISTING_TOTAL_STEPS = 16;
+export const MOBILE_LISTING_TOTAL_STEPS = 15;
 
 /** Mobile-only icon assets; labels/descriptions come from shared LISTING_TYPES. */
 export const MOBILE_LISTING_TYPE_ICONS: Record<ListingTypeId, string> = {
@@ -51,13 +51,18 @@ export const MOBILE_LISTING_STEPS: MobileListingStep[] = [
   { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "stock-mod-add", label: "Specifications & Light Modifications", href: "/mobile-listing/stock/modifications/add" },
   { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "modified-specifications", label: "Specifications & Modifications", href: "/mobile-listing/modified/specifications" },
   { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "modified-mod-add", label: "Specifications & Modifications", href: "/mobile-listing/modified/modifications/add" },
-  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "restored-specifications", label: "Authenticity & Restoration", href: "/mobile-listing/restored/specifications" },
-  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "restored-mod-add", label: "Authenticity & Restoration", href: "/mobile-listing/restored/modifications/add" },
-  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-summary", label: "Competition Profile", href: "/mobile-listing/race/summary" },
-  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-biography", label: "Vehicle Biography", href: "/mobile-listing/race/biography" },
-  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-specifications", label: "Race Specifications & Modifications", href: "/mobile-listing/race/specifications" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "restored-specifications", label: "Build & Restoration", href: "/mobile-listing/restored/specifications" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "restored-timeline", label: "Restoration Timeline", href: "/mobile-listing/restored/timeline" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "restored-summary", label: "Build Summary", href: "/mobile-listing/restored/summary" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "restored-mod-add", label: "Build & Restoration", href: "/mobile-listing/restored/modifications/add" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-summary", label: "Race / Track Use", href: "/mobile-listing/race/summary" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-biography", label: "Competition History", href: "/mobile-listing/race/biography" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-specifications", label: "Race / Track Build", href: "/mobile-listing/race/specifications" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-safety", label: "Safety Equipment", href: "/mobile-listing/race/safety" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-documentation", label: "Race / Track Documentation", href: "/mobile-listing/race/documentation" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-spares", label: "Spares & Support Equipment", href: "/mobile-listing/race/spares" },
   { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-mod-add", label: "Race Specifications & Modifications", href: "/mobile-listing/race/modifications/add" },
-  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-competition", label: "Competition Profile", href: "/mobile-listing/race/competition" },
+  { index: 4, total: MOBILE_LISTING_TOTAL_STEPS, id: "race-competition", label: "Race / Track Use", href: "/mobile-listing/race/competition" },
   { index: 5, total: MOBILE_LISTING_TOTAL_STEPS, id: "condition", label: "Condition & History", href: "/mobile-listing/condition" },
   { index: 6, total: MOBILE_LISTING_TOTAL_STEPS, id: "photos", label: "Photos, Videos & Documents", href: "/mobile-listing/photos" },
   { index: 7, total: MOBILE_LISTING_TOTAL_STEPS, id: "notes", label: "Owner's Notes", href: "/mobile-listing/notes" },
@@ -85,6 +90,8 @@ export const MOBILE_SHARED_BACK_HREF: Record<string, string> = {
   "modified-specifications": "/mobile-listing/details",
   "modified-mod-add": "/mobile-listing/modified/specifications",
   "restored-specifications": "/mobile-listing/details",
+  "restored-timeline": "/mobile-listing/restored/specifications",
+  "restored-summary": "/mobile-listing/restored/timeline",
   "restored-mod-add": "/mobile-listing/restored/specifications",
   condition: "/mobile-listing/stock/specifications",
   photos: "/mobile-listing/condition",
@@ -99,8 +106,11 @@ export const MOBILE_SHARED_BACK_HREF: Record<string, string> = {
   "share-community": "/profile?tab=listings",
   "share-confirmation": "/profile?tab=listings",
   "race-summary": "/mobile-listing/details",
-  "race-biography": "/mobile-listing/race/summary",
-  "race-specifications": "/mobile-listing/race/biography",
+  "race-specifications": "/mobile-listing/race/summary",
+  "race-safety": "/mobile-listing/race/specifications",
+  "race-biography": "/mobile-listing/race/safety",
+  "race-documentation": "/mobile-listing/race/biography",
+  "race-spares": "/mobile-listing/race/documentation",
   "race-mod-add": "/mobile-listing/race/specifications",
   "race-competition": "/mobile-listing/details",
   "shop-builder": "/mobile-listing/type",

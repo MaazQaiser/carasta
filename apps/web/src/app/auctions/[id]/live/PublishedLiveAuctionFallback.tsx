@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Auction } from "@carasta/types";
 import { LiveAuctionClient } from "./LiveAuctionClient";
 import { PublishedListingService } from "@/components/listing/services/published-listing-service";
@@ -9,12 +10,18 @@ import { Button } from "@/components/ui/button";
 
 /** Client fallback when mock auctionService misses a seller-published listing. */
 export function PublishedLiveAuctionFallback({ id }: { id: string }) {
+  const router = useRouter();
   const [auction, setAuction] = useState<Auction | null | undefined>(undefined);
 
   useEffect(() => {
     const record = PublishedListingService.resolve(id);
-    setAuction(record?.auction ?? null);
-  }, [id]);
+    const next = record?.auction ?? null;
+    if (next && next.id !== id) {
+      router.replace(`/auctions/${next.id}/live`);
+      return;
+    }
+    setAuction(next);
+  }, [id, router]);
 
   if (auction === undefined) {
     return (

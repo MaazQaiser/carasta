@@ -4,7 +4,7 @@ import * as React from "react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import { MobileListingShell } from "../MobileListingShell";
 import { useMobileListingChrome } from "../MobileListingRuntime";
-import { ShopBuilderService } from "./shop-builder-service";
+import { ShopBuilderService, type ShopBuilderRecord } from "./shop-builder-service";
 import {
   applyShopBuilderSelection,
   ShopBuilderSession,
@@ -19,7 +19,6 @@ export function MobileShopBuilderAddScreen() {
   const [name, setName] = React.useState("");
   const [city, setCity] = React.useState("");
   const [state, setState] = React.useState("");
-  const [type, setType] = React.useState<"Shop" | "Builder" | "Company">("Shop");
 
   React.useEffect(() => {
     const loaded = ShopBuilderSession.load();
@@ -31,10 +30,25 @@ export function MobileShopBuilderAddScreen() {
   }, [navigate]);
 
   const canSave = name.trim().length > 1 && city.trim().length > 0 && state.trim().length > 0;
+  const matches = ShopBuilderService.findSimilar(name, city, state);
+
+  const selectExisting = (shop: ShopBuilderRecord) => {
+    if (!session) return;
+    const next = applyShopBuilderSelection(
+      draft,
+      session.target,
+      shop.name,
+      session.entryId
+    );
+    replaceDraft(next);
+    const returnTo = session.returnTo;
+    ShopBuilderSession.clear();
+    navigate(returnTo);
+  };
 
   const save = () => {
     if (!session || !canSave) return;
-    const created = ShopBuilderService.add({ name, city, state, type });
+    const created = ShopBuilderService.add({ name, city, state });
     const next = applyShopBuilderSelection(
       draft,
       session.target,
@@ -68,7 +82,7 @@ export function MobileShopBuilderAddScreen() {
             Add Shop / Builder
           </h1>
           <p className="mt-2 text-[14px] text-[#636366]">
-            Add name, city, and state. This shop will be searchable for future listings.
+            Add name, city, and state. Match an existing record when you can to avoid duplicates.
           </p>
         </div>
 
@@ -103,20 +117,26 @@ export function MobileShopBuilderAddScreen() {
           />
         </label>
 
-        <label className="block space-y-1.5">
-          <span className="text-[12px] font-semibold text-[#636366]">Type</span>
-          <select
-            value={type}
-            onChange={(event) =>
-              setType(event.target.value as "Shop" | "Builder" | "Company")
-            }
-            className="h-11 w-full rounded-lg border border-[#e5e5ea] bg-white px-3 text-[13px] outline-none focus:border-[#1b1464]"
-          >
-            <option value="Shop">Shop</option>
-            <option value="Builder">Builder</option>
-            <option value="Company">Company</option>
-          </select>
-        </label>
+        {matches.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#636366]">
+              Possible matches — select one instead of adding a duplicate
+            </p>
+            {matches.map((shop) => (
+              <button
+                key={shop.id}
+                type="button"
+                onClick={() => selectExisting(shop)}
+                className="w-full rounded-xl border border-[#e5e5ea] px-3 py-3 text-left hover:border-[#1b1464] hover:bg-[#f4f5fc]"
+              >
+                <p className="text-[14px] font-semibold text-[#1c1c1e]">{shop.name}</p>
+                <p className="mt-0.5 text-[12px] text-[#636366]">
+                  {[shop.city, shop.state].filter(Boolean).join(", ") || "Location not listed"}
+                </p>
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         <button
           type="button"

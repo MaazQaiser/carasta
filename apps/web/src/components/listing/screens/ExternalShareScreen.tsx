@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Facebook, Instagram, Mail, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldHint, FieldLabel, textareaClassName } from "../fields";
 import { ListingStep } from "../ListingStep";
@@ -13,13 +12,20 @@ import {
   SubmissionSession,
 } from "../services/submission-session";
 import { useListingNotifications } from "../notifications/NotificationProvider";
+import {
+  CopyLinkIcon,
+  FacebookBrandIcon,
+  GmailBrandIcon,
+  InstagramBrandIcon,
+  XBrandIcon,
+} from "@/components/share/ShareBrandIcons";
 
 const DESTINATIONS = [
-  { id: "Instagram", label: "Instagram", icon: Instagram },
-  { id: "Facebook", label: "Facebook", icon: Facebook },
-  { id: "X", label: "X", icon: Twitter },
-  { id: "Email", label: "Email", icon: Mail },
-  { id: "Copy Link", label: "Copy Link", icon: Copy },
+  { id: "Instagram", label: "Instagram", Icon: InstagramBrandIcon },
+  { id: "Facebook", label: "Facebook", Icon: FacebookBrandIcon },
+  { id: "X", label: "X", Icon: XBrandIcon },
+  { id: "Email", label: "Email", Icon: GmailBrandIcon },
+  { id: "Copy Link", label: "Copy Link", Icon: CopyLinkIcon },
 ] as const;
 
 export function ExternalShareScreen() {
@@ -73,7 +79,7 @@ export function ExternalShareScreen() {
 
         <ListingSection title="Share destinations">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {DESTINATIONS.map(({ id, label, icon: Icon }) => (
+            {DESTINATIONS.map(({ id, label, Icon }) => (
               <Button
                 key={id}
                 type="button"
@@ -82,7 +88,9 @@ export function ExternalShareScreen() {
                 onClick={() => shareTo(id)}
                 disabled={!caption.trim()}
               >
-                <Icon className="h-4 w-4" />
+                <span className="[&>svg]:h-6 [&>svg]:w-6">
+                  <Icon />
+                </span>
                 {label}
               </Button>
             ))}

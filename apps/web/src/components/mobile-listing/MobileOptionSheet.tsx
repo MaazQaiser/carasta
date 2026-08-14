@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 /**
  * Bottom sheet for mobile listing / buyer flows.
@@ -14,12 +14,14 @@ export function MobileOptionSheet({
   onClose,
   children,
   footer,
+  showHandle = false,
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  showHandle?: boolean;
 }) {
   const [mounted, setMounted] = React.useState(false);
 
@@ -57,17 +59,36 @@ export function MobileOptionSheet({
         aria-label={title}
         className="relative z-10 flex max-h-[85svh] w-full max-w-[440px] flex-col rounded-t-[28px] bg-white shadow-xl"
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-[#e5e5ea] px-5 py-4">
-          <h2 className="text-[17px] font-bold text-[#1c1c1e]">{title}</h2>
-          <button
-            type="button"
-            aria-label="Close dialog"
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-[#636366]"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        {showHandle ? (
+          <div className="flex shrink-0 flex-col">
+            <div className="flex justify-center pt-3">
+              <span className="h-1 w-10 rounded-full bg-[#d1d5db]" />
+            </div>
+            <div className="flex items-center justify-between px-5 pb-2 pt-3">
+              <h2 className="text-[20px] font-bold text-[#1c1c1e]">{title}</h2>
+              <button
+                type="button"
+                aria-label="Close dialog"
+                onClick={onClose}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eceef2] text-[#6b7280]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex shrink-0 items-center justify-between border-b border-[#e5e5ea] px-5 py-4">
+            <h2 className="text-[17px] font-bold text-[#1c1c1e]">{title}</h2>
+            <button
+              type="button"
+              aria-label="Close dialog"
+              onClick={onClose}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#636366]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        )}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
           {children}
         </div>
@@ -77,6 +98,64 @@ export function MobileOptionSheet({
       </div>
     </div>,
     document.body
+  );
+}
+
+/** Card + radio list used by pickers like Mileage Status. */
+export function MobileRadioOptionList({
+  options,
+  value,
+  onSelect,
+}: {
+  options: readonly { value: string; label?: string; description?: string }[];
+  value?: string;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2.5" role="radiogroup">
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onSelect(option.value)}
+            className={[
+              "flex w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3.5 text-left transition-colors",
+              selected
+                ? "border-[#1b1464] bg-[#f4f5fc]"
+                : "border-[#e5e5ea] bg-white",
+            ].join(" ")}
+          >
+            <span className="min-w-0 flex-1">
+              <span
+                className={[
+                  "block text-[15px] font-bold leading-snug",
+                  selected ? "text-[#1b1464]" : "text-[#1c1c1e]",
+                ].join(" ")}
+              >
+                {option.label || option.value}
+              </span>
+              {option.description ? (
+                <span className="mt-0.5 block text-[12px] italic leading-snug text-[#8e8e93]">
+                  {option.description}
+                </span>
+              ) : null}
+            </span>
+            <span
+              className={[
+                "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2",
+                selected ? "border-[#1b1464] bg-[#1b1464]" : "border-[#d1d5db] bg-white",
+              ].join(" ")}
+            >
+              {selected ? <span className="h-2 w-2 rounded-full bg-white" /> : null}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -91,7 +170,7 @@ export function MobileOptionList({
   onSelect: (value: string) => void;
 }) {
   return (
-    <div className="divide-y divide-[#f0f0f2]">
+    <div className="overflow-hidden rounded-xl border border-[#1b1464] bg-white">
       {options.map((option) => {
         const optionValue = typeof option === "string" ? option : option.value;
         const label = typeof option === "string" ? option : option.label;
@@ -100,11 +179,16 @@ export function MobileOptionList({
           <button
             key={optionValue}
             type="button"
-            className="flex w-full items-center justify-between py-3.5 text-left text-[14px] text-[#1c1c1e]"
+            className={[
+              "flex w-full items-center justify-between border-b border-[#eeeeee] px-3 py-3.5 text-left text-[14px] last:border-b-0",
+              selected
+                ? "bg-[#f4f5fc] font-medium text-[#1b1464]"
+                : "bg-white text-[#1c1c1e]",
+            ].join(" ")}
             onClick={() => onSelect(optionValue)}
           >
             {label}
-            {selected ? <span className="font-semibold text-[#1b1464]">✓</span> : null}
+            {selected ? <Check className="h-4 w-4 shrink-0 text-[#1b1464]" /> : null}
           </button>
         );
       })}
@@ -140,7 +224,7 @@ export function MobileSelectField({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="relative flex h-11 w-full items-center rounded-lg border border-[#e5e5ea] bg-white px-3 text-left transition-colors hover:border-[#c7c7cc]"
+          className="relative flex h-11 w-full items-center rounded-lg border border-[#d1d5db] bg-white px-3 text-left transition-colors hover:border-[#c7c7cc] data-[open]:border-[#1b1464]"
         >
           <span className={display ? "text-[13px] text-[#1c1c1e]" : "text-[13px] text-[#9ca3af]"}>
             {display || placeholder || `Select ${label.toLowerCase()}`}

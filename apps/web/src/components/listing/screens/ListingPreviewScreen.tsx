@@ -5,21 +5,30 @@ import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getListingSpecsEditHref, getListingTypeById, LISTING_EDIT_HREFS } from "../config";
+import { LISTING_PATHS } from "../listing-route-map";
 import { useListingBuilder } from "../ListingBuilderContext";
 import { useCompletion } from "../hooks/useCompletion";
 import { ListingReviewIssues } from "../ListingReviewIssues";
 import {
   listingReviewAuctionSettingsSummary,
   listingReviewBuildRestorationSummary,
+  listingReviewCompetitionHistorySummary,
   listingReviewDescriptionSummary,
+  listingReviewDocumentationSummary,
   listingReviewDocumentsSummary,
   listingReviewHeroUrl,
+  listingReviewKnownIssuesSummary,
   listingReviewModificationsSummary,
   listingReviewPhotosSummary,
+  listingReviewPrimaryUseSummary,
+  listingReviewRaceBuildSummary,
+  listingReviewSafetySummary,
+  listingReviewSparesSummary,
   listingReviewSpecsLine,
   listingReviewVehicleTitle,
   showListingReviewBuildRestoration,
   showListingReviewModifications,
+  showListingReviewPrimaryUse,
 } from "../listing-review-summary";
 
 function SummaryCard({
@@ -108,11 +117,66 @@ export function ListingPreviewScreen() {
           />
         ) : null}
 
+        {showListingReviewPrimaryUse(draft) ? (
+          <SummaryCard
+            title="Primary Use"
+            href={LISTING_PATHS.raceSummary}
+            summary={listingReviewPrimaryUseSummary(draft)}
+          />
+        ) : null}
+
+        {showListingReviewPrimaryUse(draft) ? (
+          <SummaryCard
+            title="Race / Track Build"
+            href={LISTING_PATHS.raceSpecs}
+            summary={listingReviewRaceBuildSummary(draft)}
+          />
+        ) : null}
+
+        {showListingReviewPrimaryUse(draft) ? (
+          <SummaryCard
+            title="Safety Equipment"
+            href={LISTING_PATHS.raceSafety}
+            summary={listingReviewSafetySummary(draft)}
+          />
+        ) : null}
+
+        {showListingReviewPrimaryUse(draft) ? (
+          <SummaryCard
+            title="Competition History"
+            href={LISTING_PATHS.raceBiography}
+            summary={listingReviewCompetitionHistorySummary(draft)}
+          />
+        ) : null}
+
+        {showListingReviewPrimaryUse(draft) ? (
+          <SummaryCard
+            title="Race / Track Documentation"
+            href={LISTING_PATHS.raceDocumentation}
+            summary={listingReviewDocumentationSummary(draft)}
+          />
+        ) : null}
+
+        {showListingReviewPrimaryUse(draft) ? (
+          <SummaryCard
+            title="Spares & Support Equipment"
+            href={LISTING_PATHS.raceSpares}
+            summary={listingReviewSparesSummary(draft)}
+          />
+        ) : null}
+
         <SummaryCard
           title="Condition"
           href={LISTING_EDIT_HREFS.history}
           summary={condition}
         />
+        {showListingReviewPrimaryUse(draft) ? (
+          <SummaryCard
+            title="Known Race / Track Issues"
+            href={LISTING_PATHS.condition}
+            summary={listingReviewKnownIssuesSummary(draft)}
+          />
+        ) : null}
         <SummaryCard
           title="Photos"
           href={LISTING_EDIT_HREFS.photos}

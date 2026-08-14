@@ -6,34 +6,28 @@ import { BadgeCheck, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { FieldLabel } from "../fields";
 import { useListingBuilder } from "../ListingBuilderContext";
 import type { ListingVehicleDetails } from "../types";
 import { LISTING_PATHS } from "../listing-route-map";
 import { ModificationEntryCard } from "./ModificationEntryCard";
-import { ModificationEntryForm } from "./ModificationEntryForm";
+import { ModificationFormWithCategory } from "./ModificationFormWithCategory";
 import { SpecsBuildSummary } from "./SpecsBuildSummary";
 import { SpecsCategoryTabs } from "./SpecsCategoryTabs";
-import type { ModificationEntry } from "./types";
 import {
+  STOCK_DECISION_COPY,
   STOCK_ENTRY_FORM_CONFIG,
   STOCK_FACTORY_CATEGORIES,
   STOCK_MODIFICATION_CATEGORIES,
   buildFactorySpecSections,
 } from "./stock-lightly-modified";
+import { getSharedModificationCategoryLabel, normalizeModificationCategoryId } from "./shared-modification-categories";
 import { countEntryPhotos } from "./options";
 
 const STOCK_AREA_TABS = [
   { id: "factory", label: "Factory Specs" },
-  { id: "modifications", label: "Modifications" },
+  { id: "modifications", label: "Light Modifications" },
 ] as const;
 
 export function StockLightlyModifiedSpecsScreen() {
@@ -75,7 +69,10 @@ export function StockLightlyModifiedSpecsScreen() {
     const map = new Map<string, number>();
     for (const entry of entries) {
       if (!entry.title.trim() && !entry.completed) continue;
-      map.set(entry.categoryId, (map.get(entry.categoryId) ?? 0) + 1);
+      map.set(
+        normalizeModificationCategoryId(entry.categoryId),
+        (map.get(normalizeModificationCategoryId(entry.categoryId)) ?? 0) + 1
+      );
     }
     return map;
   }, [entries]);
@@ -116,7 +113,7 @@ export function StockLightlyModifiedSpecsScreen() {
   };
 
   const openAddModification = (categoryId?: string) => {
-    const nextCategory = categoryId ?? (ws.activeCategoryId || "powertrain");
+    const nextCategory = categoryId ?? (ws.activeCategoryId || "engine-performance");
     setActiveArea("modifications");
     updateWorkspace({ hasModifications: true, activeCategoryId: nextCategory });
     startNewEntry(nextCategory);
@@ -125,6 +122,7 @@ export function StockLightlyModifiedSpecsScreen() {
 
   const setFactoryOriginal = (isOriginal: boolean) => {
     updateWorkspace({ hasModifications: !isOriginal });
+    if (isOriginal) setActiveArea("factory");
   };
 
   const activeFactorySection =
@@ -137,10 +135,13 @@ export function StockLightlyModifiedSpecsScreen() {
     {}
   );
 
-  const activeModCategoryId =
-    ws.activeCategoryId || STOCK_MODIFICATION_CATEGORIES[0]?.id || "powertrain";
+  const activeModCategoryId = normalizeModificationCategoryId(
+    ws.activeCategoryId || STOCK_MODIFICATION_CATEGORIES[0]?.id
+  );
   const entriesInActiveCategory = meaningfulEntries.filter(
-    (e) => e.categoryId === activeModCategoryId && e.id !== ws.editingEntryId
+    (e) =>
+      normalizeModificationCategoryId(e.categoryId) === activeModCategoryId &&
+      e.id !== ws.editingEntryId
   );
 
   return (
@@ -151,8 +152,7 @@ export function StockLightlyModifiedSpecsScreen() {
             Specifications & Modifications
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Review auto-filled factory specs, edit anything that looks wrong, and add modifications
-            only when this vehicle differs from factory.
+            {STOCK_DECISION_COPY.sectionSubtext}
           </p>
           <p className="text-xs text-muted-foreground mt-2">
             {reviewedCount} of {STOCK_FACTORY_CATEGORIES.length} categories reviewed
@@ -161,7 +161,8 @@ export function StockLightlyModifiedSpecsScreen() {
 
         <section className="rounded-2xl border bg-card p-4 sm:p-5 space-y-3">
           <div>
-            <h2 className="text-sm font-semibold">Is this vehicle stock?</h2>
+            <h2 className="text-sm font-semibold">{STOCK_DECISION_COPY.question}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{STOCK_DECISION_COPY.questionHint}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 max-w-md">
             <Button
@@ -183,23 +184,25 @@ export function StockLightlyModifiedSpecsScreen() {
 
         {hasModifications === false ? (
           <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
-            Stock vehicle selected - no modifications will be able to be added
+            {STOCK_DECISION_COPY.stockSelected}
           </div>
         ) : null}
 
         <div className="rounded-2xl border bg-card p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-5 min-w-0">
-          <SpecsCategoryTabs
-            categories={STOCK_AREA_TABS.map((tab) => ({ id: tab.id, label: tab.label }))}
-            activeCategoryId={activeArea}
-            entryCounts={{
-              factory: STOCK_FACTORY_CATEGORIES.length,
-              modifications: meaningfulEntries.length,
-            }}
-            onSelect={(id) => setActiveArea(id as "factory" | "modifications")}
-            ariaLabel="Specification areas"
-          />
+          {hasModifications === true ? (
+            <SpecsCategoryTabs
+              categories={STOCK_AREA_TABS.map((tab) => ({ id: tab.id, label: tab.label }))}
+              activeCategoryId={activeArea}
+              entryCounts={{
+                factory: STOCK_FACTORY_CATEGORIES.length,
+                modifications: meaningfulEntries.length,
+              }}
+              onSelect={(id) => setActiveArea(id as "factory" | "modifications")}
+              ariaLabel="Specification areas"
+            />
+          ) : null}
 
-          {activeArea === "factory" ? (
+          {activeArea === "factory" || hasModifications !== true ? (
             <section className="space-y-4 min-w-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="font-semibold text-sm min-w-0">Factory Specifications</h2>
@@ -239,17 +242,19 @@ export function StockLightlyModifiedSpecsScreen() {
                           </Badge>
                         ) : null}
                       </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="w-full sm:w-auto shrink-0"
-                        onClick={() => openAddModification(activeFactorySection.id)}
-                        disabled={Boolean(editingEntry)}
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Modification
-                      </Button>
+                      {hasModifications === true ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="w-full sm:w-auto shrink-0"
+                          onClick={() => openAddModification(activeFactorySection.id)}
+                          disabled={Boolean(editingEntry)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Modification
+                        </Button>
+                      ) : null}
                     </div>
                     <div className="p-3 sm:p-4 space-y-3">
                       {activeFactorySection.fields.map((field) => (
@@ -276,9 +281,9 @@ export function StockLightlyModifiedSpecsScreen() {
             <section className="space-y-4 min-w-0">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <h2 className="font-semibold text-sm">Modifications</h2>
+                  <h2 className="font-semibold text-sm">{STOCK_DECISION_COPY.lightModsTitle}</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Add modifications by category with details and documents
+                    {STOCK_DECISION_COPY.lightModsSubtext}
                   </p>
                 </div>
                 <Button
@@ -321,11 +326,11 @@ export function StockLightlyModifiedSpecsScreen() {
                             : "Add Modification"}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Add modifications by category with details and documents
+                          {STOCK_DECISION_COPY.lightModsSubtext}
                         </p>
                       </div>
                       <div className="p-4 sm:p-5">
-                        <StockModFormWithCategory
+                        <ModificationFormWithCategory
                           entry={editingEntry}
                           onSave={(entry) => saveEntry(entry)}
                           onCancel={cancelEntryEdit}
@@ -337,9 +342,9 @@ export function StockLightlyModifiedSpecsScreen() {
 
                   {!editingEntry && entriesInActiveCategory.length === 0 ? (
                     <div className="rounded-xl border border-dashed bg-muted/20 px-5 py-10 text-center h-full min-h-[178px] flex flex-col items-center justify-center">
-                      <p className="font-medium text-sm">No modifications added</p>
+                      <p className="font-medium text-sm">{STOCK_DECISION_COPY.emptyTitle}</p>
                       <p className="text-sm text-muted-foreground mt-1 mb-4">
-                        Add wheels, exhaust, window tint, wrap, etc.
+                        {STOCK_DECISION_COPY.emptySubtext}
                       </p>
                       <Button
                         type="button"
@@ -354,7 +359,7 @@ export function StockLightlyModifiedSpecsScreen() {
                       {entriesInActiveCategory.map((entry) => {
                         const categoryLabel =
                           STOCK_MODIFICATION_CATEGORIES.find((c) => c.id === entry.categoryId)
-                            ?.label ?? "Modification";
+                            ?.label ?? getSharedModificationCategoryLabel(entry.categoryId);
                         return (
                           <div key={entry.id} className="space-y-1">
                             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
@@ -406,57 +411,6 @@ export function StockLightlyModifiedSpecsScreen() {
           { label: "Photos", value: String(photosUploaded) },
         ]}
         footerNote="Edit factory fields above, then add modifications only if needed."
-      />
-    </div>
-  );
-}
-
-/** Category-aware form wrapper so category changes update the draft entry before save. */
-function StockModFormWithCategory({
-  entry,
-  onSave,
-  onCancel,
-  onCategoryChange,
-}: {
-  entry: ModificationEntry;
-  onSave: (entry: ModificationEntry) => void;
-  onCancel: () => void;
-  onCategoryChange?: (categoryId: string) => void;
-}) {
-  const [categoryId, setCategoryId] = React.useState(entry.categoryId);
-
-  React.useEffect(() => {
-    setCategoryId(entry.categoryId);
-  }, [entry.id, entry.categoryId]);
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <FieldLabel>Category</FieldLabel>
-        <Select
-          value={categoryId || undefined}
-          onValueChange={(value) => {
-            setCategoryId(value);
-            onCategoryChange?.(value);
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {STOCK_MODIFICATION_CATEGORIES.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <ModificationEntryForm
-        entry={{ ...entry, categoryId }}
-        onSave={(next) => onSave({ ...next, categoryId })}
-        onCancel={onCancel}
-        formConfig={STOCK_ENTRY_FORM_CONFIG}
       />
     </div>
   );

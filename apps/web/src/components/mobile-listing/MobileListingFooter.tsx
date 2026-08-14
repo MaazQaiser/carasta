@@ -69,9 +69,8 @@ export function MobileListingFooter({
       {hideSaveDraftExit ? null : (
         <button
           type="button"
-          onClick={backDisabled || continueDisabled ? undefined : onSaveDraftExit}
-          disabled={backDisabled || continueDisabled}
-          className="w-full text-center text-[13px] font-medium text-[#636366] underline underline-offset-2 disabled:opacity-50 disabled:no-underline"
+          onClick={onSaveDraftExit}
+          className="w-full text-center text-[13px] font-medium text-[#1c1c1e] underline underline-offset-2"
         >
           Save Draft &amp; Exit
         </button>

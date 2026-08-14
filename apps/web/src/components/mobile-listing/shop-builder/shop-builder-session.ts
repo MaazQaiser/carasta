@@ -5,7 +5,8 @@ export type ShopBuilderTarget =
   | "entry.workPerformedBy"
   | "restoration.shop"
   | "race.identity.builder"
-  | "race.safety.rollCageBuilder";
+  | "race.safety.rollCageBuilder"
+  | "race.shopBuilder";
 
 export type ShopBuilderPickerSession = {
   returnTo: string;
@@ -73,9 +74,27 @@ export function applyShopBuilderSelection(
         ...ws,
         restoration: {
           ...ws.restoration,
+          shopBuilder: name,
           factoryCorrect: {
             ...ws.restoration.factoryCorrect,
             restorationShop: name,
+            builder: name,
+          },
+        },
+      },
+    };
+  }
+
+  if (target === "race.shopBuilder") {
+    return {
+      ...draft,
+      modificationWorkspace: {
+        ...ws,
+        race: {
+          ...ws.race,
+          shopBuilder: name,
+          identity: {
+            ...ws.race.identity,
             builder: name,
           },
         },

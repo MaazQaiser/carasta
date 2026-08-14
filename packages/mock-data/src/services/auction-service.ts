@@ -73,6 +73,11 @@ export const auctionService = {
     return MOCK_AUCTIONS.find((a) => a.id === id) ?? null;
   },
 
+  async getAuctionForVehicle(vehicleId: string): Promise<Auction | null> {
+    await delay(80);
+    return MOCK_AUCTIONS.find((a) => a.vehicle.id === vehicleId) ?? null;
+  },
+
   async getLiveAuctions(): Promise<Auction[]> {
     await delay(100);
     return MOCK_AUCTIONS.filter((a) => a.status === "live");

@@ -6,6 +6,8 @@ import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import type { ListingMediaItem } from "@/components/listing/types";
 import {
   collectBuildHistoryMedia,
+  listingDocumentsHelper,
+  listingPhotosHelper,
   LISTING_MEDIA_COPY,
   LISTING_MEDIA_LIMITS,
   showBuildHistorySection,
@@ -203,10 +205,10 @@ export function MobilePhotosDocumentsScreen() {
 
   const helper =
     tab === "photos"
-      ? LISTING_MEDIA_COPY.photosHelper
+      ? listingPhotosHelper(draft)
       : tab === "videos"
         ? LISTING_MEDIA_COPY.videosHelper
-        : LISTING_MEDIA_COPY.documentsHelper;
+        : listingDocumentsHelper(draft);
 
   const photosAtCap = photoTotal >= LISTING_MEDIA_LIMITS.maxPhotos;
   const videosAtCap = videos.length >= LISTING_MEDIA_LIMITS.maxVideos;
@@ -296,7 +298,7 @@ export function MobilePhotosDocumentsScreen() {
             progressLabel={`${documents.length} documents`}
             progressPct={Math.min(documents.length * 10, 100)}
             emptyLabel="Tap to add documents"
-            emptyHint={LISTING_MEDIA_COPY.documentsHelper}
+            emptyHint={listingDocumentsHelper(draft)}
             addLabel="+ Add More Documents"
             addDisabled={false}
             variant="document"

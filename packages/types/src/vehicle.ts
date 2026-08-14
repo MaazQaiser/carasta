@@ -60,6 +60,7 @@ export interface VehicleConditionHistory {
   generalNotes?: string;
   numberOfKeys?: string;
   warranty?: string;
+  knownRaceTrackIssues?: string;
 }
 
 /** Media asset captured during listing upload. */
@@ -96,6 +97,7 @@ export interface VehicleModificationEntry {
   shopBuilder?: string;
   installationDate?: string;
   additionalNotes?: string;
+  partClassification?: string;
 }
 
 export interface VehiclePerformanceSummary {
@@ -114,10 +116,24 @@ export interface VehiclePerformanceSummary {
 export interface VehicleRestorationSummary {
   buildType?: string;
   mileageStatus?: string;
+  buildStatus?: string;
+  completionYear?: string;
+  workPerformedBy?: string;
+  shopBuilder?: string;
+  buildSummary?: string;
   identityType?: string;
   identityValue?: string;
   factoryCorrect?: Record<string, string>;
   provenance?: Record<string, string>;
+  timelineEvents?: {
+    id: string;
+    title: string;
+    dateYear?: string;
+    exactDate?: string;
+    datePrecision?: string;
+    eventType?: string;
+    description?: string;
+  }[];
 }
 
 export interface VehicleRaceHistoryEntry {
@@ -134,7 +150,20 @@ export interface VehicleRaceHistoryEntry {
 
 export interface VehicleRaceSummary {
   competition?: Record<string, string>;
+  buildNarrative?: string;
+  workPerformedBy?: string;
+  shopBuilder?: string;
+  installedEquipment?: string[];
+  safetyNotes?: string;
+  safetyServiceDates?: Record<string, string>;
   safety?: Record<string, string>;
+  organizedCompetition?: string;
+  competitionHistory?: string;
+  documentationTypes?: string[];
+  documentationOther?: string;
+  sparesIncluded?: string;
+  sparesDescription?: string;
+  knownRaceTrackIssues?: string;
   setup?: Record<string, string>;
   history?: VehicleRaceHistoryEntry[];
 }

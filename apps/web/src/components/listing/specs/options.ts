@@ -6,6 +6,7 @@ import type {
   RaceHistoryEntry,
   RaceState,
   RestorationState,
+  RestorationTimelineEvent,
   WorkPerformedByOption,
 } from "../types";
 import type { EntryDocumentSlotConfig, EntryFormConfig } from "./types";
@@ -14,6 +15,7 @@ export const HORSEPOWER_STATUS_OPTIONS: MeasurementStatus[] = [
   "Factory Rated",
   "Estimated",
   "Dyno Verified",
+  "Seller Reported",
   "Unknown",
 ];
 
@@ -21,8 +23,24 @@ export const TORQUE_STATUS_OPTIONS: MeasurementStatus[] = [
   "Factory Rated",
   "Estimated",
   "Dyno Verified",
+  "Seller Reported",
   "Unknown",
 ];
+
+const SUPPORTED_PERFORMANCE_CLAIM_STATUSES = new Set([
+  "Dyno Verified",
+  "Factory Rated",
+]);
+
+export function isSupportedPerformanceClaim(status: string | null | undefined): boolean {
+  return Boolean(status && SUPPORTED_PERFORMANCE_CLAIM_STATUSES.has(status));
+}
+
+/** Unsupported or unverified figures stay labeled as seller-reported. */
+export function displayPerformanceClaimStatus(status: string | null | undefined): string {
+  if (isSupportedPerformanceClaim(status)) return status as string;
+  return "Seller Reported";
+}
 
 export const DATE_STATUS_OPTIONS: DateStatusOption[] = [
   "Exact Date",
@@ -42,22 +60,45 @@ export const RESTORATION_DATE_STATUS_OPTIONS: DateStatusOption[] = [
   "Not Applicable",
 ];
 
+export const PROFESSIONAL_SHOP_BUILDER_OPTION = "Professional Shop / Builder";
+
 export const WORK_PERFORMED_BY_OPTIONS: WorkPerformedByOption[] = [
   "Current Owner",
-  "Professional Shop",
-  "Current Owner + Shop",
   "Previous Owner",
-  "Original Builder",
-  "Factory / Manufacturer",
+  PROFESSIONAL_SHOP_BUILDER_OPTION,
+  "Other Individual",
   "Unknown",
 ];
 
+const LEGACY_SHOP_BUILDER_WORK_VALUES = new Set([
+  PROFESSIONAL_SHOP_BUILDER_OPTION,
+  "Professional Shop",
+  "Restoration Shop",
+  "Current Owner + Shop",
+]);
+
+export function shouldShowShopBuilder(workPerformedBy: string | null | undefined): boolean {
+  return Boolean(workPerformedBy && LEGACY_SHOP_BUILDER_WORK_VALUES.has(workPerformedBy));
+}
+
 export const ORIGINAL_PARTS_OPTIONS = ["Yes", "No", "Partial", "Unknown"];
+
+/** Optional on restoration entries. Most useful for factory-correct and restored builds. */
+export const PART_CLASSIFICATION_OPTIONS = [
+  "Original to Vehicle",
+  "OEM / New Old Stock",
+  "Factory-Correct Reproduction",
+  "Period-Correct",
+  "Modern Replacement",
+  "Custom / Fabricated",
+  "Unknown",
+] as const;
 
 export const YES_NO_UNKNOWN_OPTIONS = ["Yes", "No", "Unknown", "Not Applicable"];
 
 /** Authenticity checklist answers for restored / restomod listings. */
-export const RESTORATION_AUTHENTICITY_OPTIONS = ["Yes", "No", "Unknown", "Not Verified"];
+/** Seller-reported answers only. Do not label Yes as verified. */
+export const RESTORATION_AUTHENTICITY_OPTIONS = ["Yes", "No", "Unknown"];
 
 export const RESTORATION_LEVEL_OPTIONS = [
   "Concours",
@@ -67,7 +108,21 @@ export const RESTORATION_LEVEL_OPTIONS = [
   "Partial Restoration",
 ];
 
-export const RESTORATION_COMPLETION_STATUS_OPTIONS = ["Complete", "In Progress", "Planned"];
+/** Shared Flow #3 Build Overview status + restoration entry Completion Status. */
+export const BUILD_STATUS_OPTIONS = [
+  "Completed",
+  "In Progress",
+  "Partial",
+  "Planned",
+  "Unknown",
+] as const;
+
+/** Restoration / Build entry Completion Status (optional). */
+export const RESTORATION_COMPLETION_STATUS_OPTIONS = [...BUILD_STATUS_OPTIONS];
+
+export function shouldShowCompletionYear(buildStatus: string | null | undefined): boolean {
+  return buildStatus === "Completed" || buildStatus === "In Progress" || buildStatus === "Partial";
+}
 
 export const RESTORATION_WORK_PERFORMED_BY_OPTIONS = [
   "Self",
@@ -86,13 +141,25 @@ export const VEHICLE_IDENTITY_TYPE_OPTIONS = [
   "Manual Entry",
 ];
 
-export const MILEAGE_STATUS_OPTIONS = [
-  "Actual Mileage",
-  "Exempt",
-  "Odometer Replaced",
-  "Rolled Over",
-  "Unknown",
-];
+export const MILEAGE_STATUS_CHOICES = [
+  { value: "Actual", description: "Verified original mileage" },
+  { value: "Exempt", description: "Mileage exempt vehicle" },
+  { value: "Odometer Replaced", description: "Odometer has been replaced" },
+  { value: "Rolled Over", description: "Odometer has exceeded its limit" },
+  { value: "Unknown", description: "" },
+] as const;
+
+export const MILEAGE_STATUS_OPTIONS = MILEAGE_STATUS_CHOICES.map((choice) => choice.value);
+
+const MILEAGE_STATUS_ALIASES: Record<string, string> = {
+  "Actual Mileage": "Actual",
+  "Odometer Rolled Over": "Rolled Over",
+};
+
+export function normalizeMileageStatus(value: string): string {
+  if (!value) return "";
+  return MILEAGE_STATUS_ALIASES[value] ?? value;
+}
 
 export const DEFAULT_ENTRY_DOCUMENT_SLOTS: EntryDocumentSlotConfig[] = [
   {
@@ -149,8 +216,8 @@ export const RESTORATION_ENTRY_DOCUMENT_SLOTS: EntryDocumentSlotConfig[] = [
   },
   {
     key: "supportingDocuments",
-    title: "Supporting Documents",
-    description: "Receipts, invoices, notes, and other supporting files.",
+    title: "Files / Receipts",
+    description: "Upload receipts, invoices, or any other supporting documentation.",
     accept: ".pdf,.doc,.docx,.png,.jpg,.jpeg",
     variant: "file",
   },
@@ -162,33 +229,47 @@ export const DEFAULT_ENTRY_FORM_CONFIG: EntryFormConfig = {
   typeOfWorkPlaceholder: "e.g. Forced induction",
   partsBrandLabel: "Parts / Brand",
   manufacturerLabel: "Manufacturer",
-  shopBuilderLabel: "Shop / Builder",
+  shopBuilderLabel: "Add Shop / Builder",
+  shopBuilderWhenWorkPerformedBy: PROFESSIONAL_SHOP_BUILDER_OPTION,
+  useShopBuilderPicker: true,
   workPerformedByLabel: "Work Performed By",
   workPerformedByAsText: false,
+  workPerformedByOptions: WORK_PERFORMED_BY_OPTIONS,
   installationDateLabel: "Installation Date",
   dateStatusOptions: DATE_STATUS_OPTIONS,
   documentSlots: DEFAULT_ENTRY_DOCUMENT_SLOTS,
   showOriginalPartsIncluded: true,
+  showPartClassification: false,
 };
 
 export const RESTORATION_ENTRY_FORM_CONFIG: EntryFormConfig = {
-  entryTitleLabel: "Restoration Title",
-  descriptionLabel: "Summary",
-  descriptionPlaceholder: "Brief overview of this restoration entry",
-  typeOfWorkLabel: "Work Performed",
-  typeOfWorkPlaceholder: "Describe the restoration work performed",
-  typeOfWorkMultiline: true,
-  partsBrandLabel: "Parts / Brand",
-  manufacturerLabel: "Manufacturer",
-  shopBuilderLabel: "Shop / Builder",
+  entryTitleLabel: "Entry Title",
+  descriptionLabel: "Details",
+  descriptionPlaceholder:
+    "Describe what was restored, rebuilt, fabricated, replaced, upgraded, or added.",
+  hideTypeOfWork: true,
+  hideSpecifications: true,
+  partsBrandLabel: "Parts Used",
+  manufacturerLabel: "Manufacturer / Source",
+  shopBuilderLabel: "Add Shop / Builder",
+  shopBuilderWhenWorkPerformedBy: PROFESSIONAL_SHOP_BUILDER_OPTION,
+  useShopBuilderPicker: true,
   workPerformedByLabel: "Work Performed By",
-  workPerformedByOptions: RESTORATION_WORK_PERFORMED_BY_OPTIONS,
+  workPerformedByOptions: WORK_PERFORMED_BY_OPTIONS,
   workPerformedByAsText: false,
+  completedDuringLabel: "Completion Status",
+  completedDuringOptions: [...RESTORATION_COMPLETION_STATUS_OPTIONS],
+  completedDuringAfterShop: true,
   installationDateLabel: "Completion Date",
-  dateStatusOptions: RESTORATION_DATE_STATUS_OPTIONS,
+  simpleDateOnly: true,
+  mileageLabel: "Completion Mileage",
   documentSlots: RESTORATION_ENTRY_DOCUMENT_SLOTS,
-  showOriginalPartsIncluded: true,
-  saveButtonLabel: "Save Restoration Entry",
+  showOriginalPartsIncluded: false,
+  showPartClassification: true,
+  partClassificationLabel: "Classification",
+  notesLabel: "Additional Notes",
+  notesPlaceholder: "Anything else buyers should know about this entry…",
+  saveButtonLabel: "Save Entry",
   addEntryLabel: "Add Restoration Entry",
 };
 
@@ -215,9 +296,12 @@ export const RACE_ENTRY_FORM_CONFIG: EntryFormConfig = {
   typeOfWorkPlaceholder: "e.g. Cage install, aero package, engine rebuild",
   partsBrandLabel: "Brand",
   manufacturerLabel: "Manufacturer",
-  shopBuilderLabel: "Installer",
-  workPerformedByLabel: "Builder",
-  workPerformedByAsText: true,
+  shopBuilderLabel: "Add Shop / Builder",
+  shopBuilderWhenWorkPerformedBy: PROFESSIONAL_SHOP_BUILDER_OPTION,
+  useShopBuilderPicker: true,
+  workPerformedByLabel: "Work Performed By",
+  workPerformedByOptions: WORK_PERFORMED_BY_OPTIONS,
+  workPerformedByAsText: false,
   installationDateLabel: "Completion Date",
   dateStatusOptions: RESTORATION_DATE_STATUS_OPTIONS,
   documentSlots: RACE_ENTRY_DOCUMENT_SLOTS,
@@ -235,11 +319,15 @@ export const COMPETITION_LEVEL_OPTIONS = [
 
 export const RACE_DISCIPLINE_OPTIONS = [
   "Road Racing",
-  "Time Attack",
   "Drag Racing",
-  "Karting",
+  "Time Attack",
+  "Drifting",
   "Autocross",
   "Rally",
+  "Hill Climb",
+  "Oval Racing",
+  "Off-Road Racing",
+  "Track Day / HPDE",
   "Other",
 ];
 
@@ -333,7 +421,14 @@ export function createEmptyRestorationState(): RestorationState {
     identityType: "",
     identityValue: "",
     buildType: "",
+    restomodSubcategory: "",
     mileageStatus: "",
+    buildStatus: "",
+    completionYear: "",
+    completionDate: "",
+    workPerformedBy: "",
+    shopBuilder: "",
+    buildSummary: "",
     factoryCorrect: {
       numbersMatchingEngine: "",
       numbersMatchingTransmission: "",
@@ -355,12 +450,14 @@ export function createEmptyRestorationState(): RestorationState {
     },
     documentation: {
       buildBook: [],
-      receipts: [],
-      invoices: [],
-      restorationPhotos: [],
+      receiptsAndInvoices: [],
       factoryDocuments: [],
+      historicalBuildPhotos: [],
       certificates: [],
-      historicalDocumentation: [],
+      magazineFeatures: [],
+      awards: [],
+      judgingSheets: [],
+      other: [],
     },
     provenance: {
       previousOwners: "",
@@ -371,6 +468,22 @@ export function createEmptyRestorationState(): RestorationState {
       auctionHistory: "",
       specialNotes: "",
     },
+    timelineEvents: [],
+  };
+}
+
+export function createEmptyRestorationTimelineEvent(
+  id = `timeline-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+): RestorationTimelineEvent {
+  return {
+    id,
+    title: "",
+    dateYear: "",
+    exactDate: "",
+    datePrecision: "",
+    eventType: "",
+    description: "",
+    photos: [],
   };
 }
 
@@ -394,6 +507,7 @@ export function createEmptyModificationEntry(
     dateStatus: "",
     mileage: "",
     originalPartsIncluded: "",
+    partClassification: "",
     photos: [],
     receipt: [],
     dynoSheet: [],
@@ -420,14 +534,9 @@ export function countEntryPhotos(entry: ModificationEntry) {
 }
 
 export function countRestorationDocuments(docs: RestorationState["documentation"]) {
-  return (
-    docs.buildBook.length +
-    docs.receipts.length +
-    docs.invoices.length +
-    docs.restorationPhotos.length +
-    docs.factoryDocuments.length +
-    docs.certificates.length +
-    docs.historicalDocumentation.length
+  return Object.values(docs).reduce(
+    (sum, items) => sum + (Array.isArray(items) ? items.length : 0),
+    0
   );
 }
 
@@ -478,6 +587,7 @@ export function createEmptyRaceState(): RaceState {
     },
     competition: {
       primaryDiscipline: "",
+      primaryUseOther: "",
       secondaryDiscipline: "",
       sanctioningBody: "",
       series: "",
@@ -544,6 +654,24 @@ export function createEmptyRaceState(): RaceState {
     },
     historyEntries: [],
     editingHistoryId: null,
+    buildNarrative: "",
+    workPerformedBy: "",
+    shopBuilder: "",
+    installedSafetyEquipment: [],
+    safetyEquipmentNotes: "",
+    safetyServiceDates: {
+      "competition-seat": "",
+      harness: "",
+      "fire-suppression": "",
+    },
+    organizedCompetition: "",
+    competitionHistoryNarrative: "",
+    documentationTypes: [],
+    documentationOther: "",
+    documentationUploads: [],
+    sparesIncluded: "",
+    sparesDescription: "",
+    knownRaceTrackIssues: "",
   };
 }
 

@@ -19,10 +19,14 @@ export const LISTING_MEDIA_COPY = {
   documentsTab: "Documents",
   photosHelper:
     "Add clear, high-quality photos that show the vehicle accurately. Professional-quality photos can help your listing stand out to buyers.",
+  racePhotosHelper:
+    "Recommended (not required as separate uploads): exterior, cockpit, engine bay, undercarriage, roll cage, seats and harnesses, fire system and other safety equipment, suspension, brakes, wheels and tires, race-specific equipment, VIN or chassis plate, damage or repairs, and spares included with the sale.",
   videosHelper:
     "Videos are optional. Add up to 5 videos, each up to 1 minute long. Walkarounds, cold starts, engine-running clips, interior functions, and driving footage can help buyers better understand the vehicle.",
   documentsHelper:
     "Upload photos or PDFs of documents associated with this vehicle.",
+  raceDocumentsHelper:
+    "Race / track documents you added earlier appear here automatically. You don’t need to upload the same file twice.",
   generalPhotosTitle: "General Photos",
   generalPhotosHelper:
     "Current photos of the vehicle as it sits today — front/rear 3/4, sides, wheels, engine bay, interior, trunk, undercarriage, and any flaws.",
@@ -41,12 +45,29 @@ export const LISTING_MEDIA_COPY = {
   addFilesHint: "Upload from files",
 } as const;
 
+export function listingPhotosHelper(draft: ListingDraft): string {
+  if (draft.listingTypeId === "race-track-car") {
+    return `${LISTING_MEDIA_COPY.photosHelper} ${LISTING_MEDIA_COPY.racePhotosHelper}`;
+  }
+  return LISTING_MEDIA_COPY.photosHelper;
+}
+
+export function listingDocumentsHelper(draft: ListingDraft): string {
+  if (draft.listingTypeId === "race-track-car") {
+    return `${LISTING_MEDIA_COPY.documentsHelper} ${LISTING_MEDIA_COPY.raceDocumentsHelper}`;
+  }
+  return LISTING_MEDIA_COPY.documentsHelper;
+}
+
 export function dedupeMediaItems(items: ListingMediaItem[]): ListingMediaItem[] {
-  const seen = new Set<string>();
+  const seenIds = new Set<string>();
+  const seenKeys = new Set<string>();
   const next: ListingMediaItem[] = [];
   for (const item of items) {
-    if (!item?.id || seen.has(item.id)) continue;
-    seen.add(item.id);
+    if (!item?.id || seenIds.has(item.id)) continue;
+    if (item.sourceKey && seenKeys.has(item.sourceKey)) continue;
+    seenIds.add(item.id);
+    if (item.sourceKey) seenKeys.add(item.sourceKey);
     next.push(item);
   }
   return next;
@@ -79,15 +100,7 @@ export function collectCarriedModificationPhotos(draft: ListingDraft): ListingMe
  */
 export function collectBuildHistoryMedia(draft: ListingDraft): ListingMediaItem[] {
   const resto = draft.modificationWorkspace.restoration.documentation;
-  return dedupeMediaItems([
-    ...(resto.restorationPhotos ?? []),
-    // Image-like historical records when present as media items
-    ...(resto.historicalDocumentation ?? []).filter(
-      (item) =>
-        Boolean(item.previewUrl) ||
-        /\.(jpe?g|png|gif|webp|heic)$/i.test(item.name || "")
-    ),
-  ]);
+  return dedupeMediaItems([...(resto.historicalBuildPhotos ?? [])]);
 }
 
 /** Whether the Modification Photos group should appear for this listing. */
@@ -98,11 +111,14 @@ export function showModificationPhotosSection(draft: ListingDraft): boolean {
   ) {
     return false;
   }
-  // Stock with mods, modified, restored, race — show when relevant
+  if (draft.listingTypeId === "race-track-car") {
+    return (
+      draft.modificationPhotos.length > 0 || collectCarriedModificationPhotos(draft).length > 0
+    );
+  }
   return (
     draft.listingTypeId === "modified-performance" ||
     draft.listingTypeId === "restored-restomod-custom" ||
-    draft.listingTypeId === "race-track-car" ||
     draft.modificationWorkspace.hasModifications === true ||
     draft.modificationPhotos.length > 0 ||
     collectCarriedModificationPhotos(draft).length > 0
@@ -136,16 +152,13 @@ export function collectCarriedDocuments(draft: ListingDraft): ListingMediaItem[]
   const resto = draft.modificationWorkspace.restoration.documentation;
   const fromRestoration = [
     ...(resto.buildBook ?? []),
-    ...(resto.receipts ?? []),
-    ...(resto.invoices ?? []),
+    ...(resto.receiptsAndInvoices ?? []),
     ...(resto.factoryDocuments ?? []),
     ...(resto.certificates ?? []),
-    // Keep non-image historical docs in Documents; images go to build-history
-    ...(resto.historicalDocumentation ?? []).filter(
-      (item) =>
-        !item.previewUrl &&
-        !/\.(jpe?g|png|gif|webp|heic)$/i.test(item.name || "")
-    ),
+    ...(resto.magazineFeatures ?? []),
+    ...(resto.awards ?? []),
+    ...(resto.judgingSheets ?? []),
+    ...(resto.other ?? []),
   ];
   const race = draft.modificationWorkspace.race.documentation;
   const fromRace = [
@@ -157,6 +170,7 @@ export function collectCarriedDocuments(draft: ListingDraft): ListingMediaItem[]
     ...(race.setupSheets ?? []),
     ...(race.dataLogs ?? []),
     ...(race.technicalReports ?? []),
+    ...(draft.modificationWorkspace.race.documentationUploads ?? []),
   ];
   return dedupeMediaItems([...fromEntries, ...fromRestoration, ...fromRace]);
 }

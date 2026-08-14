@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       // Deep-link aliases from handoff
-      { source: "/auctionDetails/:id", destination: "/auctions/:id", permanent: false },
+      { source: "/auctionDetails/:id", destination: "/vehicles/:id", permanent: false },
       { source: "/postDetails/:id", destination: "/carmunity/posts/:id", permanent: false },
       // Legacy routes
       { source: "/merch/:path*", destination: "/shop/:path*", permanent: true },

@@ -22,7 +22,10 @@ export function listingReviewSoftWarnings(draft: ListingDraft): ValidationIssue[
       stepId: "photos",
       href: "/listing/photos",
       field: "vehiclePhotos",
-      message: "Interior photos recommended.",
+      message:
+        draft.listingTypeId === "race-track-car"
+          ? "Recommended race photos: exterior, cockpit, engine bay, cage, seats and harnesses, fire system, suspension, brakes, VIN/chassis plate, damage or repairs, and included spares."
+          : "Interior photos recommended.",
       severity: "warning",
     });
   }

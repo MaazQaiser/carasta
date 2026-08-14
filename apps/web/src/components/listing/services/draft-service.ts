@@ -1,5 +1,15 @@
 import type { ListingDraft, ListingMediaItem } from "../types";
 import { createModifiedPerformanceWorkspace } from "../specs/modified-performance";
+import { createEmptyRestorationState, createEmptyRaceState } from "../specs/options";
+import {
+  normalizeModificationCategoryId,
+  normalizeModificationEntries,
+} from "../specs/shared-modification-categories";
+import {
+  normalizeRestorationCategoryId,
+  normalizeRestorationEntries,
+} from "../specs/restored-restomod";
+import { migrateRestoredListingDraft } from "../listing-type-utils";
 
 export type AutosaveStatus = "idle" | "saving" | "saved" | "failed";
 
@@ -102,16 +112,24 @@ export function sanitizeDraftForStorage(draft: ListingDraft): ListingDraft {
       restoration: {
         ...ws.restoration,
         documentation: {
-          buildBook: stripMediaUrls(ws.restoration.documentation.buildBook),
-          receipts: stripMediaUrls(ws.restoration.documentation.receipts),
-          invoices: stripMediaUrls(ws.restoration.documentation.invoices),
-          restorationPhotos: stripMediaUrls(ws.restoration.documentation.restorationPhotos),
-          factoryDocuments: stripMediaUrls(ws.restoration.documentation.factoryDocuments),
-          certificates: stripMediaUrls(ws.restoration.documentation.certificates),
-          historicalDocumentation: stripMediaUrls(
-            ws.restoration.documentation.historicalDocumentation
+          buildBook: stripMediaUrls(ws.restoration.documentation.buildBook ?? []),
+          receiptsAndInvoices: stripMediaUrls(
+            ws.restoration.documentation.receiptsAndInvoices ?? []
           ),
+          factoryDocuments: stripMediaUrls(ws.restoration.documentation.factoryDocuments ?? []),
+          historicalBuildPhotos: stripMediaUrls(
+            ws.restoration.documentation.historicalBuildPhotos ?? []
+          ),
+          certificates: stripMediaUrls(ws.restoration.documentation.certificates ?? []),
+          magazineFeatures: stripMediaUrls(ws.restoration.documentation.magazineFeatures ?? []),
+          awards: stripMediaUrls(ws.restoration.documentation.awards ?? []),
+          judgingSheets: stripMediaUrls(ws.restoration.documentation.judgingSheets ?? []),
+          other: stripMediaUrls(ws.restoration.documentation.other ?? []),
         },
+        timelineEvents: (ws.restoration.timelineEvents ?? []).map((event) => ({
+          ...event,
+          photos: stripMediaUrls(event.photos ?? []),
+        })),
       },
       race: {
         ...ws.race,
@@ -173,7 +191,8 @@ export const DraftService = {
         significantEvents: "",
         additionalBackground: "",
       };
-      parsed.draft = {
+      const beforeType = parsed.draft.listingTypeId;
+      parsed.draft = migrateRestoredListingDraft({
         ...parsed.draft,
         details: {
           ...parsed.draft.details,
@@ -190,14 +209,64 @@ export const DraftService = {
           hasModifications: ws.hasModifications ?? null,
           reviewedFactoryCategoryIds: ws.reviewedFactoryCategoryIds ?? [],
           factorySpecOverrides: ws.factorySpecOverrides ?? {},
+          entries:
+            parsed.draft.listingTypeId === "restored-restomod-custom"
+              ? normalizeRestorationEntries(ws.entries ?? [])
+              : normalizeModificationEntries(ws.entries ?? []),
+          activeCategoryId:
+            parsed.draft.listingTypeId === "restored-restomod-custom"
+              ? normalizeRestorationCategoryId(ws.activeCategoryId)
+              : normalizeModificationCategoryId(ws.activeCategoryId),
+          restoration: {
+            ...createEmptyRestorationState(),
+            ...ws.restoration,
+          },
           race: race
             ? {
+                ...createEmptyRaceState(),
                 ...race,
                 biography,
+                competition: {
+                  ...createEmptyRaceState().competition,
+                  ...race.competition,
+                  primaryUseOther: race.competition?.primaryUseOther ?? "",
+                },
+                buildNarrative: race.buildNarrative ?? "",
+                workPerformedBy: race.workPerformedBy ?? "",
+                shopBuilder: race.shopBuilder ?? "",
+                installedSafetyEquipment: Array.isArray(race.installedSafetyEquipment)
+                  ? race.installedSafetyEquipment
+                  : [],
+                safetyEquipmentNotes: race.safetyEquipmentNotes ?? "",
+                safetyServiceDates: {
+                  "competition-seat": race.safetyServiceDates?.["competition-seat"] ?? "",
+                  harness: race.safetyServiceDates?.harness ?? "",
+                  "fire-suppression": race.safetyServiceDates?.["fire-suppression"] ?? "",
+                },
+                organizedCompetition: race.organizedCompetition ?? "",
+                competitionHistoryNarrative: race.competitionHistoryNarrative ?? "",
+                documentationTypes: Array.isArray(race.documentationTypes)
+                  ? race.documentationTypes
+                  : [],
+                documentationOther: race.documentationOther ?? "",
+                documentationUploads: Array.isArray(race.documentationUploads)
+                  ? race.documentationUploads
+                  : [],
+                sparesIncluded: race.sparesIncluded ?? "",
+                sparesDescription: race.sparesDescription ?? "",
+                knownRaceTrackIssues: race.knownRaceTrackIssues ?? "",
               }
             : race,
         },
-      };
+      });
+      if (
+        beforeType === "restored-restomod-custom" &&
+        parsed.draft.listingTypeId === "stock-lightly-modified"
+      ) {
+        parsed.lastPath = parsed.lastPath
+          .replace("/listing/restored/", "/listing/stock/")
+          .replace("/mobile-listing/restored/", "/mobile-listing/stock/");
+      }
       return parsed;
     } catch {
       return null;

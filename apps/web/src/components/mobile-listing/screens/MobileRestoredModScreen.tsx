@@ -5,20 +5,26 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import type { ListingMediaItem, ModificationEntry } from "@/components/listing/types";
-import { RESTORED_RESTOMODE_SPECS_CONFIG } from "@/components/listing/specs/restored-restomod";
 import {
-  ORIGINAL_PARTS_OPTIONS,
-  RESTORATION_DATE_STATUS_OPTIONS,
-  RESTORATION_WORK_PERFORMED_BY_OPTIONS,
+  getRestorationBuildCategories,
+  shouldShowPartClassification,
+} from "@/components/listing/specs/restored-restomod";
+import {
+  PART_CLASSIFICATION_OPTIONS,
+  RESTORATION_COMPLETION_STATUS_OPTIONS,
+  shouldShowShopBuilder,
+  WORK_PERFORMED_BY_OPTIONS,
 } from "@/components/listing/specs/options";
 import { MobileListingShell } from "../MobileListingShell";
 import { MobileOptionList, MobileOptionSheet } from "../MobileOptionSheet";
-import { MobileShopBuilderField } from "../shop-builder/MobileShopBuilderField";
+import { MobileAddShopBuilderControl } from "../shop-builder/MobileAddShopBuilderControl";
 import { useOpenShopBuilder } from "../shop-builder/useOpenShopBuilder";
 
-const CATEGORIES = RESTORED_RESTOMODE_SPECS_CONFIG.categories;
-
-type PickerKey = "category" | "workPerformedBy" | "dateStatus" | "originalParts";
+type PickerKey =
+  | "category"
+  | "workPerformedBy"
+  | "completionStatus"
+  | "partClassification";
 
 function createLocalId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -32,6 +38,7 @@ export function MobileRestoredModScreen() {
   const { openShopBuilder, opening } = useOpenShopBuilder();
   const entryIdParam = searchParams.get("id");
   const ws = draft.modificationWorkspace;
+  const categories = getRestorationBuildCategories(ws.restoration.buildType);
   const [picker, setPicker] = React.useState<PickerKey | null>(null);
 
   React.useEffect(() => {
@@ -49,7 +56,7 @@ export function MobileRestoredModScreen() {
         return;
       }
     }
-    startNewEntry(ws.activeCategoryId || CATEGORIES[0]?.id || "build-restoration");
+    startNewEntry(ws.activeCategoryId || categories[0]?.id || "body-chassis");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -85,7 +92,7 @@ export function MobileRestoredModScreen() {
         hideProgress
         hideSaveDraftExit
         backLabel="Cancel"
-        continueLabel="Save Restoration Entry"
+        continueLabel="Save Entry"
         onBack={onCancel}
       >
         <div className="px-6 py-10 text-[14px] text-[#636366]">Preparing entry form…</div>
@@ -106,7 +113,11 @@ export function MobileRestoredModScreen() {
     patch({ [key]: [...form[key], ...items] });
   };
 
-  const canSave = Boolean(form.categoryId && form.title.trim());
+  const canSave = Boolean(
+    form.categoryId && form.title.trim() && form.description.trim() && form.workPerformedBy
+  );
+  const showPartClassification =
+    shouldShowPartClassification(ws.restoration.buildType) || Boolean(form.partClassification);
 
   const onSave = () => {
     if (!canSave) return;
@@ -115,7 +126,7 @@ export function MobileRestoredModScreen() {
   };
 
   const categoryLabel =
-    CATEGORIES.find((category) => category.id === form.categoryId)?.label || "";
+    categories.find((category) => category.id === form.categoryId)?.label || "";
 
   const pickerConfig: Record<
     PickerKey,
@@ -123,7 +134,7 @@ export function MobileRestoredModScreen() {
   > = {
     category: {
       label: "Category",
-      options: CATEGORIES.map((category) => ({
+      options: categories.map((category) => ({
         value: category.id,
         label: category.label,
       })),
@@ -131,27 +142,27 @@ export function MobileRestoredModScreen() {
     },
     workPerformedBy: {
       label: "Work Performed By",
-      options: RESTORATION_WORK_PERFORMED_BY_OPTIONS.map((option) => ({
+      options: WORK_PERFORMED_BY_OPTIONS.map((option) => ({
         value: option,
         label: option,
       })),
       value: form.workPerformedBy,
     },
-    dateStatus: {
-      label: "Date Status",
-      options: RESTORATION_DATE_STATUS_OPTIONS.map((option) => ({
+    completionStatus: {
+      label: "Completion Status",
+      options: RESTORATION_COMPLETION_STATUS_OPTIONS.map((option) => ({
         value: option,
         label: option,
       })),
-      value: form.dateStatus,
+      value: form.completedDuring,
     },
-    originalParts: {
-      label: "Original Parts",
-      options: ORIGINAL_PARTS_OPTIONS.map((option) => ({
+    partClassification: {
+      label: "Classification",
+      options: PART_CLASSIFICATION_OPTIONS.map((option) => ({
         value: option,
         label: option,
       })),
-      value: form.originalPartsIncluded,
+      value: form.partClassification,
     },
   };
 
@@ -164,15 +175,25 @@ export function MobileRestoredModScreen() {
       hideProgress
       hideSaveDraftExit
       backLabel="Cancel"
-      continueLabel="Save Restoration Entry"
+      continueLabel="Save Entry"
     >
       <div className="flex flex-col gap-4 px-6 pt-4 pb-6">
         <div>
-          <h1 className="text-[28px] font-extrabold text-[#1c1c1e]">Restoration Entry</h1>
+          <h1 className="text-[28px] font-extrabold text-[#1c1c1e]">Add Restoration Entry</h1>
           <p className="mt-2 text-[14px] text-[#636366]">
-            Document work under the restored / restomod / custom categories.
+            Document restoration and build work for this listing.
           </p>
         </div>
+
+        <label className="block space-y-1.5">
+          <span className="text-[12px] font-semibold text-[#636366]">Entry Title</span>
+          <input
+            value={form.title}
+            onChange={(event) => patch({ title: event.target.value })}
+            placeholder="e.g. Rally Green PPG Paint"
+            className="h-11 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none focus:border-[#1b1464]"
+          />
+        </label>
 
         <SelectField
           label="Category"
@@ -182,41 +203,12 @@ export function MobileRestoredModScreen() {
         />
 
         <label className="block space-y-1.5">
-          <span className="text-[12px] font-semibold text-[#636366]">Restoration Title</span>
-          <input
-            value={form.title}
-            onChange={(event) => patch({ title: event.target.value })}
-            placeholder="Name this restoration entry"
-            className="h-11 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none focus:border-[#1b1464]"
-          />
-        </label>
-
-        <label className="block space-y-1.5">
-          <span className="text-[12px] font-semibold text-[#636366]">Summary</span>
+          <span className="text-[12px] font-semibold text-[#636366]">Details</span>
           <textarea
             value={form.description}
             onChange={(event) => patch({ description: event.target.value })}
-            placeholder="Brief overview of this restoration entry"
-            className="min-h-24 w-full rounded-lg border border-[#e5e5ea] p-3 text-[13px] outline-none focus:border-[#1b1464]"
-          />
-        </label>
-
-        <label className="block space-y-1.5">
-          <span className="text-[12px] font-semibold text-[#636366]">Work Performed</span>
-          <textarea
-            value={form.typeOfWork}
-            onChange={(event) => patch({ typeOfWork: event.target.value })}
-            placeholder="Describe the restoration work in detail"
+            placeholder="Describe what was restored, rebuilt, fabricated, replaced, upgraded, or added."
             className="min-h-28 w-full rounded-lg border border-[#e5e5ea] p-3 text-[13px] outline-none focus:border-[#1b1464]"
-          />
-        </label>
-
-        <label className="block space-y-1.5">
-          <span className="text-[12px] font-semibold text-[#636366]">Parts / Brand</span>
-          <input
-            value={form.partsBrand}
-            onChange={(event) => patch({ partsBrand: event.target.value })}
-            className="h-11 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none focus:border-[#1b1464]"
           />
         </label>
 
@@ -227,33 +219,80 @@ export function MobileRestoredModScreen() {
           onPress={() => setPicker("workPerformedBy")}
         />
 
-        <MobileShopBuilderField
-          label="Shop / Builder"
-          value={form.shopBuilder}
-          placeholder="Search or add a shop"
-          onPress={() =>
-            openShopBuilder({
-              target: "entry.shopBuilder",
-              entry: form,
-              label: "Shop / Builder",
-            })
-          }
-          busy={opening}
-        />
+        {shouldShowShopBuilder(form.workPerformedBy) ? (
+          <MobileAddShopBuilderControl
+            value={form.shopBuilder}
+            onPress={() =>
+              openShopBuilder({
+                target: "entry.shopBuilder",
+                entry: form,
+                label: "Shop / Builder",
+              })
+            }
+            busy={opening}
+          />
+        ) : null}
+
+        <label className="block space-y-1.5">
+          <span className="text-[12px] font-semibold text-[#636366]">Parts Used</span>
+          <input
+            value={form.partsBrand}
+            onChange={(event) => patch({ partsBrand: event.target.value })}
+            placeholder="Enter part name…"
+            className="h-11 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none focus:border-[#1b1464]"
+          />
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="text-[12px] font-semibold text-[#636366]">Manufacturer / Source</span>
+          <input
+            value={form.manufacturer}
+            onChange={(event) => patch({ manufacturer: event.target.value })}
+            placeholder="e.g. PPG Paint"
+            className="h-11 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none focus:border-[#1b1464]"
+          />
+        </label>
+
+        {showPartClassification ? (
+          <SelectField
+            label="Classification"
+            value={form.partClassification}
+            placeholder="Optional"
+            onPress={() => setPicker("partClassification")}
+          />
+        ) : null}
 
         <SelectField
-          label="Date Status"
-          value={form.dateStatus}
-          placeholder="Select date status"
-          onPress={() => setPicker("dateStatus")}
+          label="Completion Status"
+          value={form.completedDuring}
+          placeholder="Optional"
+          onPress={() => setPicker("completionStatus")}
         />
 
-        <SelectField
-          label="Original Parts"
-          value={form.originalPartsIncluded}
-          placeholder="Yes / No / Partial"
-          onPress={() => setPicker("originalParts")}
-        />
+        <label className="block space-y-1.5">
+          <span className="text-[12px] font-semibold text-[#636366]">Completion Date</span>
+          <input
+            type="date"
+            value={form.installationDate}
+            onChange={(event) =>
+              patch({
+                installationDate: event.target.value,
+                dateStatus: event.target.value ? "Exact Date" : "",
+              })
+            }
+            className="h-11 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none focus:border-[#1b1464]"
+          />
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="text-[12px] font-semibold text-[#636366]">Completion Mileage</span>
+          <input
+            value={form.mileage}
+            onChange={(event) => patch({ mileage: event.target.value })}
+            placeholder="e.g. 14,800"
+            className="h-11 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none focus:border-[#1b1464]"
+          />
+        </label>
 
         <div className="space-y-2">
           <span className="text-[12px] font-semibold text-[#636366]">Photos</span>
@@ -274,9 +313,9 @@ export function MobileRestoredModScreen() {
         </div>
 
         <div className="space-y-2">
-          <span className="text-[12px] font-semibold text-[#636366]">Supporting Documents</span>
+          <span className="text-[12px] font-semibold text-[#636366]">Files / Receipts</span>
           <label className="flex h-11 cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#1b1464] text-[13px] font-semibold text-[#1b1464]">
-            Upload Documents
+            Upload Files
             <input
               type="file"
               accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
@@ -289,15 +328,16 @@ export function MobileRestoredModScreen() {
             />
           </label>
           <p className="text-[11px] text-[#636366]">
-            PDFs or photos of receipts, invoices, and related documents.
+            Upload receipts, invoices, or any other supporting documentation.
           </p>
         </div>
 
         <label className="block space-y-1.5">
-          <span className="text-[12px] font-semibold text-[#636366]">Notes</span>
+          <span className="text-[12px] font-semibold text-[#636366]">Additional Notes</span>
           <textarea
             value={form.additionalNotes}
             onChange={(event) => patch({ additionalNotes: event.target.value })}
+            placeholder="Anything else buyers should know about this entry…"
             className="min-h-24 w-full rounded-lg border border-[#e5e5ea] p-3 text-[13px] outline-none focus:border-[#1b1464]"
           />
         </label>
@@ -314,11 +354,14 @@ export function MobileRestoredModScreen() {
               patch({ categoryId: value });
               updateWorkspace({ activeCategoryId: value });
             } else if (picker === "workPerformedBy") {
-              patch({ workPerformedBy: value });
-            } else if (picker === "dateStatus") {
-              patch({ dateStatus: value });
+              patch({
+                workPerformedBy: value,
+                ...(shouldShowShopBuilder(value) ? null : { shopBuilder: "" }),
+              });
+            } else if (picker === "completionStatus") {
+              patch({ completedDuring: value });
             } else {
-              patch({ originalPartsIncluded: value });
+              patch({ partClassification: value });
             }
             setPicker(null);
           }}
@@ -345,12 +388,12 @@ function SelectField({
       <button
         type="button"
         onClick={onPress}
-        className="relative flex h-11 w-full items-center rounded-lg border border-[#e5e5ea] bg-white text-left transition-colors hover:border-[#c7c7cc]"
+        className="flex h-11 w-full items-center justify-between rounded-lg border border-[#e5e5ea] px-3 text-left"
       >
-        <span className={value ? "px-3 text-[13px] text-[#1c1c1e]" : "px-3 text-[13px] text-[#9ca3af]"}>
+        <span className={value ? "text-[13px] text-[#1c1c1e]" : "text-[13px] text-[#8e8e93]"}>
           {value || placeholder}
         </span>
-        <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4 text-[#636366]" />
+        <ChevronDown className="h-4 w-4 text-[#636366]" />
       </button>
     </div>
   );
@@ -369,8 +412,8 @@ function OptionSheet({
   onClose: () => void;
   onSelect: (value: string) => void;
 }) {
-    return (
-    <MobileOptionSheet open title={label} onClose={onClose}>
+  return (
+    <MobileOptionSheet open onClose={onClose} title={label}>
       <MobileOptionList
         options={options}
         value={value}

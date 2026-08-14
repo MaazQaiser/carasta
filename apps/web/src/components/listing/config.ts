@@ -206,7 +206,8 @@ export function getListingCompletionItems(draft: {
     performanceSummary: { horsepower: string; currentEngine: string };
     restoration: { buildType: string; identityType: string };
     race: {
-      competition: { competitionLevel: string; primaryDiscipline: string };
+      competition: { primaryDiscipline: string; primaryUseOther?: string };
+      buildNarrative?: string;
       historyEntries: unknown[];
     };
   };
@@ -263,14 +264,11 @@ export function getListingCompletionItems(draft: {
     const mods = draft.modificationWorkspace;
     items.splice(3, 0, {
       id: "specs",
-      label: "Competition sheet started",
+      label: "Race / Track Build started",
       done: Boolean(
-        mods.race.competition.competitionLevel ||
-          mods.race.competition.primaryDiscipline ||
-          mods.race.historyEntries.length > 0 ||
-          mods.entries.some((e) => e.completed || e.title.trim())
+        mods.race.competition.primaryDiscipline && mods.race.buildNarrative?.trim()
       ),
-      href: LISTING_PATHS.raceSummary,
+      href: LISTING_PATHS.raceSpecs,
     });
   }
 

@@ -10,6 +10,7 @@ import type {
 } from "@carasta/types";
 import { cn } from "@/lib/utils";
 import { humanizeKey } from "@/lib/listing-labels";
+import { displayPerformanceClaimStatus } from "@/components/listing/specs/options";
 
 function Expandable({
   title,
@@ -77,6 +78,9 @@ function ModEntryCard({ entry }: { entry: VehicleModificationEntry }) {
     ...(entry.typeOfWork ? [["Type of Work", entry.typeOfWork] as [string, string]] : []),
     ...(entry.partsBrand ? [["Parts Brand", entry.partsBrand] as [string, string]] : []),
     ...(entry.manufacturer ? [["Manufacturer", entry.manufacturer] as [string, string]] : []),
+    ...(entry.partClassification
+      ? [["Part Classification", entry.partClassification] as [string, string]]
+      : []),
     ...(entry.specifications ? [["Specifications", entry.specifications] as [string, string]] : []),
     ...(entry.workPerformedBy ? [["Work Performed By", entry.workPerformedBy] as [string, string]] : []),
     ...(entry.shopBuilder ? [["Shop / Builder", entry.shopBuilder] as [string, string]] : []),
@@ -341,21 +345,17 @@ export function SpecificationsModificationsSection({ vehicle }: { vehicle: Vehic
                   ...(details.performanceSummary.horsepower
                     ? [[
                         "Horsepower",
-                        `${details.performanceSummary.horsepower}${
+                        `${details.performanceSummary.horsepower} (${displayPerformanceClaimStatus(
                           details.performanceSummary.horsepowerStatus
-                            ? ` (${details.performanceSummary.horsepowerStatus})`
-                            : ""
-                        }`,
+                        )})`,
                       ] as [string, string]]
                     : []),
                   ...(details.performanceSummary.torque
                     ? [[
                         "Torque",
-                        `${details.performanceSummary.torque}${
+                        `${details.performanceSummary.torque} (${displayPerformanceClaimStatus(
                           details.performanceSummary.torqueStatus
-                            ? ` (${details.performanceSummary.torqueStatus})`
-                            : ""
-                        }`,
+                        )})`,
                       ] as [string, string]]
                     : []),
                   ...(details.performanceSummary.fuelType
@@ -387,6 +387,15 @@ export function SpecificationsModificationsSection({ vehicle }: { vehicle: Vehic
                     ...(details.restoration.buildType
                       ? [["Build Type", details.restoration.buildType] as [string, string]]
                       : []),
+                    ...(details.restoration.buildStatus
+                      ? [["Build Status", details.restoration.buildStatus] as [string, string]]
+                      : []),
+                    ...(details.restoration.workPerformedBy
+                      ? [["Work Performed By", details.restoration.workPerformedBy] as [string, string]]
+                      : []),
+                    ...(details.restoration.shopBuilder
+                      ? [["Builder / Restoration Shop", details.restoration.shopBuilder] as [string, string]]
+                      : []),
                     ...(details.restoration.mileageStatus
                       ? [["Mileage Status", details.restoration.mileageStatus] as [string, string]]
                       : []),
@@ -397,7 +406,7 @@ export function SpecificationsModificationsSection({ vehicle }: { vehicle: Vehic
                 />
               </Expandable>
               {recordRows(details.restoration.factoryCorrect).length > 0 && (
-                <Expandable title="Factory Correctness" defaultOpen>
+                <Expandable title="Seller-reported originality" defaultOpen>
                   <KeyValueRows rows={recordRows(details.restoration.factoryCorrect)} />
                 </Expandable>
               )}
@@ -422,8 +431,27 @@ export function SpecificationsModificationsSection({ vehicle }: { vehicle: Vehic
           {details?.race && (
             <>
               {recordRows(details.race.competition).length > 0 && (
-                <Expandable title="Competition Specifications" defaultOpen>
+                <Expandable title="Primary Use" defaultOpen>
                   <KeyValueRows rows={recordRows(details.race.competition)} />
+                </Expandable>
+              )}
+              {(details.race.buildNarrative ||
+                details.race.workPerformedBy ||
+                details.race.shopBuilder) && (
+                <Expandable title="Race / Track Build" defaultOpen>
+                  <KeyValueRows
+                    rows={[
+                      ...(details.race.buildNarrative
+                        ? [["Build", details.race.buildNarrative] as [string, string]]
+                        : []),
+                      ...(details.race.workPerformedBy
+                        ? [["Prepared by", details.race.workPerformedBy] as [string, string]]
+                        : []),
+                      ...(details.race.shopBuilder
+                        ? [["Shop / Builder", details.race.shopBuilder] as [string, string]]
+                        : []),
+                    ]}
+                  />
                 </Expandable>
               )}
               {recordRows(details.race.safety).length > 0 && (
@@ -431,6 +459,56 @@ export function SpecificationsModificationsSection({ vehicle }: { vehicle: Vehic
                   <KeyValueRows rows={recordRows(details.race.safety)} />
                 </Expandable>
               )}
+              {(details.race.organizedCompetition || details.race.competitionHistory) && (
+                <Expandable title="Competition History" defaultOpen>
+                  <KeyValueRows
+                    rows={[
+                      ...(details.race.organizedCompetition
+                        ? [["Organized competition", details.race.organizedCompetition] as [string, string]]
+                        : []),
+                      ...(details.race.competitionHistory
+                        ? [["Competition History", details.race.competitionHistory] as [string, string]]
+                        : []),
+                    ]}
+                  />
+                </Expandable>
+              )}
+              {((details.race.documentationTypes?.length ?? 0) > 0 ||
+                details.race.documentationOther) && (
+                <Expandable title="Race / Track Documentation" defaultOpen>
+                  <KeyValueRows
+                    rows={[
+                      ...(details.race.documentationTypes?.length
+                        ? [["Documentation", details.race.documentationTypes.join(", ")] as [string, string]]
+                        : []),
+                      ...(details.race.documentationOther
+                        ? [["Other", details.race.documentationOther] as [string, string]]
+                        : []),
+                    ]}
+                  />
+                </Expandable>
+              )}
+              {(details.race.sparesIncluded || details.race.sparesDescription) && (
+                <Expandable title="Spares & Support Equipment" defaultOpen>
+                  <KeyValueRows
+                    rows={[
+                      ...(details.race.sparesIncluded
+                        ? [["Included with the sale", details.race.sparesIncluded] as [string, string]]
+                        : []),
+                      ...(details.race.sparesDescription
+                        ? [["Spares / Support Included", details.race.sparesDescription] as [string, string]]
+                        : []),
+                    ]}
+                  />
+                </Expandable>
+              )}
+              {details.race.knownRaceTrackIssues ? (
+                <Expandable title="Known Race / Track Issues" defaultOpen>
+                  <KeyValueRows
+                    rows={[["Known issues", details.race.knownRaceTrackIssues] as [string, string]]}
+                  />
+                </Expandable>
+              ) : null}
               {recordRows(details.race.setup).length > 0 && (
                 <Expandable title="Setup Information">
                   <KeyValueRows rows={recordRows(details.race.setup)} />
@@ -479,6 +557,9 @@ export function ConditionHistorySection({ vehicle }: { vehicle: Vehicle }) {
   const rows: [string, string][] = [
     ...(history.vehicleHistory ? [["Vehicle History", history.vehicleHistory] as [string, string]] : []),
     ...(history.accidentHistory ? [["Accident History", history.accidentHistory] as [string, string]] : []),
+    ...(history.knownRaceTrackIssues
+      ? [["Known Race / Track Issues", history.knownRaceTrackIssues] as [string, string]]
+      : []),
     ...(history.titleStatus ? [["Title Status", history.titleStatus] as [string, string]] : []),
     ...(history.ownershipHistory ? [["Ownership History", history.ownershipHistory] as [string, string]] : []),
     ...(history.serviceRecords ? [["Service Records", history.serviceRecords] as [string, string]] : []),

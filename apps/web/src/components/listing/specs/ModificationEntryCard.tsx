@@ -176,7 +176,11 @@ export function ModificationEntryCard({
           <Meta label="Installation date" value={entry.installationDate} />
           <Meta label="Date status" value={entry.dateStatus} />
           <Meta label="Mileage" value={entry.mileage} />
-          <Meta label="Original parts" value={entry.originalPartsIncluded} />
+          {formConfig?.showPartClassification || entry.partClassification ? (
+            <Meta label="Part classification" value={entry.partClassification} />
+          ) : (
+            <Meta label="Original parts" value={entry.originalPartsIncluded} />
+          )}
         </div>
         {entry.specifications ? (
           <div>

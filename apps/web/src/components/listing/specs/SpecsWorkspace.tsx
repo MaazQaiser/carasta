@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { ModificationEntry, SpecsFlowConfig } from "./types";
 import { SpecsCategoryTabs } from "./SpecsCategoryTabs";
 import { SpecsCategoryPanel } from "./SpecsCategoryPanel";
+import { normalizeModificationCategoryId } from "./shared-modification-categories";
 
 /**
  * Reusable specifications workspace.
@@ -30,6 +31,8 @@ export function SpecsWorkspace({
   header,
   continueHref = "/listing/condition",
   showContinue = false,
+  title = "Specifications & Modifications",
+  description,
   className,
 }: {
   config: SpecsFlowConfig;
@@ -49,10 +52,13 @@ export function SpecsWorkspace({
   continueHref?: string;
   /** Shell footer owns Continue by default (mobile-aligned routing). */
   showContinue?: boolean;
+  title?: string;
+  description?: string;
   className?: string;
 }) {
+  const normalizedActiveId = normalizeModificationCategoryId(activeCategoryId);
   const activeCategory =
-    config.categories.find((category) => category.id === activeCategoryId) ??
+    config.categories.find((category) => category.id === normalizedActiveId) ??
     config.categories[0];
 
   if (!activeCategory) {
@@ -60,19 +66,21 @@ export function SpecsWorkspace({
   }
 
   const categoryEntries = entries.filter(
-    (entry) => entry.categoryId === activeCategory.id
+    (entry) => normalizeModificationCategoryId(entry.categoryId) === activeCategory.id
   );
 
   const entryCounts = config.categories.reduce<Record<string, number>>((acc, category) => {
-    acc[category.id] = entries.filter((entry) => entry.categoryId === category.id).length;
+    acc[category.id] = entries.filter(
+      (entry) => normalizeModificationCategoryId(entry.categoryId) === category.id
+    ).length;
     return acc;
   }, {});
 
   return (
     <div className={cn("space-y-4 sm:space-y-6 min-w-0", className)}>
       <div className="min-w-0">
-        <h2 className="text-lg sm:text-xl font-semibold">Specifications & Modifications</h2>
-        <p className="text-sm text-muted-foreground mt-1">{config.description}</p>
+        <h2 className="text-lg sm:text-xl font-semibold">{title}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{description ?? config.description}</p>
       </div>
 
       {header}

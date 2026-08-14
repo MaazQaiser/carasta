@@ -127,15 +127,6 @@ function ListingBody({
       }
     >
       <div className="flex flex-col gap-6 px-5 pb-6 pt-4">
-        {previewMode ? (
-          <div className="rounded-xl border border-[#1b1464]/30 bg-[#f4f5fc] px-3 py-3 text-[13px] leading-relaxed text-[#1b1464]">
-            <p className="text-[11px] font-bold uppercase tracking-wide">Preview Mode</p>
-            <p className="mt-1">
-              This is how buyers will see your listing from Auctions. Bidding and Buy Now are
-              disabled here.
-            </p>
-          </div>
-        ) : null}
         {approvalNotice ? (
           <div className="rounded-xl border border-[#b7e4c7] bg-[#edf9f1] px-3 py-2 text-[12px] text-[#1b7a3d]">
             {approvalNotice}

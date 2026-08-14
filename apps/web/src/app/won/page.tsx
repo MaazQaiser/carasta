@@ -78,7 +78,7 @@ export default async function WonAuctionsPage() {
                         <Package className="h-3.5 w-3.5" /> View Details
                       </Button>
                     </Link>
-                    <Link href={`/auctions/${auction.vehicle.id}`}>
+                    <Link href={`/vehicles/${auction.vehicle.id}`}>
                       <Button variant="ghost" size="sm" className="gap-1.5">
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Button>

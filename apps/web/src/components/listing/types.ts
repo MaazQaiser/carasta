@@ -30,6 +30,10 @@ export interface ListingMediaItem {
   previewUrl?: string;
   /** UI-only progress placeholder (0–100). */
   progress?: number;
+  /** Stable file fingerprint so the same file is not stored twice. */
+  sourceKey?: string;
+  /** Optional seller-provided document date — not an eligibility or “current” check. */
+  documentDate?: string;
 }
 
 export interface ListingVehicleDetails {
@@ -81,6 +85,7 @@ export type MeasurementStatus =
   | "Factory Rated"
   | "Estimated"
   | "Dyno Verified"
+  | "Seller Reported"
   | "Unknown";
 
 export type DateStatusOption =
@@ -94,11 +99,9 @@ export type DateStatusOption =
 
 export type WorkPerformedByOption =
   | "Current Owner"
-  | "Professional Shop"
-  | "Current Owner + Shop"
   | "Previous Owner"
-  | "Original Builder"
-  | "Factory / Manufacturer"
+  | "Professional Shop / Builder"
+  | "Other Individual"
   | "Unknown";
 
 export interface ModificationEntry {
@@ -118,6 +121,8 @@ export interface ModificationEntry {
   dateStatus: string;
   mileage: string;
   originalPartsIncluded: string;
+  /** Restoration entries: Original to Vehicle, OEM / NOS, reproduction, etc. */
+  partClassification: string;
   photos: ListingMediaItem[];
   receipt: ListingMediaItem[];
   dynoSheet: ListingMediaItem[];
@@ -142,12 +147,11 @@ export interface PerformanceSummary {
 }
 
 export type RestorationBuildTypeId =
-  | "preserved-survivor"
   | "factory-correct-restoration"
   | "restored"
-  | "restomod"
-  | "custom"
-  | "hot-rod-street-rod";
+  | "restomod";
+
+export type RestomodSubcategoryId = "custom" | "hot-rod-street-rod";
 
 export interface FactoryCorrectDetails {
   numbersMatchingEngine: string;
@@ -169,14 +173,28 @@ export interface FactoryCorrectDetails {
   builder: string;
 }
 
+export type RestorationDocumentationGroupId =
+  | "buildBook"
+  | "receiptsAndInvoices"
+  | "factoryDocuments"
+  | "historicalBuildPhotos"
+  | "certificates"
+  | "magazineFeatures"
+  | "awards"
+  | "judgingSheets"
+  | "other";
+
 export interface RestorationDocumentation {
   buildBook: ListingMediaItem[];
-  receipts: ListingMediaItem[];
-  invoices: ListingMediaItem[];
-  restorationPhotos: ListingMediaItem[];
+  receiptsAndInvoices: ListingMediaItem[];
   factoryDocuments: ListingMediaItem[];
+  /** Restoration/build process photos — not current-condition listing photos. */
+  historicalBuildPhotos: ListingMediaItem[];
   certificates: ListingMediaItem[];
-  historicalDocumentation: ListingMediaItem[];
+  magazineFeatures: ListingMediaItem[];
+  awards: ListingMediaItem[];
+  judgingSheets: ListingMediaItem[];
+  other: ListingMediaItem[];
 }
 
 export interface RestorationProvenance {
@@ -189,14 +207,43 @@ export interface RestorationProvenance {
   specialNotes: string;
 }
 
+export type RestorationTimelineDatePrecision =
+  | "Exact Date"
+  | "Approximate Date"
+  | "Before Current Ownership"
+  | "Previous Owner"
+  | "Unknown";
+
+export interface RestorationTimelineEvent {
+  id: string;
+  title: string;
+  dateYear: string;
+  exactDate: string;
+  datePrecision: RestorationTimelineDatePrecision | "";
+  eventType: string;
+  description: string;
+  photos: ListingMediaItem[];
+}
+
 export interface RestorationState {
   identityType: string;
   identityValue: string;
   buildType: RestorationBuildTypeId | "";
+  /** Only used when buildType is restomod. */
+  restomodSubcategory: RestomodSubcategoryId | "";
   mileageStatus: string;
+  buildStatus: string;
+  completionYear: string;
+  /** Optional exact date when a completion year applies. */
+  completionDate: string;
+  workPerformedBy: string;
+  shopBuilder: string;
+  buildSummary: string;
   factoryCorrect: FactoryCorrectDetails;
   documentation: RestorationDocumentation;
   provenance: RestorationProvenance;
+  /** Optional restoration / build timeline. Never required to continue or submit. */
+  timelineEvents: RestorationTimelineEvent[];
 }
 
 export interface RaceVehicleIdentity {
@@ -228,7 +275,10 @@ export interface RaceVehicleIdentity {
 }
 
 export interface RaceCompetitionProfile {
+  /** Seller-reported primary use. The only race-specific marketplace filter in Phase 1. */
   primaryDiscipline: string;
+  /** Required when Primary Use is Other. */
+  primaryUseOther: string;
   secondaryDiscipline: string;
   sanctioningBody: string;
   series: string;
@@ -322,6 +372,35 @@ export interface RaceState {
   biography: RaceVehicleBiography;
   historyEntries: RaceHistoryEntry[];
   editingHistoryId: string | null;
+  /** Phase 1 Race / Track Build narrative. Factory/spec cars describe the stock configuration here. */
+  buildNarrative: string;
+  /** Optional. Who performed the build or preparation. */
+  workPerformedBy: string;
+  shopBuilder: string;
+  /** Phase 1 seller-reported installed safety equipment. Optional. */
+  installedSafetyEquipment: string[];
+  safetyEquipmentNotes: string;
+  safetyServiceDates: RaceSafetyServiceDates;
+  /** Phase 1: Has this vehicle competed in organized competition? Yes / No / Unknown. */
+  organizedCompetition: string;
+  /** Optional narrative. Shown only when organizedCompetition is Yes. */
+  competitionHistoryNarrative: string;
+  /** Phase 1 selected race/track documentation types. None is exclusive. */
+  documentationTypes: string[];
+  documentationOther: string;
+  documentationUploads: ListingMediaItem[];
+  /** Phase 1 optional: Are any spares or support equipment included with the sale? Yes / No. */
+  sparesIncluded: string;
+  /** Required when sparesIncluded is Yes. What is included in the advertised sale. */
+  sparesDescription: string;
+  /** Optional known race/track issues. Shown on shared Condition & History. */
+  knownRaceTrackIssues: string;
+}
+
+export interface RaceSafetyServiceDates {
+  "competition-seat": string;
+  harness: string;
+  "fire-suppression": string;
 }
 
 export interface ModificationWorkspaceState {

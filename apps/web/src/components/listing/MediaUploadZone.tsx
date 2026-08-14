@@ -8,15 +8,19 @@ import type { ListingMediaItem } from "./types";
 
 export function createListingMediaItems(files: FileList | null): ListingMediaItem[] {
   if (!files) return [];
-  return Array.from(files).map((file, index) => ({
-    id: `${file.name}-${file.lastModified}-${index}-${Math.random().toString(36).slice(2, 7)}`,
-    name: file.name,
-    previewUrl:
-      file.type.startsWith("image/") || file.type.startsWith("video/")
-        ? URL.createObjectURL(file)
-        : undefined,
-    progress: 100,
-  }));
+  return Array.from(files).map((file) => {
+    const sourceKey = `${file.name}|${file.size}|${file.lastModified}`;
+    return {
+      id: sourceKey,
+      sourceKey,
+      name: file.name,
+      previewUrl:
+        file.type.startsWith("image/") || file.type.startsWith("video/")
+          ? URL.createObjectURL(file)
+          : undefined,
+      progress: 100,
+    };
+  });
 }
 
 export interface MediaUploadZoneProps {

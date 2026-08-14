@@ -15,7 +15,8 @@ import type {
   PerformanceSummary,
 } from "./specs/types";
 import { createModifiedPerformanceWorkspace } from "./specs/modified-performance";
-import { createWorkspaceForListingType } from "./listing-type-utils";
+import { createWorkspaceForListingType, migrateRestoredListingDraft } from "./listing-type-utils";
+import { createEmptyModificationEntry } from "./specs/options";
 import {
   collectCarriedDocuments,
   collectCarriedModificationPhotos,
@@ -179,7 +180,7 @@ export function ListingBuilderProvider({ children }: { children: React.ReactNode
     isDirty,
     markClean: () => setIsDirty(false),
     replaceDraft: (next) => {
-      setDraft({
+      const migrated = migrateRestoredListingDraft({
         ...next,
         auctionCoverPhotoId: next.auctionCoverPhotoId ?? null,
         saleSettings: {
@@ -188,6 +189,7 @@ export function ListingBuilderProvider({ children }: { children: React.ReactNode
           localPickup: next.saleSettings?.localPickup ?? "",
         },
       });
+      setDraft(migrated);
       setIsDirty(false);
     },
     setListingType: (id) => {
@@ -238,7 +240,7 @@ export function ListingBuilderProvider({ children }: { children: React.ReactNode
           if (room <= 0) return prev;
           return { ...prev, [bucket]: [...prev[bucket], ...items.slice(0, room)] };
         }
-        return { ...prev, [bucket]: [...prev[bucket], ...items] };
+        return { ...prev, [bucket]: mergeUniqueMedia(prev[bucket], items) };
       });
       addActivity(
         bucket === "vehiclePhotos"
@@ -326,38 +328,13 @@ export function ListingBuilderProvider({ children }: { children: React.ReactNode
       ),
     startNewEntry: (categoryId) =>
       touch((prev) => {
-        const id = `entry-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-        const draftEntry = {
-          id,
-          categoryId,
-          title: "",
-          description: "",
-          typeOfWork: "",
-          partsBrand: "",
-          manufacturer: "",
-          specifications: "",
-          workPerformedBy: "",
-          completedDuring: "",
-          shopBuilder: "",
-          installationDate: "",
-          dateStatus: "",
-          mileage: "",
-          originalPartsIncluded: "",
-          photos: [],
-          receipt: [],
-          dynoSheet: [],
-          installationInvoice: [],
-          warranty: [],
-          supportingDocuments: [],
-          additionalNotes: "",
-          completed: false,
-        };
+        const draftEntry = createEmptyModificationEntry(categoryId);
         return patchWorkspace(prev, {
           entries: [...prev.modificationWorkspace.entries, draftEntry],
-          editingEntryId: id,
-          expandedEntryIds: prev.modificationWorkspace.expandedEntryIds.includes(id)
+          editingEntryId: draftEntry.id,
+          expandedEntryIds: prev.modificationWorkspace.expandedEntryIds.includes(draftEntry.id)
             ? prev.modificationWorkspace.expandedEntryIds
-            : [...prev.modificationWorkspace.expandedEntryIds, id],
+            : [...prev.modificationWorkspace.expandedEntryIds, draftEntry.id],
           activeCategoryId: categoryId,
         });
       }),

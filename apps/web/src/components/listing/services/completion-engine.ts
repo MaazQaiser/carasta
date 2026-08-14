@@ -5,6 +5,12 @@ import {
   MIN_LISTING_PHOTOS,
   specsEntryHref,
 } from "../listing-route-map";
+import {
+  isRaceBuildComplete,
+  isRaceCompetitionHistoryComplete,
+  isRaceDocumentationComplete,
+  isRacePrimaryUseComplete,
+} from "../specs/race-track";
 
 export type CompletionCategoryId =
   | "type"
@@ -63,11 +69,11 @@ function specsDone(draft: ListingDraft): boolean {
     );
   }
   if (draft.listingTypeId === "race-track-car") {
-    return Boolean(
-      ws.race.competition.competitionLevel ||
-        ws.race.competition.primaryDiscipline ||
-        ws.race.historyEntries.length > 0 ||
-        ws.entries.some((e) => e.completed || e.title.trim())
+    return (
+      isRacePrimaryUseComplete(ws.race.competition) &&
+      isRaceBuildComplete(ws.race) &&
+      isRaceCompetitionHistoryComplete(ws.race) &&
+      isRaceDocumentationComplete(ws.race)
     );
   }
   return false;
@@ -98,6 +104,12 @@ export function evaluateListingCompletion(draft: ListingDraft): CompletionReport
     }
     if (!draft.modificationWorkspace.restoration.mileageStatus) {
       detailsMissing.push("Mileage status");
+    }
+    if (!draft.modificationWorkspace.restoration.buildStatus) {
+      detailsMissing.push("Build status");
+    }
+    if (!draft.modificationWorkspace.restoration.workPerformedBy) {
+      detailsMissing.push("Work performed by");
     }
   }
 

@@ -3,20 +3,9 @@
 import * as React from "react";
 import { ChevronDown, ChevronRight, Pencil } from "lucide-react";
 import { MobileListingShell } from "../MobileListingShell";
+import { SHARED_MODIFICATION_CATEGORIES } from "@/components/listing/specs/shared-modification-categories";
 
-const categories = [
-  "Powertrain",
-  "Drivetrain",
-  "Wheels & Tires",
-  "Exterior",
-  "Interior",
-  "Electronics / Audio",
-  "Safety",
-  "Factory Equipment",
-  "Other",
-];
-
-const powertrain = [
+const enginePerformanceDemo = [
   ["Engine", "4.0L Naturally Aspirated Boxer-6"],
   ["Horsepower", "520 hp"],
   ["Torque", "346 lb-ft"],
@@ -45,23 +34,28 @@ export function MobileModificationsScreen() {
         </div>
 
         <div className="divide-y divide-[#e5e5ea] rounded-xl border border-[#e5e5ea]">
-          {categories.map((category) => {
-            const open = expanded === category;
+          {SHARED_MODIFICATION_CATEGORIES.map((category) => {
+            const open = expanded === category.id;
             return (
-              <div key={category}>
+              <div key={category.id}>
                 <button
                   type="button"
-                  onClick={() => setExpanded(open ? null : category)}
+                  onClick={() => setExpanded(open ? null : category.id)}
                   className="flex h-12 w-full items-center justify-between px-3 text-left"
                 >
                   <span className="text-[13px] font-semibold text-[#1c1c1e]">
-                    {category} <span className="ml-1 text-[10px] font-medium text-[#7b78a3]">VIN imported</span>
+                    {category.label}{" "}
+                    <span className="ml-1 text-[10px] font-medium text-[#7b78a3]">VIN imported</span>
                   </span>
-                  {open ? <ChevronDown className="h-4 w-4 text-[#636366]" /> : <ChevronRight className="h-4 w-4 text-[#636366]" />}
+                  {open ? (
+                    <ChevronDown className="h-4 w-4 text-[#636366]" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-[#636366]" />
+                  )}
                 </button>
-                {open && category === "Powertrain" ? (
+                {open && category.id === "engine-performance" ? (
                   <div className="space-y-3 border-t border-[#e5e5ea] bg-[#fafafa] p-3">
-                    {powertrain.map(([label, value]) => (
+                    {enginePerformanceDemo.map(([label, value]) => (
                       <div key={label} className="space-y-1">
                         <span className="text-[11px] font-semibold text-[#636366]">{label}</span>
                         <div className="flex h-10 items-center justify-between rounded-lg border border-[#e5e5ea] bg-white px-3">

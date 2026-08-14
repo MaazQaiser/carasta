@@ -4,11 +4,15 @@ import * as React from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { FieldLabel, textareaClassName } from "../fields";
+import { FieldHint, FieldLabel, textareaClassName } from "../fields";
 import { ListingStep } from "../ListingStep";
 import { ListingSection } from "../ListingSection";
 import { useListingBuilder } from "../ListingBuilderContext";
 import type { ListingConditionHistory } from "../types";
+import {
+  FLOW4_KNOWN_ISSUES_COPY,
+  FLOW4_RACE_ACCIDENT_PLACEHOLDER,
+} from "../specs/race-track";
 import {
   formatTitleStatuses,
   parseTitleStatuses,
@@ -64,8 +68,10 @@ function AccordionSection({
 }
 
 export function ConditionHistoryScreen() {
-  const { draft, updateCondition } = useListingBuilder();
+  const { draft, updateCondition, updateWorkspace } = useListingBuilder();
   const c = draft.condition;
+  const race = draft.modificationWorkspace.race;
+  const isRace = draft.listingTypeId === "race-track-car";
   const titleStatuses = parseTitleStatuses(c.titleStatus);
 
   const set = (key: keyof ListingConditionHistory, value: string) =>
@@ -122,7 +128,11 @@ export function ConditionHistoryScreen() {
               className={textareaClassName}
               value={c.accidentHistory}
               onChange={(e) => set("accidentHistory", e.target.value)}
-              placeholder="Describe any accidents, damage, or repairs..."
+              placeholder={
+                isRace
+                  ? FLOW4_RACE_ACCIDENT_PLACEHOLDER
+                  : "Describe any accidents, damage, or repairs..."
+              }
             />
           </AccordionSection>
           <AccordionSection title="Warranty">
@@ -140,6 +150,26 @@ export function ConditionHistoryScreen() {
             />
           </AccordionSection>
         </div>
+
+        {isRace ? (
+          <ListingSection title={FLOW4_KNOWN_ISSUES_COPY.title}>
+            <FieldLabel htmlFor="known-race-track-issues">
+              {FLOW4_KNOWN_ISSUES_COPY.label}
+            </FieldLabel>
+            <textarea
+              id="known-race-track-issues"
+              className={`${textareaClassName} min-h-32`}
+              value={race.knownRaceTrackIssues ?? ""}
+              onChange={(e) =>
+                updateWorkspace({
+                  race: { ...race, knownRaceTrackIssues: e.target.value },
+                })
+              }
+              placeholder={FLOW4_KNOWN_ISSUES_COPY.prompt}
+            />
+            <FieldHint>{FLOW4_KNOWN_ISSUES_COPY.prompt}</FieldHint>
+          </ListingSection>
+        ) : null}
 
         <ListingSection title="Vehicle Condition">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

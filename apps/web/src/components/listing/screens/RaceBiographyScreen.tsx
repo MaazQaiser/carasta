@@ -2,65 +2,26 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { FieldLabel, textareaClassName } from "../fields";
+import { cn } from "@/lib/utils";
+import { FieldHint, FieldLabel, textareaClassName } from "../fields";
 import { ListingStep } from "../ListingStep";
 import { ListingSection } from "../ListingSection";
 import { useListingBuilder } from "../ListingBuilderContext";
-import type { RaceVehicleBiography } from "../types";
+import {
+  FLOW4_COMPETITION_HISTORY_COPY,
+  ORGANIZED_COMPETITION_OPTIONS,
+  raceOrganizedCompetitionPatch,
+  shouldShowCompetitionHistoryNarrative,
+  type OrganizedCompetitionOption,
+} from "../specs/race-track";
 import { LISTING_PATHS } from "../listing-route-map";
 
-const BIOGRAPHY_FIELDS: {
-  key: keyof RaceVehicleBiography;
-  label: string;
-  placeholder: string;
-}[] = [
-  {
-    key: "competitionHistory",
-    label: "Competition History",
-    placeholder: "Overview of events, seasons, and racing programs…",
-  },
-  {
-    key: "notableResults",
-    label: "Notable Results",
-    placeholder: "Wins, podiums, records, and standout finishes…",
-  },
-  {
-    key: "vehicleHistory",
-    label: "Vehicle History",
-    placeholder: "Ownership timeline, rebuilds, and preparation milestones…",
-  },
-  {
-    key: "builderNotes",
-    label: "Preparation Notes",
-    placeholder: "Prep approach, setup philosophy, and technical context…",
-  },
-  {
-    key: "previousTeamsOrDrivers",
-    label: "Previous Teams or Drivers",
-    placeholder: "Teams, drivers, or programs associated with this car…",
-  },
-  {
-    key: "championships",
-    label: "Championships",
-    placeholder: "Titles, class championships, or series awards…",
-  },
-  {
-    key: "significantEvents",
-    label: "Significant Events",
-    placeholder: "Milestone races, debuts, or historically important moments…",
-  },
-  {
-    key: "additionalBackground",
-    label: "Additional Background",
-    placeholder: "Anything else buyers should know about this race car…",
-  },
-];
-
+/** Phase 1 Competition History — required Yes/No/Unknown, optional single narrative if Yes. */
 export function RaceBiographyScreen() {
   const router = useRouter();
   const { draft, updateWorkspace } = useListingBuilder();
   const race = draft.modificationWorkspace.race;
-  const biography = race.biography;
+  const showHistory = shouldShowCompetitionHistoryNarrative(race.organizedCompetition);
 
   React.useEffect(() => {
     if (draft.listingTypeId && draft.listingTypeId !== "race-track-car") {
@@ -68,42 +29,69 @@ export function RaceBiographyScreen() {
     }
   }, [draft.listingTypeId, router]);
 
-  const patchBiography = (patch: Partial<RaceVehicleBiography>) => {
-    const nextBiography = { ...biography, ...patch };
+  const patchRace = (patch: Partial<typeof race>) => {
     updateWorkspace({
-      race: {
-        ...race,
-        biography: nextBiography,
-        competition: {
-          ...race.competition,
-          competitionHistorySummary: nextBiography.competitionHistory,
-          notableResults: nextBiography.notableResults,
-        },
-      },
+      race: { ...race, ...patch },
     });
   };
 
   return (
     <ListingStep
-      title="Vehicle Biography"
-      description="Tell the competition story buyers need before reviewing race specifications."
+      title={FLOW4_COMPETITION_HISTORY_COPY.title}
+      description={FLOW4_COMPETITION_HISTORY_COPY.disclaimer}
     >
-      <ListingSection title="Narrative">
-        <div className="space-y-4">
-          {BIOGRAPHY_FIELDS.map((field) => (
-            <div key={field.key}>
-              <FieldLabel htmlFor={`bio-${field.key}`}>{field.label}</FieldLabel>
-              <textarea
-                id={`bio-${field.key}`}
-                className={`${textareaClassName} min-h-28`}
-                value={biography[field.key] ?? ""}
-                onChange={(e) => patchBiography({ [field.key]: e.target.value })}
-                placeholder={field.placeholder}
-              />
-            </div>
-          ))}
+      <ListingSection>
+        <div>
+          <FieldLabel>{FLOW4_COMPETITION_HISTORY_COPY.question}</FieldLabel>
+          <div className="flex flex-wrap gap-2">
+            {ORGANIZED_COMPETITION_OPTIONS.map((option) => {
+              const selected = race.organizedCompetition === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() =>
+                    patchRace(
+                      raceOrganizedCompetitionPatch(
+                        race,
+                        option as OrganizedCompetitionOption
+                      )
+                    )
+                  }
+                  className={cn(
+                    "h-9 rounded-lg border px-3 text-sm font-medium transition-colors",
+                    selected
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-input bg-background text-foreground hover:bg-muted"
+                  )}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </ListingSection>
+
+      {showHistory ? (
+        <ListingSection>
+          <div>
+            <FieldLabel htmlFor="race-competition-history">
+              {FLOW4_COMPETITION_HISTORY_COPY.historyLabel}
+            </FieldLabel>
+            <textarea
+              id="race-competition-history"
+              className={`${textareaClassName} min-h-40`}
+              value={race.competitionHistoryNarrative ?? ""}
+              onChange={(event) =>
+                patchRace({ competitionHistoryNarrative: event.target.value })
+              }
+              placeholder={FLOW4_COMPETITION_HISTORY_COPY.historyPlaceholder}
+            />
+            <FieldHint>{FLOW4_COMPETITION_HISTORY_COPY.historyPrompt}</FieldHint>
+          </div>
+        </ListingSection>
+      ) : null}
     </ListingStep>
   );
 }

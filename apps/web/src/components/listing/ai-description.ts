@@ -96,6 +96,22 @@ export function generateListingAiDescription(draft: ListingDraft): {
   const warrantyLine = qualifySellerClaim(c.warranty, "Warranty notes from the seller");
   if (warrantyLine) paragraphs.push(warrantyLine);
 
+  if (draft.listingTypeId === "race-track-car") {
+    const race = draft.modificationWorkspace.race;
+    const issuesLine = qualifySellerClaim(
+      race.knownRaceTrackIssues ?? "",
+      "Known race / track issues are disclosed by the seller as"
+    );
+    if (issuesLine) paragraphs.push(issuesLine);
+    if (race.sparesIncluded === "Yes" && race.sparesDescription?.trim()) {
+      const sparesLine = qualifySellerClaim(
+        race.sparesDescription,
+        "Spares and support equipment included with the sale are described by the seller as"
+      );
+      if (sparesLine) paragraphs.push(sparesLine);
+    }
+  }
+
   const notes = draft.ownerNotes.trim();
   if (notes) {
     paragraphs.push(

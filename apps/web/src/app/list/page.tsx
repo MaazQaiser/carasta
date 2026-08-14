@@ -78,7 +78,7 @@ export default async function ListPage() {
                 <p className="font-bold">{formatPrice(auction.currentBid)}</p>
                 <Badge variant={auction.status === "live" ? "live" : "ending"} className="text-[10px] mt-1">{auction.status}</Badge>
               </div>
-              <Link href={`/auctions/${auction.vehicle.id}`}>
+              <Link href={`/vehicles/${auction.vehicle.id}`}>
                 <Button variant="ghost" size="sm" className="text-xs">Manage</Button>
               </Link>
             </div>

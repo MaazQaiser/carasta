@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import { MODIFIED_PERFORMANCE_SPECS_CONFIG } from "@/components/listing/specs/modified-performance";
+import { MODIFIED_SPECS_COPY } from "@/components/listing/specs/standard-modification-entry";
+import { normalizeModificationCategoryId } from "@/components/listing/specs/shared-modification-categories";
 import { MobileListingShell } from "../MobileListingShell";
 
 const CATEGORIES = MODIFIED_PERFORMANCE_SPECS_CONFIG.categories;
@@ -19,9 +21,7 @@ export function MobileModifiedSpecsScreen() {
     deleteEntry,
   } = useListingBuilder();
   const ws = draft.modificationWorkspace;
-  const [expanded, setExpanded] = React.useState<string | null>(
-    ws.activeCategoryId || CATEGORIES[0]?.id || null
-  );
+  const [expanded, setExpanded] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (draft.listingTypeId && draft.listingTypeId !== "modified-performance") {
@@ -30,14 +30,6 @@ export function MobileModifiedSpecsScreen() {
   }, [draft.listingTypeId, router]);
 
   const entries = ws.entries.filter((entry) => entry.completed || entry.title.trim());
-
-  const countByCategory = React.useMemo(() => {
-    const map = new Map<string, number>();
-    for (const entry of entries) {
-      map.set(entry.categoryId, (map.get(entry.categoryId) ?? 0) + 1);
-    }
-    return map;
-  }, [entries]);
 
   const addModification = (categoryId: string) => {
     updateWorkspace({ activeCategoryId: categoryId, hasModifications: true });
@@ -59,11 +51,9 @@ export function MobileModifiedSpecsScreen() {
       <div className="flex flex-col gap-5 px-6 pt-4 pb-6">
         <div>
           <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
-            Specifications &amp; Modifications
+            {MODIFIED_SPECS_COPY.title}
           </h1>
-          <p className="mt-2 text-[14px] text-[#636366]">
-            Add unlimited modifications across the Modified / Performance categories.
-          </p>
+          <p className="mt-2 text-[14px] text-[#636366]">{MODIFIED_SPECS_COPY.subtext}</p>
           <p className="mt-1 text-[12px] font-medium text-[#1b1464]">
             {entries.length} modification{entries.length === 1 ? "" : "s"} added
           </p>
@@ -72,8 +62,10 @@ export function MobileModifiedSpecsScreen() {
         <div className="divide-y divide-[#e5e5ea] rounded-xl border border-[#e5e5ea]">
           {CATEGORIES.map((category) => {
             const open = expanded === category.id;
-            const categoryEntries = entries.filter((entry) => entry.categoryId === category.id);
-            const count = countByCategory.get(category.id) ?? 0;
+            const categoryEntries = entries.filter(
+              (entry) => normalizeModificationCategoryId(entry.categoryId) === category.id
+            );
+            const count = categoryEntries.length;
 
             return (
               <div key={category.id}>
@@ -118,17 +110,11 @@ export function MobileModifiedSpecsScreen() {
                           <p className="mt-0.5 truncate text-[13px] font-semibold text-[#1c1c1e]">
                             {entry.title || entry.description || "Untitled modification"}
                           </p>
-                          {(() => {
-                            const detail =
-                              entry.description && entry.description !== entry.title
-                                ? entry.description
-                                : entry.partsBrand || entry.additionalNotes;
-                            return detail ? (
-                              <p className="mt-1 line-clamp-2 text-[11px] text-[#636366]">
-                                {detail}
-                              </p>
-                            ) : null;
-                          })()}
+                          {entry.description && entry.description !== entry.title ? (
+                            <p className="mt-1 line-clamp-2 text-[11px] text-[#636366]">
+                              {entry.description}
+                            </p>
+                          ) : null}
                           <div className="mt-2 flex items-center gap-2">
                             <button
                               type="button"
@@ -168,7 +154,7 @@ export function MobileModifiedSpecsScreen() {
         <button
           type="button"
           onClick={() =>
-            addModification(ws.activeCategoryId || CATEGORIES[0]?.id || "powertrain")
+            addModification(expanded || CATEGORIES[0]?.id || "engine-performance")
           }
           className="flex h-11 items-center justify-center rounded-lg bg-[#1b1464] text-[13px] font-semibold text-white"
         >

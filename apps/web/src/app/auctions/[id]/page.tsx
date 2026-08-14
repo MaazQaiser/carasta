@@ -1,39 +1,28 @@
-import type { Metadata } from "next";
-import { vehicleService, auctionService } from "@carasta/mock-data/services";
-import { VehicleDetailClient } from "@/app/vehicles/[id]/VehicleDetailClient";
-import { PublishedAuctionFallback } from "./PublishedAuctionFallback";
+import { redirect } from "next/navigation";
+import { auctionService, vehicleService } from "@carasta/mock-data/services";
+import { AuctionToVehicleRedirect } from "./AuctionToVehicleRedirect";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+/**
+ * `/auctions/:id` is not a listing page.
+ * Listing URLs are `/vehicles/{vehicleId}`. Live rooms are `/auctions/{auctionId}/live`.
+ * This route only exists to bounce old / mixed IDs to the canonical listing.
+ */
+export default async function AuctionDetailRedirect({ params }: Props) {
   const { id } = await params;
-  const vehicle = await vehicleService.getVehicle(id);
-  if (!vehicle) return { title: "Listing" };
-  return {
-    title: vehicle.title,
-    description: vehicle.description,
-    openGraph: {
-      images: vehicle.images[0] ? [{ url: vehicle.images[0].url }] : [],
-    },
-  };
-}
 
-export default async function AuctionDetailPage({ params }: Props) {
-  const { id } = await params;
-  const [vehicle, similar] = await Promise.all([
+  const [auction, vehicle, auctionForVehicle] = await Promise.all([
+    auctionService.getAuction(id),
     vehicleService.getVehicle(id),
-    vehicleService.getSimilarVehicles(id, 4),
+    auctionService.getAuctionForVehicle(id),
   ]);
 
-  // Listing Builder publishes client-side; fall back to localStorage records.
-  if (!vehicle) {
-    return <PublishedAuctionFallback id={id} />;
-  }
+  if (auction) redirect(`/vehicles/${auction.vehicle.id}`);
+  if (vehicle) redirect(`/vehicles/${vehicle.id}`);
+  if (auctionForVehicle) redirect(`/vehicles/${auctionForVehicle.vehicle.id}`);
 
-  const allAuctions = await auctionService.getAuctions({ filters: {}, pageSize: 100 });
-  const auction = allAuctions.data.find((a) => a.vehicle.id === vehicle.id) ?? null;
-
-  return <VehicleDetailClient vehicle={vehicle} auction={auction} similar={similar} />;
+  return <AuctionToVehicleRedirect id={id} />;
 }

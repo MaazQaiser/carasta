@@ -2,7 +2,7 @@
 
 import { useListingBuilder } from "../ListingBuilderContext";
 import { SpecificationsPlaceholderScreen } from "../screens/SpecificationsPlaceholderScreen";
-import { ModifiedPerformanceSpecsScreen } from "./ModifiedPerformanceSpecsScreen";
+import { ModifiedSpecsRouteScreen } from "../screens/ModifiedSpecsRouteScreen";
 import { RestoredRestomodSpecsScreen } from "./RestoredRestomodSpecsScreen";
 import { RaceTrackSpecsScreen } from "./RaceTrackSpecsScreen";
 import { StockLightlyModifiedSpecsScreen } from "./StockLightlyModifiedSpecsScreen";
@@ -19,7 +19,7 @@ export function SpecificationsScreen() {
   }
 
   if (draft.listingTypeId === "modified-performance") {
-    return <ModifiedPerformanceSpecsScreen />;
+    return <ModifiedSpecsRouteScreen />;
   }
 
   if (draft.listingTypeId === "restored-restomod-custom") {

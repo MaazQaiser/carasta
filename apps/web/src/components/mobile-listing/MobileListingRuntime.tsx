@@ -70,10 +70,10 @@ function resolveBackHref(stepId: string, listingTypeId: string | null | undefine
     return "/mobile-listing/modified/specifications";
   }
   if (stepId === "condition" && listingTypeId === "restored-restomod-custom") {
-    return "/mobile-listing/restored/specifications";
+    return "/mobile-listing/restored/summary";
   }
   if (stepId === "condition" && listingTypeId === "race-track-car") {
-    return "/mobile-listing/race/specifications";
+    return "/mobile-listing/race/spares";
   }
   return MOBILE_SHARED_BACK_HREF[stepId] || null;
 }
@@ -93,9 +93,20 @@ function prefetchForPath(
   if (pathname.includes("/details")) {
     candidates.add(afterDetailsHrefMobile(listingTypeId as Parameters<typeof afterDetailsHrefMobile>[0]));
   }
-  if (pathname.includes("/race/summary")) candidates.add("/mobile-listing/race/biography");
-  if (pathname.includes("/race/biography")) candidates.add("/mobile-listing/race/specifications");
-  if (pathname.includes("/specifications")) candidates.add("/mobile-listing/condition");
+  if (pathname.includes("/race/summary")) candidates.add("/mobile-listing/race/specifications");
+  if (pathname.includes("/race/specifications")) candidates.add("/mobile-listing/race/safety");
+  if (pathname.includes("/race/safety")) candidates.add("/mobile-listing/race/biography");
+  if (pathname.includes("/race/biography")) candidates.add("/mobile-listing/race/documentation");
+  if (pathname.includes("/race/documentation")) candidates.add("/mobile-listing/race/spares");
+  if (pathname.includes("/race/spares")) candidates.add("/mobile-listing/condition");
+  if (pathname.includes("/restored/specifications")) candidates.add("/mobile-listing/restored/summary");
+  if (pathname.includes("/restored/summary")) candidates.add("/mobile-listing/condition");
+  if (
+    pathname.includes("/stock/specifications") ||
+    pathname.includes("/modified/specifications")
+  ) {
+    candidates.add("/mobile-listing/condition");
+  }
   if (pathname.includes("/condition")) candidates.add("/mobile-listing/photos");
   if (pathname.includes("/photos")) candidates.add("/mobile-listing/notes");
   if (pathname.includes("/notes")) candidates.add("/mobile-listing/ai");

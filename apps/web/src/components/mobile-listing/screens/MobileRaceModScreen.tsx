@@ -5,8 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import type { ListingMediaItem, ModificationEntry } from "@/components/listing/types";
 import { RACE_TRACK_SPECS_CONFIG } from "@/components/listing/specs/race-track";
+import {
+  shouldShowShopBuilder,
+  WORK_PERFORMED_BY_OPTIONS,
+} from "@/components/listing/specs/options";
 import { MobileListingShell } from "../MobileListingShell";
-import { MobileShopBuilderField } from "../shop-builder/MobileShopBuilderField";
+import { MobileSelectField } from "../MobileOptionSheet";
+import { MobileAddShopBuilderControl } from "../shop-builder/MobileAddShopBuilderControl";
 import { useOpenShopBuilder } from "../shop-builder/useOpenShopBuilder";
 
 const CATEGORIES = RACE_TRACK_SPECS_CONFIG.categories;
@@ -39,7 +44,7 @@ export function MobileRaceModScreen() {
         return;
       }
     }
-    startNewEntry(ws.activeCategoryId || CATEGORIES[0]?.id || "competition-classification");
+    startNewEntry(ws.activeCategoryId || CATEGORIES[0]?.id || "engine-performance");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -85,6 +90,13 @@ export function MobileRaceModScreen() {
 
   const patch = (partial: Partial<ModificationEntry>) =>
     setForm((prev) => (prev ? { ...prev, ...partial } : prev));
+
+  const setWorkPerformedBy = (value: string) => {
+    patch({
+      workPerformedBy: value,
+      ...(shouldShowShopBuilder(value) ? null : { shopBuilder: "" }),
+    });
+  };
 
   const addPhotos = (files: FileList | null) => {
     if (!files?.length) return;
@@ -178,33 +190,29 @@ export function MobileRaceModScreen() {
           />
         </label>
 
-        <MobileShopBuilderField
-          label="Installer"
-          value={form.shopBuilder}
-          placeholder="Search or add a shop"
-          onPress={() =>
-            openShopBuilder({
-              target: "entry.shopBuilder",
-              entry: form,
-              label: "Installer",
-            })
-          }
-          busy={opening}
+        <MobileSelectField
+          label="Work Performed By"
+          value={form.workPerformedBy}
+          options={WORK_PERFORMED_BY_OPTIONS.map((option) => ({
+            value: option,
+            label: option,
+          }))}
+          onChange={setWorkPerformedBy}
         />
 
-        <MobileShopBuilderField
-          label="Builder"
-          value={form.workPerformedBy}
-          placeholder="Search or add a builder"
-          onPress={() =>
-            openShopBuilder({
-              target: "entry.workPerformedBy",
-              entry: form,
-              label: "Builder",
-            })
-          }
-          busy={opening}
-        />
+        {shouldShowShopBuilder(form.workPerformedBy) ? (
+          <MobileAddShopBuilderControl
+            value={form.shopBuilder}
+            onPress={() =>
+              openShopBuilder({
+                target: "entry.shopBuilder",
+                entry: form,
+                label: "Shop / Builder",
+              })
+            }
+            busy={opening}
+          />
+        ) : null}
 
         <div className="space-y-2">
           <span className="text-[12px] font-semibold text-[#636366]">Photos</span>

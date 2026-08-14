@@ -7,12 +7,21 @@ import {
   Speaker,
   Shield,
   Factory,
-  MoreHorizontal,
 } from "lucide-react";
 import type { ListingVehicleDetails } from "../types";
 import type { EntryFormConfig, SpecsCategoryDefinition, SpecsFlowConfig } from "./types";
 import { createModifiedPerformanceWorkspace } from "./modified-performance";
+import { SHARED_MODIFICATION_CATEGORIES } from "./shared-modification-categories";
+import {
+  PROFESSIONAL_SHOP_BUILDER_OPTION,
+  WORK_PERFORMED_BY_OPTIONS,
+} from "./options";
+import {
+  STANDARD_COMPLETED_DURING_OPTIONS,
+  STANDARD_MODIFICATION_ENTRY_FORM_CONFIG,
+} from "./standard-modification-entry";
 
+/** Factory-spec review sections (Stock flow only — not modification categories). */
 export const STOCK_FACTORY_CATEGORIES: SpecsCategoryDefinition[] = [
   { id: "powertrain", label: "Powertrain", description: "Engine, power, and transmission", icon: Cog },
   { id: "drivetrain", label: "Drivetrain", description: "Drive layout and differential", icon: Gauge },
@@ -24,10 +33,9 @@ export const STOCK_FACTORY_CATEGORIES: SpecsCategoryDefinition[] = [
   { id: "factory-equipment", label: "Factory Equipment", description: "Packages and premium options", icon: Factory },
 ];
 
-export const STOCK_MODIFICATION_CATEGORIES: SpecsCategoryDefinition[] = [
-  ...STOCK_FACTORY_CATEGORIES.filter((category) => category.id !== "factory-equipment"),
-  { id: "other", label: "Other", description: "Anything that doesn’t fit above", icon: MoreHorizontal },
-];
+/** Shared modification categories for Stock light-mod entries. */
+export const STOCK_MODIFICATION_CATEGORIES: SpecsCategoryDefinition[] =
+  SHARED_MODIFICATION_CATEGORIES;
 
 export const STOCK_TYPE_OF_WORK_OPTIONS = [
   "Repair",
@@ -39,22 +47,12 @@ export const STOCK_TYPE_OF_WORK_OPTIONS = [
   "Other",
 ];
 
-export const STOCK_COMPLETED_DURING_OPTIONS = [
-  "Current ownership",
-  "Previous Ownership",
-  "Unknown",
-];
+export const STOCK_COMPLETED_DURING_OPTIONS = STANDARD_COMPLETED_DURING_OPTIONS;
 
 /** Value that reveals the Add Shop / Builder control on the light-mod form. */
-export const STOCK_PROFESSIONAL_SHOP_OPTION = "Professional Shop / Builder";
+export const STOCK_PROFESSIONAL_SHOP_OPTION = PROFESSIONAL_SHOP_BUILDER_OPTION;
 
-export const STOCK_WORK_PERFORMED_BY_OPTIONS = [
-  "Current Owner",
-  "Previous Owner",
-  STOCK_PROFESSIONAL_SHOP_OPTION,
-  "Other Individual",
-  "Unknown",
-];
+export const STOCK_WORK_PERFORMED_BY_OPTIONS = WORK_PERFORMED_BY_OPTIONS;
 
 export const STOCK_DATE_STATUS_OPTIONS = [
   "Exact Date",
@@ -65,45 +63,21 @@ export const STOCK_DATE_STATUS_OPTIONS = [
   "Not Applicable",
 ] as const;
 
-export const STOCK_ENTRY_FORM_CONFIG: EntryFormConfig = {
-  entryTitleLabel: "Modification",
-  descriptionLabel: "Modification Details",
-  descriptionPlaceholder:
-    "Describe what was modified, replaced, upgraded or added. Include and details about the parts used and changes made",
-  hideTypeOfWork: true,
-  hidePartsBrand: true,
-  hideManufacturer: true,
-  hideSpecifications: true,
-  completedDuringLabel: "Modification Completed During",
-  completedDuringOptions: STOCK_COMPLETED_DURING_OPTIONS,
-  shopBuilderLabel: "Add Shop / Builder",
-  shopBuilderWhenWorkPerformedBy: STOCK_PROFESSIONAL_SHOP_OPTION,
-  useShopBuilderPicker: true,
-  workPerformedByLabel: "Work Performed By",
-  workPerformedByOptions: STOCK_WORK_PERFORMED_BY_OPTIONS,
-  installationDateLabel: "Date",
-  simpleDateOnly: true,
-  showOriginalPartsIncluded: true,
-  saveButtonLabel: "Save Modification",
-  notesLabel: "Notes",
-  documentSlots: [
-    {
-      key: "photos",
-      title: "Photos",
-      description: "Browse files or drag images. Multiple images supported.",
-      accept: "image/*",
-      variant: "image",
-    },
-    {
-      key: "receipt",
-      title: "Supporting Documents",
-      description:
-        "Upload receipts or any other supporting documentation about modification",
-      accept: ".pdf,.png,.jpg,.jpeg",
-      variant: "file",
-    },
-  ],
-};
+export const STOCK_ENTRY_FORM_CONFIG: EntryFormConfig = STANDARD_MODIFICATION_ENTRY_FORM_CONFIG;
+
+export const STOCK_DECISION_COPY = {
+  sectionSubtext:
+    "Confirm whether this vehicle is factory original, then document any light changes.",
+  question: "Is this vehicle essentially factory original?",
+  questionHint: "Choose Yes if it remains essentially as delivered from the factory.",
+  stockSelected:
+    "Stock vehicle selected — no modifications will be able to be added.",
+  lightModsTitle: "Light Modifications",
+  lightModsSubtext: "Add each light change with category, work details, and documents.",
+  emptyTitle: "No light modifications yet",
+  emptySubtext: "Document wheels, stereo upgrades, or other light changes.",
+  addCta: "Add Light Modification",
+} as const;
 
 export const STOCK_LIGHTLY_MODIFIED_SPECS_CONFIG: SpecsFlowConfig = {
   id: "stock-lightly-modified",
@@ -224,7 +198,7 @@ export function buildFactorySpecSections(
 export function createStockLightlyModifiedWorkspace() {
   return {
     ...createModifiedPerformanceWorkspace(),
-    activeCategoryId: STOCK_MODIFICATION_CATEGORIES[0]?.id ?? "powertrain",
+    activeCategoryId: STOCK_MODIFICATION_CATEGORIES[0]?.id ?? "engine-performance",
     hasModifications: null as boolean | null,
     reviewedFactoryCategoryIds: [] as string[],
     factorySpecOverrides: {} as Record<string, string>,

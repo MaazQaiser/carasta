@@ -3,10 +3,13 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import {
+  STOCK_DECISION_COPY,
   STOCK_MODIFICATION_CATEGORIES,
 } from "@/components/listing/specs/stock-lightly-modified";
+import { getSharedModificationCategoryLabel } from "@/components/listing/specs/shared-modification-categories";
 import { MobileListingShell } from "../MobileListingShell";
 
 export function MobileStockSpecsScreen() {
@@ -17,7 +20,6 @@ export function MobileStockSpecsScreen() {
   const hasModifications = ws.hasModifications;
   const entries = ws.entries.filter((entry) => entry.completed || entry.title.trim());
 
-  // Guard: other listing types should not use this screen.
   React.useEffect(() => {
     if (draft.listingTypeId && draft.listingTypeId !== "stock-lightly-modified") {
       router.replace("/mobile-listing/specifications");
@@ -31,7 +33,8 @@ export function MobileStockSpecsScreen() {
   };
 
   const addModification = () => {
-    const categoryId = ws.activeCategoryId || STOCK_MODIFICATION_CATEGORIES[0]?.id || "powertrain";
+    const categoryId =
+      ws.activeCategoryId || STOCK_MODIFICATION_CATEGORIES[0]?.id || "engine-performance";
     updateWorkspace({ hasModifications: true, activeCategoryId: categoryId });
     startNewEntry(categoryId);
     router.push("/mobile-listing/stock/modifications/add");
@@ -48,73 +51,76 @@ export function MobileStockSpecsScreen() {
       continueDisabled={!canContinue}
       continueHref={canContinue ? "/mobile-listing/condition" : undefined}
     >
-      <div className="flex flex-col gap-5 px-6 pt-4 pb-6">
-        <div>
+      <div className="flex flex-col gap-6 px-6 pt-4 pb-6">
+        <div className="space-y-2">
           <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
             Specifications &amp; Light Modifications
           </h1>
-          <p className="mt-2 text-[14px] text-[#636366]">
-            Confirm whether this vehicle is stock or if it has been lightly modified.
+          <p className="text-[15px] leading-[1.4] text-[#636366]">
+            {STOCK_DECISION_COPY.sectionSubtext}
           </p>
         </div>
 
-        <section className="rounded-xl border border-[#e5e5ea] p-4">
-          <h2 className="text-[15px] font-bold text-[#1c1c1e]">Is this vehicle stock?</h2>
+        <section className="rounded-2xl border border-[#e5e5ea] bg-white p-4">
+          <h2 className="text-[16px] font-bold leading-snug text-[#1c1c1e]">
+            {STOCK_DECISION_COPY.question}
+          </h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-[#636366]">
+            {STOCK_DECISION_COPY.questionHint}
+          </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setFactoryOriginal(true)}
-              className={[
-                "h-11 rounded-lg border text-[13px] font-semibold",
+              className={cn(
+                "h-12 rounded-xl border text-[15px] font-semibold transition-colors",
                 hasModifications === false
                   ? "border-[#1b1464] bg-[#f4f5fc] text-[#1b1464]"
-                  : "border-[#e5e5ea] text-[#1c1c1e]",
-              ].join(" ")}
+                  : "border-[#e5e5ea] bg-white text-[#1c1c1e]"
+              )}
             >
               Yes
             </button>
             <button
               type="button"
               onClick={() => setFactoryOriginal(false)}
-              className={[
-                "h-11 rounded-lg border text-[13px] font-semibold",
+              className={cn(
+                "h-12 rounded-xl border text-[15px] font-semibold transition-colors",
                 hasModifications === true
                   ? "border-[#1b1464] bg-[#f4f5fc] text-[#1b1464]"
-                  : "border-[#e5e5ea] text-[#1c1c1e]",
-              ].join(" ")}
+                  : "border-[#e5e5ea] bg-white text-[#1c1c1e]"
+              )}
             >
               No
             </button>
           </div>
         </section>
 
-        {hasModifications === false ? (
-          <div className="rounded-xl bg-[#f4f5fc] px-4 py-3 text-[13px] text-[#1b1464]">
-            Stock vehicle selected - no modifications will be able to be added
-          </div>
-        ) : null}
-
         {hasModifications === true ? (
           <section className="space-y-3">
             <div>
-              <h2 className="text-[16px] font-bold text-[#1c1c1e]">Light Modifications</h2>
-              <p className="text-[12px] text-[#636366]">
-                Add modifications by category with details and documents
+              <h2 className="text-[16px] font-bold text-[#1c1c1e]">
+                {STOCK_DECISION_COPY.lightModsTitle}
+              </h2>
+              <p className="mt-1 text-[13px] leading-relaxed text-[#636366]">
+                {STOCK_DECISION_COPY.lightModsSubtext}
               </p>
             </div>
 
             {entries.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[#d1d1d6] px-4 py-8 text-center">
-                <p className="text-[14px] font-semibold text-[#1c1c1e]">No modifications added</p>
-                <p className="mt-1 text-[12px] text-[#636366]">
-                  Add wheels, exhaust, window tint, wrap, etc.
+              <div className="rounded-2xl border border-dashed border-[#d1d1d6] px-4 py-8 text-center">
+                <p className="text-[15px] font-bold text-[#1c1c1e]">
+                  {STOCK_DECISION_COPY.emptyTitle}
+                </p>
+                <p className="mt-1 text-[13px] leading-relaxed text-[#636366]">
+                  {STOCK_DECISION_COPY.emptySubtext}
                 </p>
                 <button
                   type="button"
                   onClick={addModification}
-                  className="mt-4 h-10 rounded-lg border border-[#1b1464] px-4 text-[13px] font-semibold text-[#1b1464]"
+                  className="mt-4 inline-flex h-11 items-center justify-center rounded-xl border border-[#1b1464] bg-white px-4 text-[14px] font-semibold text-[#1b1464]"
                 >
-                  Add Light Modification
+                  {STOCK_DECISION_COPY.addCta}
                 </button>
               </div>
             ) : (
@@ -123,11 +129,11 @@ export function MobileStockSpecsScreen() {
                   {entries.map((entry) => {
                     const category =
                       STOCK_MODIFICATION_CATEGORIES.find((item) => item.id === entry.categoryId)
-                        ?.label ?? "Other";
+                        ?.label ?? getSharedModificationCategoryLabel(entry.categoryId);
                     return (
                       <div
                         key={entry.id}
-                        className="rounded-xl border border-[#e5e5ea] px-3 py-3"
+                        className="rounded-2xl border border-[#e5e5ea] px-4 py-3"
                       >
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-[#636366]">
                           {category}
@@ -165,10 +171,10 @@ export function MobileStockSpecsScreen() {
                 <button
                   type="button"
                   onClick={addModification}
-                  className="flex h-11 w-full items-center justify-center gap-1 rounded-lg border border-dashed border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
+                  className="flex h-11 w-full items-center justify-center gap-1 rounded-xl border border-[#1b1464] bg-white text-[14px] font-semibold text-[#1b1464]"
                 >
                   <Plus className="h-4 w-4" />
-                  Add another modification
+                  {STOCK_DECISION_COPY.addCta}
                 </button>
               </>
             )}

@@ -1,5 +1,13 @@
 import type { ListingDraft, ListingTypeId } from "./types";
 import { isTitleStatusComplete } from "./specs/title-status";
+import {
+  isRaceBuildComplete,
+  isRaceCompetitionHistoryComplete,
+  isRaceDocumentationComplete,
+  isRacePrimaryUseComplete,
+  isRaceSparesComplete,
+} from "./specs/race-track";
+import { isFactoryCorrectOriginalityComplete } from "./specs/restored-restomod";
 import { LISTING_MEDIA_LIMITS } from "./listing-media-library";
 
 export const LISTING_BASE = "/listing";
@@ -16,10 +24,15 @@ export const LISTING_PATHS = {
   modifiedSpecs: `${LISTING_BASE}/modified/specifications`,
   modifiedModAdd: `${LISTING_BASE}/modified/modifications/add`,
   restoredSpecs: `${LISTING_BASE}/restored/specifications`,
+  restoredTimeline: `${LISTING_BASE}/restored/timeline`,
+  restoredSummary: `${LISTING_BASE}/restored/summary`,
   restoredModAdd: `${LISTING_BASE}/restored/modifications/add`,
   raceSummary: `${LISTING_BASE}/race/summary`,
   raceBiography: `${LISTING_BASE}/race/biography`,
   raceSpecs: `${LISTING_BASE}/race/specifications`,
+  raceSafety: `${LISTING_BASE}/race/safety`,
+  raceDocumentation: `${LISTING_BASE}/race/documentation`,
+  raceSpares: `${LISTING_BASE}/race/spares`,
   raceModAdd: `${LISTING_BASE}/race/modifications/add`,
   raceCompetition: `${LISTING_BASE}/race/competition`,
   condition: `${LISTING_BASE}/condition`,
@@ -78,7 +91,7 @@ export function specsEditHref(typeId: ListingTypeId | null | undefined): string 
   }
 }
 
-/** Back from condition — type-specific specs parent. */
+/** Back from condition — last adaptive screen, then shared finish. */
 export function backFromCondition(typeId: ListingTypeId | null | undefined): string {
   switch (typeId) {
     case "stock-lightly-modified":
@@ -86,9 +99,9 @@ export function backFromCondition(typeId: ListingTypeId | null | undefined): str
     case "modified-performance":
       return LISTING_PATHS.modifiedSpecs;
     case "restored-restomod-custom":
-      return LISTING_PATHS.restoredSpecs;
+      return LISTING_PATHS.restoredSummary;
     case "race-track-car":
-      return LISTING_PATHS.raceSpecs;
+      return LISTING_PATHS.raceSpares;
     default:
       return LISTING_PATHS.specifications;
   }
@@ -179,7 +192,15 @@ export function isDetailsValid(draft: ListingDraft): boolean {
   );
 
   if (typeId === "restored-restomod-custom") {
-    return core && Boolean(restoration.buildType && restoration.mileageStatus);
+    return (
+      core &&
+      Boolean(
+        restoration.buildType &&
+          restoration.mileageStatus &&
+          restoration.buildStatus &&
+          restoration.workPerformedBy
+      )
+    );
   }
 
   return core;
@@ -197,13 +218,37 @@ export function canContinueOnPath(pathname: string, draft: ListingDraft): boolea
   if (pathEquals(path, LISTING_PATHS.stockSpecs)) {
     return draft.modificationWorkspace.hasModifications !== null;
   }
-  if (
-    pathEquals(path, LISTING_PATHS.modifiedSpecs) ||
-    pathEquals(path, LISTING_PATHS.restoredSpecs) ||
-    pathEquals(path, LISTING_PATHS.raceSummary) ||
-    pathEquals(path, LISTING_PATHS.raceBiography) ||
-    pathEquals(path, LISTING_PATHS.raceSpecs)
-  ) {
+  if (pathEquals(path, LISTING_PATHS.raceSummary)) {
+    return isRacePrimaryUseComplete(draft.modificationWorkspace.race.competition);
+  }
+  if (pathEquals(path, LISTING_PATHS.raceSpecs)) {
+    return isRaceBuildComplete(draft.modificationWorkspace.race);
+  }
+  if (pathEquals(path, LISTING_PATHS.raceSafety)) {
+    return true;
+  }
+  if (pathEquals(path, LISTING_PATHS.raceBiography)) {
+    return isRaceCompetitionHistoryComplete(draft.modificationWorkspace.race);
+  }
+  if (pathEquals(path, LISTING_PATHS.raceDocumentation)) {
+    return isRaceDocumentationComplete(draft.modificationWorkspace.race);
+  }
+  if (pathEquals(path, LISTING_PATHS.raceSpares)) {
+    return isRaceSparesComplete(draft.modificationWorkspace.race);
+  }
+  if (pathEquals(path, LISTING_PATHS.modifiedSpecs)) {
+    return true;
+  }
+  if (pathEquals(path, LISTING_PATHS.restoredSpecs)) {
+    if (draft.listingTypeId !== "restored-restomod-custom") return true;
+    const resto = draft.modificationWorkspace.restoration;
+    if (resto.buildType !== "factory-correct-restoration") return true;
+    return isFactoryCorrectOriginalityComplete(resto.factoryCorrect);
+  }
+  if (pathEquals(path, LISTING_PATHS.restoredTimeline)) {
+    return true;
+  }
+  if (pathEquals(path, LISTING_PATHS.restoredSummary)) {
     return true;
   }
 
@@ -254,10 +299,15 @@ export function getContinueHref(
 
   if (pathEquals(path, LISTING_PATHS.stockSpecs)) return LISTING_PATHS.condition;
   if (pathEquals(path, LISTING_PATHS.modifiedSpecs)) return LISTING_PATHS.condition;
-  if (pathEquals(path, LISTING_PATHS.restoredSpecs)) return LISTING_PATHS.condition;
-  if (pathEquals(path, LISTING_PATHS.raceSummary)) return LISTING_PATHS.raceBiography;
-  if (pathEquals(path, LISTING_PATHS.raceBiography)) return LISTING_PATHS.raceSpecs;
-  if (pathEquals(path, LISTING_PATHS.raceSpecs)) return LISTING_PATHS.condition;
+  if (pathEquals(path, LISTING_PATHS.restoredSpecs)) return LISTING_PATHS.restoredTimeline;
+  if (pathEquals(path, LISTING_PATHS.restoredTimeline)) return LISTING_PATHS.restoredSummary;
+  if (pathEquals(path, LISTING_PATHS.restoredSummary)) return LISTING_PATHS.condition;
+  if (pathEquals(path, LISTING_PATHS.raceSummary)) return LISTING_PATHS.raceSpecs;
+  if (pathEquals(path, LISTING_PATHS.raceSpecs)) return LISTING_PATHS.raceSafety;
+  if (pathEquals(path, LISTING_PATHS.raceSafety)) return LISTING_PATHS.raceBiography;
+  if (pathEquals(path, LISTING_PATHS.raceBiography)) return LISTING_PATHS.raceDocumentation;
+  if (pathEquals(path, LISTING_PATHS.raceDocumentation)) return LISTING_PATHS.raceSpares;
+  if (pathEquals(path, LISTING_PATHS.raceSpares)) return LISTING_PATHS.condition;
 
   if (pathEquals(path, LISTING_PATHS.condition)) return LISTING_PATHS.photos;
   if (pathEquals(path, LISTING_PATHS.photos)) return LISTING_PATHS.notes;
@@ -294,9 +344,14 @@ export function getBackHref(
   if (pathEquals(path, LISTING_PATHS.stockSpecs)) return LISTING_PATHS.details;
   if (pathEquals(path, LISTING_PATHS.modifiedSpecs)) return LISTING_PATHS.details;
   if (pathEquals(path, LISTING_PATHS.restoredSpecs)) return LISTING_PATHS.details;
+  if (pathEquals(path, LISTING_PATHS.restoredTimeline)) return LISTING_PATHS.restoredSpecs;
+  if (pathEquals(path, LISTING_PATHS.restoredSummary)) return LISTING_PATHS.restoredTimeline;
   if (pathEquals(path, LISTING_PATHS.raceSummary)) return LISTING_PATHS.details;
-  if (pathEquals(path, LISTING_PATHS.raceBiography)) return LISTING_PATHS.raceSummary;
-  if (pathEquals(path, LISTING_PATHS.raceSpecs)) return LISTING_PATHS.raceBiography;
+  if (pathEquals(path, LISTING_PATHS.raceSpecs)) return LISTING_PATHS.raceSummary;
+  if (pathEquals(path, LISTING_PATHS.raceSafety)) return LISTING_PATHS.raceSpecs;
+  if (pathEquals(path, LISTING_PATHS.raceBiography)) return LISTING_PATHS.raceSafety;
+  if (pathEquals(path, LISTING_PATHS.raceDocumentation)) return LISTING_PATHS.raceBiography;
+  if (pathEquals(path, LISTING_PATHS.raceSpares)) return LISTING_PATHS.raceDocumentation;
   if (pathEquals(path, LISTING_PATHS.raceCompetition)) return LISTING_PATHS.details;
 
   if (pathEquals(path, LISTING_PATHS.condition) || path.startsWith(`${LISTING_BASE}/history`)) {

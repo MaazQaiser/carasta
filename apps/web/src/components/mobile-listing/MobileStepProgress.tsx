@@ -10,7 +10,7 @@ export function MobileStepProgress({ step, total }: MobileStepProgressProps) {
 
   return (
     <div className="flex flex-col gap-2 px-6 py-3 shrink-0 w-full">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#636366]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#1b1464]">
         Step {step} of {total}
       </p>
       <div className="relative h-1 w-full rounded-full bg-[#e5e5ea] overflow-hidden">

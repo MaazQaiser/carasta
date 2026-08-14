@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { SpecsCategoryDefinition } from "./types";
 import type { ModificationEntry } from "./types";
 import { countEntryDocuments, countEntryPhotos } from "./options";
+import { normalizeModificationCategoryId } from "./shared-modification-categories";
 
 export function SpecsBuildSummary({
   title = "Build Summary",
@@ -35,7 +36,10 @@ export function SpecsBuildSummary({
   showProgress?: boolean;
 }) {
   const categoriesCompleted = categories.filter((category) =>
-    entries.some((entry) => entry.categoryId === category.id && entry.completed)
+    entries.some(
+      (entry) =>
+        normalizeModificationCategoryId(entry.categoryId) === category.id && entry.completed
+    )
   ).length;
   const entriesAdded = entries.filter((entry) => entry.completed || entry.title.trim()).length;
   const photosUploaded = entries.reduce((sum, entry) => sum + countEntryPhotos(entry), 0);

@@ -7,7 +7,7 @@ import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
 import { VIN_IDENTIFY_COPY } from "@/components/listing/vin-identify-copy";
 import { MobileListingShell } from "../MobileListingShell";
 
-type ScreenState = "entry" | "loading" | "review" | "failed";
+type ScreenState = "entry" | "loading" | "failed";
 
 function decodeVin(vin: string) {
   const clean = vin.trim().toUpperCase();
@@ -143,7 +143,7 @@ export function MobileVinEntryScreen() {
           : {}),
       });
       addActivity("VIN decoded", "identify");
-      setState("review");
+      router.push("/mobile-listing/details");
     }, 1200);
   }, [
     addActivity,
@@ -153,6 +153,7 @@ export function MobileVinEntryScreen() {
     identityType,
     isRestored,
     persistIdentity,
+    router,
     setVinImportedFields,
     updateDetails,
     updateWorkspace,
@@ -164,7 +165,7 @@ export function MobileVinEntryScreen() {
     : identityReady && vinStyle;
 
   // Failure uses in-screen Continue Manually — footer Continue stays disabled (Figma).
-  // Review enables footer Continue. Manual Entry / non-VIN restored can continue from entry.
+  // Manual Entry / non-VIN restored can continue from entry into Vehicle Details.
   const allowContinueWithoutReview =
     identityType === "Manual Entry" ||
     (isRestored && state === "entry" && (identityReady || !vinStyle));
@@ -175,10 +176,9 @@ export function MobileVinEntryScreen() {
       continueDisabled={
         state === "loading" ||
         state === "failed" ||
-        (state !== "review" && !allowContinueWithoutReview)
+        !allowContinueWithoutReview
       }
-      continueHref={state === "review" ? "/mobile-listing/details" : undefined}
-      onContinue={state === "review" ? undefined : continueManually}
+      onContinue={continueManually}
     >
       <div className="flex flex-col gap-6 px-6 pt-4 pb-6">
         {state === "loading" ? (
@@ -200,18 +200,13 @@ export function MobileVinEntryScreen() {
                   : VIN_IDENTIFY_COPY.title}
               </h1>
               <p className="text-[15px] leading-[1.4] text-[#636366]">
-                {state === "review"
-                  ? "Confirm or correct the details below."
-                  : state === "failed"
-                    ? VIN_IDENTIFY_COPY.failure.banner
-                    : VIN_IDENTIFY_COPY.subtext}
+                {state === "failed"
+                  ? VIN_IDENTIFY_COPY.failure.banner
+                  : VIN_IDENTIFY_COPY.subtext}
               </p>
             </div>
 
-            {state === "review" ? (
-              <VinReviewForm />
-            ) : (
-              <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
                 {state === "failed" ? (
                   <div className="rounded-xl border border-[#fdba74] bg-[#fff2e6] px-4 py-3 text-[13px] text-[#9b4a00]">
                     {VIN_IDENTIFY_COPY.failure.banner}
@@ -308,43 +303,9 @@ export function MobileVinEntryScreen() {
                   </>
                 )}
               </div>
-            )}
           </>
         )}
       </div>
     </MobileListingShell>
-  );
-}
-
-function VinReviewForm() {
-  const { draft, updateDetails } = useListingBuilder();
-  const fields = [
-    ["Year", "year"],
-    ["Make", "make"],
-    ["Model", "model"],
-    ["Trim", "trim"],
-  ] as const;
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 rounded-lg bg-[#e7f7e8] px-3 py-2 text-[12px] font-medium text-[#26742d]">
-        {VIN_IDENTIFY_COPY.found.banner}
-      </div>
-      {fields.map(([label, key]) => (
-        <label key={key} className="space-y-1">
-          <span className="flex items-center gap-2 text-[12px] font-semibold text-[#636366]">
-            {label}
-            <span className="rounded-full bg-[#ecebff] px-2 py-0.5 text-[10px] font-semibold text-[#1b1464]">
-              {VIN_IDENTIFY_COPY.found.importedBadge}
-            </span>
-          </span>
-          <input
-            value={draft.details[key]}
-            onChange={(event) => updateDetails({ [key]: event.target.value })}
-            className="h-10 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] text-[#1c1c1e] outline-none focus:border-[#1b1464]"
-          />
-        </label>
-      ))}
-    </div>
   );
 }

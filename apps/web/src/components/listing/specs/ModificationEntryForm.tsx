@@ -15,7 +15,7 @@ import { MediaUploadZone } from "../MediaUploadZone";
 import { ListingShopBuilderField } from "../shop-builder/ListingShopBuilderField";
 import type { ListingMediaItem } from "../types";
 import type { EntryFormConfig, EntryMediaKey, ModificationEntry } from "./types";
-import { DEFAULT_ENTRY_FORM_CONFIG, ORIGINAL_PARTS_OPTIONS, WORK_PERFORMED_BY_OPTIONS } from "./options";
+import { DEFAULT_ENTRY_FORM_CONFIG, ORIGINAL_PARTS_OPTIONS, PART_CLASSIFICATION_OPTIONS, shouldShowShopBuilder } from "./options";
 
 export function ModificationEntryForm({
   entry,
@@ -32,10 +32,7 @@ export function ModificationEntryForm({
   const config = { ...DEFAULT_ENTRY_FORM_CONFIG, ...formConfig };
   const documentSlots = config.documentSlots ?? DEFAULT_ENTRY_FORM_CONFIG.documentSlots ?? [];
   const dateStatusOptions = config.dateStatusOptions ?? DEFAULT_ENTRY_FORM_CONFIG.dateStatusOptions ?? [];
-  const shopGate = config.shopBuilderWhenWorkPerformedBy;
-  const showShopBuilder = shopGate
-    ? form.workPerformedBy === shopGate
-    : true;
+  const showShopBuilder = shouldShowShopBuilder(form.workPerformedBy);
 
   React.useEffect(() => {
     setForm(entry);
@@ -46,7 +43,7 @@ export function ModificationEntryForm({
 
   const setWorkPerformedBy = (value: string) => {
     const next: Partial<ModificationEntry> = { workPerformedBy: value };
-    if (shopGate && value !== shopGate) {
+    if (!shouldShowShopBuilder(value)) {
       next.shopBuilder = "";
     }
     patch(next);
@@ -69,7 +66,7 @@ export function ModificationEntryForm({
             id={`title-${form.id}`}
             value={form.title}
             onChange={(e) => patch({ title: e.target.value })}
-            placeholder="e.g. Body & paint restoration"
+            placeholder="e.g. Rally Green PPG Paint"
           />
         </div>
         <div className="sm:col-span-2">
@@ -87,7 +84,7 @@ export function ModificationEntryForm({
             }
           />
         </div>
-        {config.completedDuringOptions?.length ? (
+        {config.completedDuringOptions?.length && !config.completedDuringAfterShop ? (
           <div className="sm:col-span-2">
             <FieldLabel htmlFor={`completed-during-${form.id}`}>
               {config.completedDuringLabel ?? "Modification Completed During"}
@@ -146,6 +143,61 @@ export function ModificationEntryForm({
             )}
           </div>
         ) : null}
+        <div className="sm:col-span-2">
+          <FieldLabel htmlFor={`work-by-${form.id}`}>
+            {config.workPerformedByLabel ?? "Work Performed By"}
+          </FieldLabel>
+          {config.workPerformedByAsText ? (
+            <Input
+              id={`work-by-${form.id}`}
+              value={form.workPerformedBy}
+              onChange={(e) => setWorkPerformedBy(e.target.value)}
+              placeholder="e.g. Chassis builder name"
+            />
+          ) : (
+            <Select
+              value={form.workPerformedBy || undefined}
+              onValueChange={setWorkPerformedBy}
+            >
+              <SelectTrigger id={`work-by-${form.id}`}>
+                <SelectValue placeholder="Select who performed the work" />
+              </SelectTrigger>
+              <SelectContent>
+                {(config.workPerformedByOptions ?? DEFAULT_ENTRY_FORM_CONFIG.workPerformedByOptions ?? []).map(
+                  (option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+        {showShopBuilder ? (
+          <div className="sm:col-span-2">
+            {form.shopBuilder.trim() ? (
+              <ListingShopBuilderField
+                label="Shop / Builder"
+                value={form.shopBuilder}
+                target="entry.shopBuilder"
+                entryId={form.id}
+                entry={form}
+                placeholder="Add Shop / Builder"
+              />
+            ) : (
+              <ListingShopBuilderField
+                label={config.shopBuilderLabel ?? "Add Shop / Builder"}
+                value=""
+                target="entry.shopBuilder"
+                entryId={form.id}
+                entry={form}
+                placeholder="Add Shop / Builder"
+                emptyAction
+              />
+            )}
+          </div>
+        ) : null}
         {!config.hidePartsBrand ? (
           <div>
             <FieldLabel htmlFor={`parts-${form.id}`}>
@@ -184,64 +236,27 @@ export function ModificationEntryForm({
             />
           </div>
         ) : null}
-        <div className={shopGate ? "sm:col-span-2" : undefined}>
-          <FieldLabel htmlFor={`work-by-${form.id}`}>
-            {config.workPerformedByLabel ?? "Work Performed By"}
-          </FieldLabel>
-          {config.workPerformedByAsText ? (
-            <Input
-              id={`work-by-${form.id}`}
-              value={form.workPerformedBy}
-              onChange={(e) => setWorkPerformedBy(e.target.value)}
-              placeholder="e.g. Chassis builder name"
-            />
-          ) : (
+        {config.completedDuringOptions?.length && config.completedDuringAfterShop ? (
+          <div className="sm:col-span-2">
+            <FieldLabel htmlFor={`completed-during-${form.id}`}>
+              {config.completedDuringLabel ?? "Completion Status"}
+            </FieldLabel>
             <Select
-              value={form.workPerformedBy || undefined}
-              onValueChange={setWorkPerformedBy}
+              value={form.completedDuring || undefined}
+              onValueChange={(v) => patch({ completedDuring: v })}
             >
-              <SelectTrigger id={`work-by-${form.id}`}>
-                <SelectValue placeholder="Select who performed the work" />
+              <SelectTrigger id={`completed-during-${form.id}`}>
+                <SelectValue placeholder="Select completion status" />
               </SelectTrigger>
               <SelectContent>
-                {(config.workPerformedByOptions ?? WORK_PERFORMED_BY_OPTIONS).map((option) => (
+                {config.completedDuringOptions.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          )}
-        </div>
-        {showShopBuilder ? (
-          config.useShopBuilderPicker ? (
-            <div className="sm:col-span-2">
-              <ListingShopBuilderField
-                label={
-                  form.shopBuilder.trim()
-                    ? "Shop / Builder"
-                    : config.shopBuilderLabel ?? "Add Shop / Builder"
-                }
-                value={form.shopBuilder}
-                target="entry.shopBuilder"
-                entryId={form.id}
-                entry={form}
-                placeholder="Add Shop / Builder"
-              />
-            </div>
-          ) : (
-            <div>
-              <FieldLabel htmlFor={`shop-${form.id}`}>
-                {config.shopBuilderLabel ?? "Shop / Builder"}
-              </FieldLabel>
-              <Input
-                id={`shop-${form.id}`}
-                value={form.shopBuilder}
-                onChange={(e) => patch({ shopBuilder: e.target.value })}
-                placeholder="e.g. Heritage Restoration Co."
-              />
-            </div>
-          )
+          </div>
         ) : null}
         {config.simpleDateOnly ? (
           <div>
@@ -329,7 +344,9 @@ export function ModificationEntryForm({
           </>
         )}
         <div>
-          <FieldLabel htmlFor={`mileage-${form.id}`}>Mileage</FieldLabel>
+          <FieldLabel htmlFor={`mileage-${form.id}`}>
+            {config.mileageLabel ?? "Mileage"}
+          </FieldLabel>
           <Input
             id={`mileage-${form.id}`}
             value={form.mileage}
@@ -337,6 +354,26 @@ export function ModificationEntryForm({
             placeholder="e.g. 62,000 mi"
           />
         </div>
+        {config.showPartClassification ? (
+          <div>
+            <FieldLabel>{config.partClassificationLabel ?? "Part Classification"}</FieldLabel>
+            <Select
+              value={form.partClassification || undefined}
+              onValueChange={(v) => patch({ partClassification: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select classification (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                {PART_CLASSIFICATION_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
         {config.showOriginalPartsIncluded !== false ? (
           <div>
             <FieldLabel>Original Parts Included</FieldLabel>

@@ -101,6 +101,10 @@ export { useUnsavedChanges } from "./hooks/useUnsavedChanges";
 export { useListingKeyboardShortcuts } from "./hooks/useListingKeyboardShortcuts";
 
 export { VehicleTypeScreen } from "./screens/VehicleTypeScreen";
+export { RaceSafetyScreen } from "./screens/RaceSafetyScreen";
+export { RaceDocumentationScreen } from "./screens/RaceDocumentationScreen";
+export { RaceSparesScreen } from "./screens/RaceSparesScreen";
+export { RestorationTimelineScreen } from "./screens/RestorationTimelineScreen";
 export { IdentifyVehicleScreen } from "./screens/IdentifyVehicleScreen";
 export { VehicleDetailsScreen } from "./screens/VehicleDetailsScreen";
 export { SpecificationsPlaceholderScreen } from "./screens/SpecificationsPlaceholderScreen";
@@ -110,6 +114,7 @@ export { OwnerNotesScreen } from "./screens/OwnerNotesScreen";
 export { AiDescriptionScreen } from "./screens/AiDescriptionScreen";
 export { SaleSettingsScreen } from "./screens/SaleSettingsScreen";
 export { ListingPreviewScreen } from "./screens/ListingPreviewScreen";
+export { RestoredBuildSummaryScreen } from "./screens/RestoredBuildSummaryScreen";
 export { ListingBuyerViewPreviewScreen } from "./screens/ListingBuyerViewPreviewScreen";
 export { ReviewSubmitScreen } from "./screens/ReviewSubmitScreen";
 export { ListingSubmittedScreen } from "./screens/ListingSubmittedScreen";

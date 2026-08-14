@@ -13,7 +13,7 @@ export function MobileRaceCompetitionScreen() {
 
   return (
     <div className="px-6 py-10 text-[14px] text-[#636366]">
-      Opening Competition Profile…
+      Opening Race / Track Use…
     </div>
   );
 }

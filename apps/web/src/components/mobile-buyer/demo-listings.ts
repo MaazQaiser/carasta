@@ -536,7 +536,7 @@ export const BUYER_LISTING_DEMOS: Record<BuyerListingType, BuyerListingDemo> = {
       { label: "GT3", tone: "brand" },
       { label: "SCCA", tone: "neutral" },
       { label: "Purpose Built", tone: "brand" },
-      { label: "Eligible", tone: "success" },
+      { label: "Road Racing", tone: "success" },
       { label: "Race Proven", tone: "success" },
     ],
     gallery: [
@@ -555,10 +555,7 @@ export const BUYER_LISTING_DEMOS: Record<BuyerListingType, BuyerListingDemo> = {
     quickSpecs: [
       { label: "Year", value: "2020" },
       { label: "Builder", value: "Summit Motorsport" },
-      { label: "Class", value: "GT3" },
-      { label: "Series", value: "SCCA Majors" },
-      { label: "Level", value: "National" },
-      { label: "Eligibility", value: "Eligible" },
+      { label: "Primary Use", value: "Road Racing" },
     ],
     overview:
       "Purpose-built M3 Competition campaign car with current logbook, fresh tech, and a documented regional / national program. Sold race-ready with supporting documentation.",
@@ -608,12 +605,7 @@ export const BUYER_LISTING_DEMOS: Record<BuyerListingType, BuyerListingDemo> = {
         },
       ],
       competitionProfile: [
-        { label: "Primary Discipline", value: "Road Racing" },
-        { label: "Sanctioning Body", value: "SCCA" },
-        { label: "Technical Inspection", value: "Passed" },
-        { label: "Eligibility", value: "Eligible" },
-        { label: "Logbook Status", value: "Current" },
-        { label: "Competition Level", value: "National" },
+        { label: "Primary Use", value: "Road Racing" },
       ],
       biography: {
         competitionHistory:

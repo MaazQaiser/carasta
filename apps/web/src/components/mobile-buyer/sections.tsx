@@ -269,7 +269,7 @@ export function RestoredSections({ listing }: { listing: BuyerListingDemo }) {
         <KeyValueList items={profile} />
       </Section>
 
-      <Section title="Matching Numbers Summary">
+      <Section title="Seller-reported originality">
         <KeyValueList items={matching} />
       </Section>
 
@@ -318,9 +318,23 @@ export function RaceSections({ listing }: { listing: BuyerListingDemo }) {
     content.timeline
   );
   const profile = asArray<{ label: string; value: string }>(content.competitionProfile);
+  const organizedCompetition =
+    typeof content.organizedCompetition === "string" ? content.organizedCompetition : "";
+  const competitionHistory =
+    typeof content.competitionHistory === "string" ? content.competitionHistory : "";
+  const documentationTypes = asArray<string>(content.documentationTypes);
+  const documentationOther =
+    typeof content.documentationOther === "string" ? content.documentationOther : "";
+  const sparesIncluded = typeof content.sparesIncluded === "string" ? content.sparesIncluded : "";
+  const sparesDescription =
+    typeof content.sparesDescription === "string" ? content.sparesDescription : "";
+  const knownRaceTrackIssues =
+    typeof content.knownRaceTrackIssues === "string" ? content.knownRaceTrackIssues : "";
+  const raceBuild = (content.raceBuild || {}) as Record<string, string>;
   const biography = (content.biography || {}) as Record<string, string>;
   const safety = asArray<{ label: string; value: string }>(content.safetyChecklist);
-  const certifications = asArray<{ label: string; value: string }>(content.certifications);
+  const safetyDates = asArray<{ label: string; value: string }>(content.safetyDates);
+  const safetyNotes = typeof content.safetyNotes === "string" ? content.safetyNotes : "";
   const modifications = asArray<{
     id: string;
     title: string;
@@ -343,52 +357,148 @@ export function RaceSections({ listing }: { listing: BuyerListingDemo }) {
         </div>
       </Section>
 
-      <Section title="Race History">
-        <SpecGrid items={raceHistory} />
-      </Section>
+      {raceHistory.length > 0 ? (
+        <Section title="Race History">
+          <SpecGrid items={raceHistory} />
+        </Section>
+      ) : null}
 
-      <Section title="Race Timeline">
-        <Timeline items={timeline} />
-      </Section>
+      {timeline.length > 0 ? (
+        <Section title="Race Timeline">
+          <Timeline items={timeline} />
+        </Section>
+      ) : null}
 
-      <Section title="Competition Profile">
+      <Section title="Primary Use">
         <KeyValueList items={profile} />
       </Section>
 
-      <Section title="Vehicle Biography">
-        <div className="space-y-3">
-          <InfoCard title="Competition History">
-            <p className="text-[13px] leading-relaxed text-[#636366]">
-              {biography.competitionHistory}
-            </p>
-          </InfoCard>
-          <InfoCard title="Vehicle History">
-            <p className="text-[13px] leading-relaxed text-[#636366]">
-              {biography.vehicleHistory}
-            </p>
-          </InfoCard>
-          <InfoCard title="Preparation Notes">
-            <p className="text-[13px] leading-relaxed text-[#636366]">
-              {biography.preparationNotes}
-            </p>
-          </InfoCard>
-        </div>
-      </Section>
+      {(organizedCompetition || competitionHistory) && (
+        <Section title="Competition History">
+          {organizedCompetition ? (
+            <KeyValueList
+              items={[{ label: "Competed in organized competition", value: organizedCompetition }]}
+            />
+          ) : null}
+          {competitionHistory ? (
+            <div className={organizedCompetition ? "mt-3" : undefined}>
+              <InfoCard>
+                <p className="text-[13px] leading-relaxed text-[#636366]">{competitionHistory}</p>
+              </InfoCard>
+            </div>
+          ) : null}
+        </Section>
+      )}
 
-      <Section title="Safety Equipment">
-        <Checklist items={safety} />
-      </Section>
+      {(documentationTypes.length > 0 || documentationOther) && (
+        <Section title="Race / Track Documentation">
+          <KeyValueList
+            items={[
+              ...(documentationTypes.length
+                ? [{ label: "Documentation", value: documentationTypes.join(", ") }]
+                : []),
+              ...(documentationOther ? [{ label: "Other", value: documentationOther }] : []),
+            ]}
+          />
+        </Section>
+      )}
 
-      <Section title="Safety Certifications">
-        <KeyValueList items={certifications} />
-      </Section>
+      {(sparesIncluded || sparesDescription) && (
+        <Section title="Spares & Support Equipment">
+          <KeyValueList
+            items={[
+              ...(sparesIncluded
+                ? [{ label: "Included with the sale", value: sparesIncluded }]
+                : []),
+            ]}
+          />
+          {sparesDescription ? (
+            <div className={sparesIncluded ? "mt-3" : undefined}>
+              <InfoCard>
+                <p className="text-[13px] leading-relaxed text-[#636366]">{sparesDescription}</p>
+              </InfoCard>
+            </div>
+          ) : null}
+        </Section>
+      )}
 
-      <Section
-        title="Race Modifications"
-        description="Documented competition upgrades by category."
-      >
-        <AccordionList items={modifications} />
-      </Section>
+      {knownRaceTrackIssues ? (
+        <Section title="Known Race / Track Issues">
+          <InfoCard>
+            <p className="text-[13px] leading-relaxed text-[#636366]">{knownRaceTrackIssues}</p>
+          </InfoCard>
+        </Section>
+      ) : null}
+
+      {(raceBuild.narrative || raceBuild.workPerformedBy || raceBuild.shopBuilder) && (
+        <Section title="Race / Track Build">
+          {raceBuild.narrative ? (
+            <InfoCard>
+              <p className="text-[13px] leading-relaxed text-[#636366]">{raceBuild.narrative}</p>
+            </InfoCard>
+          ) : null}
+          {(raceBuild.workPerformedBy || raceBuild.shopBuilder) && (
+            <div className="mt-3">
+              <KeyValueList
+                items={[
+                  ...(raceBuild.workPerformedBy
+                    ? [{ label: "Prepared by", value: raceBuild.workPerformedBy }]
+                    : []),
+                  ...(raceBuild.shopBuilder
+                    ? [{ label: "Shop / Builder", value: raceBuild.shopBuilder }]
+                    : []),
+                ]}
+              />
+            </div>
+          )}
+        </Section>
+      )}
+
+      {(biography.vehicleHistory ||
+        (biography.preparationNotes && biography.preparationNotes !== raceBuild.narrative)) && (
+        <Section title="Vehicle Biography">
+          <div className="space-y-3">
+            {biography.vehicleHistory ? (
+              <InfoCard title="Vehicle History">
+                <p className="text-[13px] leading-relaxed text-[#636366]">
+                  {biography.vehicleHistory}
+                </p>
+              </InfoCard>
+            ) : null}
+            {biography.preparationNotes && biography.preparationNotes !== raceBuild.narrative ? (
+              <InfoCard title="Preparation Notes">
+                <p className="text-[13px] leading-relaxed text-[#636366]">
+                  {biography.preparationNotes}
+                </p>
+              </InfoCard>
+            ) : null}
+          </div>
+        </Section>
+      )}
+
+      {(safety.length > 0 || safetyDates.length > 0 || safetyNotes) && (
+        <Section title="Safety Equipment">
+          {safety.length > 0 ? <Checklist items={safety} /> : null}
+          {safetyDates.length > 0 ? (
+            <div className="mt-3">
+              <KeyValueList items={safetyDates} />
+            </div>
+          ) : null}
+          {safetyNotes ? (
+            <div className="mt-3">
+              <InfoCard>
+                <p className="text-[13px] leading-relaxed text-[#636366]">{safetyNotes}</p>
+              </InfoCard>
+            </div>
+          ) : null}
+        </Section>
+      )}
+
+      {modifications.length > 0 ? (
+        <Section title="Race Modifications">
+          <AccordionList items={modifications} />
+        </Section>
+      ) : null}
 
       <Section title="Race Team & Builder">
         <KeyValueList

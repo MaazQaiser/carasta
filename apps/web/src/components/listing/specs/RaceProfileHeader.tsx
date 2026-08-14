@@ -1,14 +1,6 @@
 "use client";
 
 import * as React from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  Plus,
-  Trash2,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,27 +12,33 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { FieldLabel, textareaClassName } from "../fields";
-import { MediaUploadZone } from "../MediaUploadZone";
-import type {
-  ListingMediaItem,
-  RaceDocumentation,
-  RaceHistoryEntry,
-  RaceState,
-} from "../types";
+import type { RaceState } from "../types";
 import {
-  COMPETITION_LEVEL_OPTIONS,
-  createEmptyRaceHistoryEntry,
   STREET_LEGAL_STATUS_OPTIONS,
   TITLE_STATUS_OPTIONS,
   YES_NO_OPTIONS,
 } from "./options";
+import {
+  FLOW4_COMPETITION_HISTORY_COPY,
+  FLOW4_DOCUMENTATION_COPY,
+  FLOW4_PRIMARY_USE_COPY,
+  FLOW4_SAFETY_COPY,
+  ORGANIZED_COMPETITION_OPTIONS,
+  SAFETY_EQUIPMENT_OPTIONS,
+  isSafetyEquipmentDateId,
+  patchSafetyServiceDate,
+  primaryUseDisplayLabel,
+  raceOrganizedCompetitionPatch,
+  shouldShowCompetitionHistoryNarrative,
+  toggleInstalledSafetyEquipment,
+  type OrganizedCompetitionOption,
+} from "./race-track";
 import { SpecsCategoryTabs } from "./SpecsCategoryTabs";
 
 const PROFILE_TABS = [
   { id: "identity", label: "Vehicle Identity" },
-  { id: "competition", label: "Competition Profile" },
   { id: "safety", label: "Safety Equipment" },
-  { id: "documentation", label: "Race Documentation" },
+  { id: "documentation", label: "Race / Track Documentation" },
   { id: "setup", label: "Setup Information" },
   { id: "history", label: "Competition History" },
 ] as const;
@@ -86,68 +84,23 @@ export function RaceProfileHeader({
 
   const patchIdentity = (patch: Partial<RaceState["identity"]>) =>
     onChange({ identity: { ...value.identity, ...patch } });
-  const patchCompetition = (patch: Partial<RaceState["competition"]>) =>
-    onChange({ competition: { ...value.competition, ...patch } });
-  const patchSafety = (patch: Partial<RaceState["safety"]>) =>
-    onChange({ safety: { ...value.safety, ...patch } });
   const patchSetup = (patch: Partial<RaceState["setup"]>) =>
     onChange({ setup: { ...value.setup, ...patch } });
 
-  const addDocs = (key: keyof RaceDocumentation, items: ListingMediaItem[]) =>
-    onChange({
-      documentation: {
-        ...value.documentation,
-        [key]: [...value.documentation[key], ...items],
-      },
-    });
-
-  const removeDoc = (key: keyof RaceDocumentation, id: string) =>
-    onChange({
-      documentation: {
-        ...value.documentation,
-        [key]: value.documentation[key].filter((item) => item.id !== id),
-      },
-    });
-
-  const updateHistory = (id: string, patch: Partial<RaceHistoryEntry>) =>
-    onChange({
-      historyEntries: value.historyEntries.map((entry) =>
-        entry.id === id ? { ...entry, ...patch } : entry
-      ),
-    });
-
-  const addHistory = () => {
-    const entry = createEmptyRaceHistoryEntry();
-    onChange({
-      historyEntries: [...value.historyEntries, entry],
-      editingHistoryId: entry.id,
-    });
-  };
-
-  const duplicateHistory = (id: string) => {
-    const source = value.historyEntries.find((entry) => entry.id === id);
-    if (!source) return;
-    const copy = {
-      ...source,
-      id: `race-hist-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      event: source.event ? `${source.event} (Copy)` : "",
-      photos: [...source.photos],
-      expanded: true,
-    };
-    onChange({
-      historyEntries: [...value.historyEntries, copy],
-      editingHistoryId: copy.id,
-    });
-  };
-
-  const deleteHistory = (id: string) =>
-    onChange({
-      historyEntries: value.historyEntries.filter((entry) => entry.id !== id),
-      editingHistoryId: value.editingHistoryId === id ? null : value.editingHistoryId,
-    });
-
   return (
     <div className="rounded-2xl border bg-card p-3 sm:p-5 space-y-4 sm:space-y-5 min-w-0">
+      <div className="rounded-xl border bg-muted/30 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {FLOW4_PRIMARY_USE_COPY.fieldLabel}
+        </p>
+        <p className="mt-1 text-sm font-semibold">
+          {primaryUseDisplayLabel(value.competition) || "Not set"}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Edit on Race / Track Use. Seller-reported — not a Carasta eligibility or rulebook check.
+        </p>
+      </div>
+
       <SpecsCategoryTabs
         categories={[...PROFILE_TABS]}
         activeCategoryId={activeTab}
@@ -261,128 +214,73 @@ export function RaceProfileHeader({
       </div>
       ) : null}
 
-      {activeTab === "competition" ? (
-      <div className="space-y-5">
-        <div>
-          <h3 className="font-semibold text-base">Competition Profile</h3>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Discipline, series, class, and eligibility for this motorsport build.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(
-            [
-              ["primaryDiscipline", "Primary Discipline"],
-              ["secondaryDiscipline", "Secondary Discipline"],
-              ["sanctioningBody", "Sanctioning Body"],
-              ["series", "Series"],
-              ["competitionClass", "Competition Class"],
-              ["currentEligibility", "Current Eligibility"],
-              ["logbookStatus", "Logbook Status"],
-              ["technicalInspection", "Technical Inspection"],
-            ] as const
-          ).map(([key, label]) => (
-            <div key={key}>
-              <FieldLabel htmlFor={`race-comp-${key}`}>{label}</FieldLabel>
-              <Input
-                id={`race-comp-${key}`}
-                value={value.competition[key]}
-                onChange={(e) => patchCompetition({ [key]: e.target.value })}
-                placeholder={label}
-              />
-            </div>
-          ))}
-          <div>
-            <FieldLabel>Competition Level</FieldLabel>
-            <Select
-              value={value.competition.competitionLevel || undefined}
-              onValueChange={(v) => patchCompetition({ competitionLevel: v })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select competition level" />
-              </SelectTrigger>
-              <SelectContent>
-                {COMPETITION_LEVEL_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="sm:col-span-2">
-            <FieldLabel htmlFor="competition-history-summary">Competition History</FieldLabel>
-            <textarea
-              id="competition-history-summary"
-              className={textareaClassName}
-              value={value.competition.competitionHistorySummary}
-              onChange={(e) => patchCompetition({ competitionHistorySummary: e.target.value })}
-              placeholder="High-level competition history overview..."
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <FieldLabel htmlFor="notable-results">Notable Results</FieldLabel>
-            <textarea
-              id="notable-results"
-              className={textareaClassName}
-              value={value.competition.notableResults}
-              onChange={(e) => patchCompetition({ notableResults: e.target.value })}
-              placeholder="Wins, podiums, records, championship results..."
-            />
-          </div>
-        </div>
-      </div>
-      ) : null}
-
       {activeTab === "safety" ? (
       <div className="space-y-5">
         <div>
-          <h3 className="font-semibold text-base">Safety Equipment</h3>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Cage, restraints, fire systems, and certification details.
-          </p>
+          <h3 className="font-semibold text-base">{FLOW4_SAFETY_COPY.title}</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">{FLOW4_SAFETY_COPY.subtext}</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(
-            [
-              ["rollCageType", "Roll Cage Type"],
-              ["rollCageBuilder", "Roll Cage Builder"],
-              ["certificationOrganization", "Certification Organization"],
-              ["certificationNumber", "Certification Number"],
-              ["certificationExpiration", "Certification Expiration"],
-              ["seatManufacturer", "Seat Manufacturer"],
-              ["seatCertification", "Seat Certification"],
-              ["harnessManufacturer", "Harness Manufacturer"],
-              ["harnessCertification", "Harness Certification"],
-              ["windowNet", "Window Net"],
-              ["fireSuppressionSystem", "Fire Suppression System"],
-              ["fuelCell", "Fuel Cell"],
-              ["batteryCutoff", "Battery Cutoff"],
-              ["killSwitch", "Kill Switch"],
-              ["towHooks", "Tow Hooks"],
-            ] as const
-          ).map(([key, label]) => (
-            <div key={key}>
-              <FieldLabel htmlFor={`race-safety-${key}`}>{label}</FieldLabel>
-              <Input
-                id={`race-safety-${key}`}
-                type={key === "certificationExpiration" ? "date" : "text"}
-                value={value.safety[key]}
-                onChange={(e) => patchSafety({ [key]: e.target.value })}
-                placeholder={label}
-              />
-            </div>
-          ))}
-          <div className="sm:col-span-2">
-            <FieldLabel htmlFor="safety-notes">Safety Notes</FieldLabel>
-            <textarea
-              id="safety-notes"
-              className={textareaClassName}
-              value={value.safety.safetyNotes}
-              onChange={(e) => patchSafety({ safetyNotes: e.target.value })}
-              placeholder="Additional safety notes, inspection caveats, or equipment details..."
-            />
-          </div>
+        <div className="space-y-2">
+          {SAFETY_EQUIPMENT_OPTIONS.map((option) => {
+            const selected = (value.installedSafetyEquipment ?? []).includes(option.id);
+            const dateId = isSafetyEquipmentDateId(option.id) ? option.id : null;
+            return (
+              <div key={option.id} className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => onChange(toggleInstalledSafetyEquipment(value, option.id))}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition-colors",
+                    selected
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border hover:bg-muted/40"
+                  )}
+                >
+                  <span className="font-medium text-foreground">{option.label}</span>
+                  <span
+                    className={cn(
+                      "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                      selected ? "bg-primary" : "bg-muted"
+                    )}
+                    aria-hidden
+                  >
+                    <span
+                      className={cn(
+                        "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+                        selected ? "translate-x-5" : "translate-x-0.5"
+                      )}
+                    />
+                  </span>
+                </button>
+                {selected && dateId ? (
+                  <div className="pl-4">
+                    <FieldLabel htmlFor={`race-profile-safety-date-${dateId}`}>
+                      {FLOW4_SAFETY_COPY.dateLabel}
+                    </FieldLabel>
+                    <Input
+                      id={`race-profile-safety-date-${dateId}`}
+                      type="date"
+                      value={value.safetyServiceDates?.[dateId] ?? ""}
+                      onChange={(e) =>
+                        onChange(patchSafetyServiceDate(value, dateId, e.target.value))
+                      }
+                    />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-xs text-muted-foreground">{FLOW4_SAFETY_COPY.disclaimer}</p>
+        <div>
+          <FieldLabel htmlFor="safety-notes">{FLOW4_SAFETY_COPY.notesLabel}</FieldLabel>
+          <textarea
+            id="safety-notes"
+            className={textareaClassName}
+            value={value.safetyEquipmentNotes ?? ""}
+            onChange={(e) => onChange({ safetyEquipmentNotes: e.target.value })}
+            placeholder={FLOW4_SAFETY_COPY.notesPlaceholder}
+          />
         </div>
       </div>
       ) : null}
@@ -390,45 +288,15 @@ export function RaceProfileHeader({
       {activeTab === "documentation" ? (
       <div className="space-y-5">
         <div>
-          <h3 className="font-semibold text-base">Race Documentation</h3>
+          <h3 className="font-semibold text-base">{FLOW4_DOCUMENTATION_COPY.title}</h3>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Logbooks, inspections, certifications, setup sheets, and media.
+            {FLOW4_DOCUMENTATION_COPY.disclaimer}
           </p>
         </div>
-        <div className="space-y-6">
-          {(
-            [
-              ["logbook", "Logbook", "file"],
-              ["inspectionReports", "Inspection Reports", "file"],
-              ["certificationDocuments", "Certification Documents", "file"],
-              ["dynoSheets", "Dyno Sheets", "file"],
-              ["raceResults", "Race Results", "file"],
-              ["setupSheets", "Setup Sheets", "file"],
-              ["dataLogs", "Data Logs", "file"],
-              ["technicalReports", "Technical Reports", "file"],
-              ["photos", "Photos", "image"],
-              ["videos", "Videos", "video"],
-            ] as const
-          ).map(([key, title, variant]) => (
-            <MediaUploadZone
-              key={key}
-              title={title}
-              description={`${title} for this race / track car.`}
-              accept={
-                variant === "image"
-                  ? "image/*"
-                  : variant === "video"
-                    ? "video/*"
-                    : ".pdf,.doc,.docx,.png,.jpg,.jpeg,.csv,.txt"
-              }
-              variant={variant}
-              compact
-              items={value.documentation[key]}
-              onAdd={(items) => addDocs(key, items)}
-              onRemove={(id) => removeDoc(key, id)}
-            />
-          ))}
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Use the Race / Track Documentation screen to select types and upload files. Uploads
+          appear in the shared Documents section automatically.
+        </p>
       </div>
       ) : null}
 
@@ -488,179 +356,60 @@ export function RaceProfileHeader({
       ) : null}
 
       {activeTab === "history" ? (
-      <div className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <h3 className="font-semibold text-base">Competition History</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Add event-by-event results. Editing stays inline on this page.
-            </p>
-          </div>
-          <Button type="button" onClick={addHistory} className="w-full sm:w-auto shrink-0">
-            <Plus className="h-4 w-4" />
-            Add History Entry
-          </Button>
+      <div className="space-y-5">
+        <div>
+          <h3 className="font-semibold text-base">{FLOW4_COMPETITION_HISTORY_COPY.title}</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {FLOW4_COMPETITION_HISTORY_COPY.disclaimer}
+          </p>
         </div>
-
-        {value.historyEntries.length === 0 ? (
-          <div className="rounded-2xl border border-dashed bg-muted/20 px-4 sm:px-6 py-8 sm:py-10 text-center">
-            <p className="text-sm font-medium">No race history entries yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Capture events, tracks, results, and fastest laps.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {value.historyEntries.map((entry) => {
-              const editing = value.editingHistoryId === entry.id;
+        <div>
+          <FieldLabel>{FLOW4_COMPETITION_HISTORY_COPY.question}</FieldLabel>
+          <div className="flex flex-wrap gap-2">
+            {ORGANIZED_COMPETITION_OPTIONS.map((option) => {
+              const selected = value.organizedCompetition === option;
               return (
-                <div key={entry.id} className="rounded-2xl border bg-muted/10 overflow-hidden">
-                  <div className="px-3 sm:px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
-                    <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <button
-                      type="button"
-                      className="mt-0.5 text-muted-foreground hover:text-foreground shrink-0"
-                      onClick={() => updateHistory(entry.id, { expanded: !entry.expanded })}
-                    >
-                      {entry.expanded ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-sm truncate">
-                          {entry.event.trim() || "Untitled event"}
-                        </p>
-                        {entry.result ? <Badge variant="secondary">{entry.result}</Badge> : null}
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate mt-0.5">
-                        {[entry.track, entry.date, entry.className].filter(Boolean).join(" · ") ||
-                          "Track / date not set"}
-                      </p>
-                    </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0 self-end sm:self-start">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          onChange({
-                            editingHistoryId: editing ? null : entry.id,
-                            historyEntries: value.historyEntries.map((item) =>
-                              item.id === entry.id ? { ...item, expanded: true } : item
-                            ),
-                          })
-                        }
-                      >
-                        {editing ? "Done" : "Edit"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => duplicateHistory(entry.id)}
-                        title="Duplicate"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteHistory(entry.id)}
-                        className="text-muted-foreground hover:text-destructive"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className={cn("border-t px-4 py-4 space-y-4", entry.expanded ? "block" : "hidden")}>
-                    {editing ? (
-                      <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {(
-                            [
-                              ["event", "Event"],
-                              ["track", "Track"],
-                              ["date", "Date"],
-                              ["result", "Result"],
-                              ["className", "Class"],
-                              ["position", "Position"],
-                              ["fastestLap", "Fastest Lap"],
-                            ] as const
-                          ).map(([key, label]) => (
-                            <div key={key}>
-                              <FieldLabel htmlFor={`hist-${entry.id}-${key}`}>{label}</FieldLabel>
-                              <Input
-                                id={`hist-${entry.id}-${key}`}
-                                type={key === "date" ? "date" : "text"}
-                                value={entry[key]}
-                                onChange={(e) => updateHistory(entry.id, { [key]: e.target.value })}
-                                placeholder={label}
-                              />
-                            </div>
-                          ))}
-                          <div className="sm:col-span-2">
-                            <FieldLabel htmlFor={`hist-notes-${entry.id}`}>Notes</FieldLabel>
-                            <textarea
-                              id={`hist-notes-${entry.id}`}
-                              className={textareaClassName}
-                              value={entry.notes}
-                              onChange={(e) => updateHistory(entry.id, { notes: e.target.value })}
-                              placeholder="Session notes, conditions, incidents..."
-                            />
-                          </div>
-                        </div>
-                        <MediaUploadZone
-                          title="Photos"
-                          description="Event photos for this history entry."
-                          compact
-                          items={entry.photos}
-                          onAdd={(items) =>
-                            updateHistory(entry.id, { photos: [...entry.photos, ...items] })
-                          }
-                          onRemove={(id) =>
-                            updateHistory(entry.id, {
-                              photos: entry.photos.filter((photo) => photo.id !== id),
-                            })
-                          }
-                        />
-                      </>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        {(
-                          [
-                            ["Result", entry.result],
-                            ["Class", entry.className],
-                            ["Position", entry.position],
-                            ["Fastest lap", entry.fastestLap],
-                          ] as const
-                        ).map(([label, val]) => (
-                          <div key={label} className="rounded-xl border bg-card px-3 py-2">
-                            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
-                              {label}
-                            </p>
-                            <p className="font-medium mt-0.5">{val?.trim() ? val : "—"}</p>
-                          </div>
-                        ))}
-                        {entry.notes ? (
-                          <p className="sm:col-span-2 text-muted-foreground whitespace-pre-wrap">
-                            {entry.notes}
-                          </p>
-                        ) : null}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() =>
+                    onChange(
+                      raceOrganizedCompetitionPatch(
+                        value,
+                        option as OrganizedCompetitionOption
+                      )
+                    )
+                  }
+                  className={cn(
+                    "h-9 rounded-lg border px-3 text-sm font-medium transition-colors",
+                    selected
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-input bg-background text-foreground hover:bg-muted"
+                  )}
+                >
+                  {option}
+                </button>
               );
             })}
           </div>
-        )}
+        </div>
+        {shouldShowCompetitionHistoryNarrative(value.organizedCompetition) ? (
+          <div>
+            <FieldLabel htmlFor="race-profile-competition-history">
+              {FLOW4_COMPETITION_HISTORY_COPY.historyLabel}
+            </FieldLabel>
+            <textarea
+              id="race-profile-competition-history"
+              className={`${textareaClassName} min-h-40`}
+              value={value.competitionHistoryNarrative ?? ""}
+              onChange={(e) => onChange({ competitionHistoryNarrative: e.target.value })}
+              placeholder={FLOW4_COMPETITION_HISTORY_COPY.historyPlaceholder}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              {FLOW4_COMPETITION_HISTORY_COPY.historyPrompt}
+            </p>
+          </div>
+        ) : null}
       </div>
       ) : null}
     </div>

@@ -24,7 +24,8 @@ export function PerformanceSummaryCard({
       <div>
         <h3 className="font-semibold text-base">Performance Summary</h3>
         <p className="text-sm text-muted-foreground mt-0.5">
-          High-level build output for this Modified / Performance listing.
+          High-level build output for this Modified / Performance listing. Unsupported or
+          unverified figures remain seller-reported.
         </p>
       </div>
 

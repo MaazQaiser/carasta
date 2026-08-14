@@ -3,6 +3,7 @@ import type {
   ModificationEntry,
   ModificationWorkspaceState,
   RestorationBuildTypeId,
+  RestomodSubcategoryId,
 } from "../types";
 
 export type {
@@ -13,9 +14,12 @@ export type {
   PerformanceSummary,
   ModificationWorkspaceState,
   RestorationBuildTypeId,
+  RestomodSubcategoryId,
   FactoryCorrectDetails,
   RestorationDocumentation,
+  RestorationDocumentationGroupId,
   RestorationProvenance,
+  RestorationTimelineEvent,
   RestorationState,
   RaceVehicleIdentity,
   RaceCompetitionProfile,
@@ -76,6 +80,8 @@ export interface EntryFormConfig {
   hidePartsBrand?: boolean;
   completedDuringLabel?: string;
   completedDuringOptions?: string[];
+  /** When true, render Completion Status after Shop / Builder (restoration entry). */
+  completedDuringAfterShop?: boolean;
   /**
    * When set, Shop / Builder only appears if Work Performed By equals this value
    * (e.g. "Professional Shop / Builder").
@@ -91,6 +97,12 @@ export interface EntryFormConfig {
   gateDatePickerOnExact?: boolean;
   documentSlots?: EntryDocumentSlotConfig[];
   showOriginalPartsIncluded?: boolean;
+  /** Restoration Part Classification (optional; most useful on factory-correct / restored). */
+  showPartClassification?: boolean;
+  /** Label for Part Classification (Figma uses "Classification"). */
+  partClassificationLabel?: string;
+  /** Optional mileage field label (restoration uses Completion Mileage). */
+  mileageLabel?: string;
   saveButtonLabel?: string;
   notesLabel?: string;
   notesPlaceholder?: string;
@@ -112,6 +124,12 @@ export interface SpecsFlowConfig {
 
 export interface RestorationBuildTypeOption {
   id: RestorationBuildTypeId;
+  label: string;
+  description: string;
+}
+
+export interface RestomodSubcategoryOption {
+  id: RestomodSubcategoryId;
   label: string;
   description: string;
 }

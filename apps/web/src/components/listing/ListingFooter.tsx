@@ -14,6 +14,7 @@ import {
   LISTING_PATHS,
   resolveListingProgressStepId,
 } from "./listing-route-map";
+import { FLOW3_SPECS_COMPLETED_COPY } from "./specs/restored-restomod";
 
 export interface ListingFooterProps {
   className?: string;
@@ -41,6 +42,9 @@ export function ListingFooter({
   const backHref = getBackHref(pathname, draft.listingTypeId);
   const continueHref = getContinueHref(pathname, draft);
   const continueDisabled = !canContinueOnPath(pathname, draft);
+  const continueLabel = pathname.split("?")[0]?.endsWith("/restored/summary")
+    ? FLOW3_SPECS_COMPLETED_COPY.confirmContinue
+    : "Continue";
 
   const shellClass = cn(
     "flex items-center justify-between gap-2 sm:gap-3",
@@ -111,20 +115,20 @@ export function ListingFooter({
       {continueHref ? (
         continueDisabled ? (
           <Button disabled className="min-w-0 flex-1 sm:flex-none">
-            Continue
+            {continueLabel}
             <ChevronRight className="h-4 w-4" />
           </Button>
         ) : (
           <Button asChild className="min-w-0 flex-1 sm:flex-none">
             <Link href={continueHref}>
-              Continue
+              {continueLabel}
               <ChevronRight className="h-4 w-4" />
             </Link>
           </Button>
         )
       ) : continueDisabled ? (
         <Button disabled className="min-w-0 flex-1 sm:flex-none">
-          Continue
+          {continueLabel}
           <ChevronRight className="h-4 w-4" />
         </Button>
       ) : (

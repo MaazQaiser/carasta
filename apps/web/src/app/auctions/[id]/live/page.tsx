@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auctionService } from "@carasta/mock-data/services";
 import { LiveAuctionClient } from "./LiveAuctionClient";
@@ -10,7 +11,8 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const auction = await auctionService.getAuction(id);
+  const auction =
+    (await auctionService.getAuction(id)) ?? (await auctionService.getAuctionForVehicle(id));
   if (!auction) return { title: "Live Auction" };
   return { title: `LIVE: ${auction.vehicle.title}` };
 }
@@ -20,6 +22,9 @@ export default async function LiveAuctionPage({ params }: Props) {
   const auction = await auctionService.getAuction(id);
 
   if (!auction) {
+    const byVehicle = await auctionService.getAuctionForVehicle(id);
+    if (byVehicle) redirect(`/auctions/${byVehicle.id}/live`);
+
     return (
       <Suspense
         fallback={

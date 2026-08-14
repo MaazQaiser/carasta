@@ -12,8 +12,22 @@ import type {
 } from "@carasta/types";
 import type { ListingDraft, ListingMediaItem, ListingTypeId, ModificationEntry } from "../types";
 import { humanizeKey } from "@/lib/listing-labels";
-import { getRestorationBuildTypeLabel } from "../specs/restored-restomod";
+import { getRestorationBuildTypeLabel, normalizeRestorationCategoryId } from "../specs/restored-restomod";
 import {
+  FLOW4_SAFETY_COPY,
+  SAFETY_EQUIPMENT_OPTIONS,
+  documentationTypeLabels,
+  installedSafetyLabels,
+  isSafetyEquipmentDateId,
+  primaryUseDisplayLabel,
+  shouldShowCompetitionHistoryNarrative,
+} from "../specs/race-track";
+import {
+  getSharedModificationCategoryLabel,
+  normalizeModificationCategoryId,
+} from "../specs/shared-modification-categories";
+import {
+  displayPerformanceClaimStatus,
   MODIFIED_PERFORMANCE_SPECS_CONFIG,
   RACE_TRACK_SPECS_CONFIG,
   RESTORED_RESTOMODE_SPECS_CONFIG,
@@ -113,7 +127,15 @@ function categoryLabelFor(listingType: MarketplaceListingType | undefined, categ
     "race-track-car": RACE_TRACK_SPECS_CONFIG,
   } as const;
   const config = listingType ? configs[listingType] : undefined;
-  return config?.categories.find((c) => c.id === categoryId)?.label ?? humanizeKey(categoryId);
+  const normalized =
+    listingType === "restored-restomod-custom"
+      ? normalizeRestorationCategoryId(categoryId)
+      : normalizeModificationCategoryId(categoryId);
+  return (
+    config?.categories.find((c) => c.id === normalized)?.label ??
+    getSharedModificationCategoryLabel(categoryId) ??
+    humanizeKey(categoryId)
+  );
 }
 
 function mapModificationEntries(
@@ -137,6 +159,7 @@ function mapModificationEntries(
       shopBuilder: entry.shopBuilder || undefined,
       installationDate: entry.installationDate || undefined,
       additionalNotes: entry.additionalNotes || undefined,
+      partClassification: entry.partClassification || undefined,
     }));
 }
 
@@ -170,6 +193,7 @@ function mapListingDetailsFromDraft(
       generalNotes: draft.condition.generalNotes || undefined,
       numberOfKeys: draft.condition.numberOfKeys || undefined,
       warranty: draft.condition.warranty || undefined,
+      knownRaceTrackIssues: ws.race.knownRaceTrackIssues?.trim() || undefined,
     },
     media: {
       vehiclePhotos: mediaAssets(draft.vehiclePhotos, "Vehicle photo"),
@@ -198,9 +222,11 @@ function mapListingDetailsFromDraft(
       transmission: p.transmission || draft.details.transmission || undefined,
       drivetrain: p.drivetrain || draft.details.drivetrain || undefined,
       horsepower: p.horsepower || undefined,
-      horsepowerStatus: p.horsepowerStatus || undefined,
+      horsepowerStatus: p.horsepower
+        ? displayPerformanceClaimStatus(p.horsepowerStatus)
+        : undefined,
       torque: p.torque || undefined,
-      torqueStatus: p.torqueStatus || undefined,
+      torqueStatus: p.torque ? displayPerformanceClaimStatus(p.torqueStatus) : undefined,
       fuelType: p.fuelType || undefined,
       tuningPlatform: p.tuningPlatform || undefined,
       buildSummary: p.buildSummary || undefined,
@@ -210,34 +236,77 @@ function mapListingDetailsFromDraft(
   if (listingType === "restored-restomod-custom") {
     const r = ws.restoration;
     details.restoration = {
-      buildType: r.buildType ? getRestorationBuildTypeLabel(r.buildType) ?? r.buildType : undefined,
+      buildType: r.buildType
+        ? getRestorationBuildTypeLabel(r.buildType, r.restomodSubcategory) ?? r.buildType
+        : undefined,
       mileageStatus: r.mileageStatus || undefined,
+      buildStatus: r.buildStatus || undefined,
+      completionYear: r.completionYear || undefined,
+      workPerformedBy: r.workPerformedBy || undefined,
+      shopBuilder: r.shopBuilder || r.factoryCorrect.restorationShop || undefined,
+      buildSummary: r.buildSummary || undefined,
       identityType: r.identityType || undefined,
       identityValue: r.identityValue || undefined,
       factoryCorrect: filledRecord(r.factoryCorrect as unknown as Record<string, string>),
       provenance: filledRecord(r.provenance as unknown as Record<string, string>),
+      timelineEvents: (r.timelineEvents ?? [])
+        .filter((event) => event.title.trim())
+        .map((event) => ({
+          id: event.id,
+          title: event.title,
+          dateYear: event.dateYear || undefined,
+          exactDate: event.exactDate || undefined,
+          datePrecision: event.datePrecision || undefined,
+          eventType: event.eventType || undefined,
+          description: event.description || undefined,
+        })),
     };
   }
 
   if (listingType === "race-track-car") {
     const race = ws.race;
+    const primaryUse = primaryUseDisplayLabel(race.competition);
+    const installed = installedSafetyLabels(race);
+    const dateRecord: Record<string, string> = {};
+    for (const option of SAFETY_EQUIPMENT_OPTIONS) {
+      if (!isSafetyEquipmentDateId(option.id)) continue;
+      if (!(race.installedSafetyEquipment ?? []).includes(option.id)) continue;
+      const value = race.safetyServiceDates?.[option.id]?.trim();
+      if (value) dateRecord[`${option.label} — ${FLOW4_SAFETY_COPY.dateLabel}`] = value;
+    }
+    const notes = race.safetyEquipmentNotes?.trim();
+    const safetyRecord: Record<string, string> = {};
+    if (installed.length) safetyRecord["Installed equipment"] = installed.join(", ");
+    Object.assign(safetyRecord, dateRecord);
+    if (notes) safetyRecord["Safety Equipment Notes"] = notes;
+
+    const organized = race.organizedCompetition?.trim();
+    const historyNarrative =
+      shouldShowCompetitionHistoryNarrative(organized) && race.competitionHistoryNarrative?.trim()
+        ? race.competitionHistoryNarrative.trim()
+        : undefined;
+    const competitionRecord: Record<string, string> = {};
+    if (primaryUse) competitionRecord["Primary Use"] = primaryUse;
+    if (organized) competitionRecord["Organized competition"] = organized;
+    if (historyNarrative) competitionRecord["Competition History"] = historyNarrative;
+
     details.race = {
-      competition: filledRecord(race.competition as unknown as Record<string, string>),
-      safety: filledRecord(race.safety as unknown as Record<string, string>),
-      setup: filledRecord(race.setup as unknown as Record<string, string>),
-      history: race.historyEntries
-        .filter((h) => h.event.trim())
-        .map((h) => ({
-          id: h.id,
-          event: h.event,
-          track: h.track || undefined,
-          date: h.date || undefined,
-          result: h.result || undefined,
-          className: h.className || undefined,
-          position: h.position || undefined,
-          fastestLap: h.fastestLap || undefined,
-          notes: h.notes || undefined,
-        })),
+      competition: Object.keys(competitionRecord).length ? competitionRecord : undefined,
+      buildNarrative: race.buildNarrative?.trim() || undefined,
+      workPerformedBy: race.workPerformedBy?.trim() || undefined,
+      shopBuilder: race.shopBuilder?.trim() || race.identity.builder?.trim() || undefined,
+      installedEquipment: installed.length ? installed : undefined,
+      safetyNotes: notes || undefined,
+      safetyServiceDates: Object.keys(dateRecord).length ? dateRecord : undefined,
+      safety: Object.keys(safetyRecord).length ? safetyRecord : undefined,
+      organizedCompetition: organized || undefined,
+      competitionHistory: historyNarrative,
+      documentationTypes: documentationTypeLabels(race.documentationTypes),
+      documentationOther: race.documentationOther?.trim() || undefined,
+      sparesIncluded: race.sparesIncluded?.trim() || undefined,
+      sparesDescription:
+        race.sparesIncluded === "Yes" ? race.sparesDescription?.trim() || undefined : undefined,
+      knownRaceTrackIssues: race.knownRaceTrackIssues?.trim() || undefined,
     };
   }
 
@@ -425,7 +494,7 @@ export const PublishedListingService = {
     return this.load().find((r) => r.auction.vehicle.id === vehicleId) ?? null;
   },
 
-  /** Resolve by auction id or vehicle id (profile / vehicles redirect links). */
+  /** Resolve by auction id or vehicle id. */
   resolve(id: string): PublishedListingRecord | null {
     return (
       this.load().find(

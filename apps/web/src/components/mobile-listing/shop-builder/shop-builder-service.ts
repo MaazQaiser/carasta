@@ -43,6 +43,14 @@ function saveCustom(records: ShopBuilderRecord[]) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
 }
 
+function normalize(value: string | undefined) {
+  return (value ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function locationLine(shop: ShopBuilderRecord) {
+  return [shop.city, shop.state].filter(Boolean).join(", ");
+}
+
 export const ShopBuilderService = {
   list(): ShopBuilderRecord[] {
     const custom = loadCustom();
@@ -66,12 +74,49 @@ export const ShopBuilderService = {
     });
   },
 
+  findExact(name: string, city?: string, state?: string): ShopBuilderRecord | undefined {
+    const n = normalize(name);
+    const c = normalize(city);
+    const s = normalize(state);
+    if (!n) return undefined;
+    return ShopBuilderService.list().find(
+      (shop) =>
+        normalize(shop.name) === n &&
+        normalize(shop.city) === c &&
+        normalize(shop.state) === s
+    );
+  },
+
+  findSimilar(name: string, city?: string, state?: string): ShopBuilderRecord[] {
+    const n = normalize(name);
+    if (n.length < 2) return [];
+    const c = normalize(city);
+    const s = normalize(state);
+    return ShopBuilderService.list()
+      .filter((shop) => {
+        const shopName = normalize(shop.name);
+        const nameMatch = shopName === n || shopName.includes(n) || n.includes(shopName);
+        if (!nameMatch) return false;
+        if (c && normalize(shop.city) && normalize(shop.city) !== c) return false;
+        if (s && normalize(shop.state) && normalize(shop.state) !== s) return false;
+        return true;
+      })
+      .slice(0, 5);
+  },
+
+  formatLocation(shop: ShopBuilderRecord) {
+    return locationLine(shop);
+  },
+
   add(input: {
     name: string;
     city?: string;
     state?: string;
     type?: ShopBuilderRecord["type"];
   }): ShopBuilderRecord {
+    const existing = ShopBuilderService.findExact(input.name, input.city, input.state);
+    if (existing) return existing;
+
     const record: ShopBuilderRecord = {
       id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name: input.name.trim(),

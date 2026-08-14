@@ -38,10 +38,15 @@ export function MobileListingHeader({ onBack, saveStatus }: MobileListingHeaderP
         <span
           className={cn(
             "w-[6px] h-[6px] rounded-[3px] transition-colors",
-            saveStatus === "saved" ? "bg-[#9acd7e]" : "bg-[#e5e5ea]"
+            saveStatus === "saved" ? "bg-[#34c759]" : "bg-[#e5e5ea]"
           )}
         />
-        <span className="text-[13px] font-medium text-[#636366] leading-normal">
+        <span
+          className={cn(
+            "text-[13px] font-medium leading-normal",
+            saveStatus === "saved" ? "text-[#34c759]" : "text-[#636366]"
+          )}
+        >
           {saveStatus === "saving"
             ? "Saving..."
             : saveStatus === "failed"

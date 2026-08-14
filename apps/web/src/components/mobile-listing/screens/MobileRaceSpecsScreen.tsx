@@ -2,65 +2,31 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useListingBuilder } from "@/components/listing/ListingBuilderContext";
-import type { RaceSafetyEquipment } from "@/components/listing/types";
-import { RACE_TRACK_SPECS_CONFIG } from "@/components/listing/specs/race-track";
-import { RACE_SAFETY_EQUIPMENT_OPTIONS } from "@/components/listing/specs/options";
+import {
+  listingReviewHeroUrl,
+  listingReviewVehicleTitle,
+} from "@/components/listing/listing-review-summary";
+import {
+  FLOW4_BUILD_COPY,
+  RACE_BUILD_PERFORMED_BY_OPTIONS,
+  isRaceBuildComplete,
+  raceBuildPerformedByPatch,
+  shouldShowRaceBuildShopBuilder,
+} from "@/components/listing/specs/race-track";
 import { MobileListingShell } from "../MobileListingShell";
 import { MobileOptionList, MobileOptionSheet } from "../MobileOptionSheet";
-import { MobileShopBuilderField } from "../shop-builder/MobileShopBuilderField";
+import { MobileAddShopBuilderControl } from "../shop-builder/MobileAddShopBuilderControl";
 import { useOpenShopBuilder } from "../shop-builder/useOpenShopBuilder";
-
-const CATEGORIES = RACE_TRACK_SPECS_CONFIG.categories;
-
-const CORE_SAFETY_FIELDS: { key: keyof RaceSafetyEquipment; label: string }[] = [
-  { key: "rollCageType", label: "Cage Type" },
-  { key: "seatManufacturer", label: "Seat" },
-  { key: "harnessManufacturer", label: "Harness" },
-];
-
-const CERTIFICATION_FIELDS: { key: keyof RaceSafetyEquipment; label: string; type?: string }[] = [
-  { key: "seatCertification", label: "Certification" },
-  { key: "certificationOrganization", label: "Certification Organization" },
-  { key: "certificationNumber", label: "Certification Number" },
-  { key: "certificationExpiration", label: "Expiration", type: "date" },
-];
-
-const SAFETY_EQUIPMENT_FIELDS: { key: keyof RaceSafetyEquipment; label: string }[] = [
-  { key: "windowNet", label: "Window Net" },
-  { key: "fireSuppressionSystem", label: "Fire System" },
-  { key: "fuelCell", label: "Fuel Cell" },
-  { key: "batteryCutoff", label: "Battery Cutoff" },
-  { key: "towHooks", label: "Tow Hooks" },
-  { key: "killSwitch", label: "Kill Switch" },
-];
 
 export function MobileRaceSpecsScreen() {
   const router = useRouter();
-  const {
-    draft,
-    updateWorkspace,
-    startNewEntry,
-    startEditEntry,
-    deleteEntry,
-    cancelEntryEdit,
-  } = useListingBuilder();
+  const { draft, updateWorkspace } = useListingBuilder();
   const { openShopBuilder, opening } = useOpenShopBuilder();
-  const ws = draft.modificationWorkspace;
-  const race = ws.race;
-  const [expanded, setExpanded] = React.useState<string | null>(
-    ws.activeCategoryId || CATEGORIES[0]?.id || null
-  );
-  const [showSafety, setShowSafety] = React.useState(true);
-  const [pickerField, setPickerField] = React.useState<keyof RaceSafetyEquipment | null>(null);
-
-  React.useEffect(() => {
-    if (ws.editingEntryId) {
-      cancelEntryEdit();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const race = draft.modificationWorkspace.race;
+  const identity = race.identity;
+  const [pickerOpen, setPickerOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (draft.listingTypeId && draft.listingTypeId !== "race-track-car") {
@@ -68,301 +34,132 @@ export function MobileRaceSpecsScreen() {
     }
   }, [draft.listingTypeId, router]);
 
-  const entries = ws.entries.filter((entry) => entry.completed);
-
-  const patchSafety = (patch: Partial<RaceSafetyEquipment>) => {
+  const patchRace = (patch: Partial<typeof race>) => {
     updateWorkspace({
-      race: {
-        ...race,
-        safety: { ...race.safety, ...patch },
-      },
+      race: { ...race, ...patch },
     });
   };
 
-  const addModification = (categoryId: string) => {
-    updateWorkspace({ activeCategoryId: categoryId });
-    startNewEntry(categoryId);
-    router.push("/mobile-listing/race/modifications/add");
-  };
+  const title =
+    [
+      identity.year || draft.details.year,
+      identity.make || draft.details.make,
+      identity.model || draft.details.model,
+      identity.chassisDesignation || identity.trim || draft.details.trim,
+    ]
+      .filter(Boolean)
+      .join(" ") || listingReviewVehicleTitle(draft);
 
-  const editModification = (entryId: string) => {
-    startEditEntry(entryId);
-    router.push(`/mobile-listing/race/modifications/add?id=${entryId}`);
-  };
+  const subtitle = [
+    draft.details.engine,
+    draft.modificationWorkspace.performanceSummary.horsepower
+      ? `${draft.modificationWorkspace.performanceSummary.horsepower} hp`
+      : "",
+    draft.details.transmission,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+
+  const hero = listingReviewHeroUrl(draft);
 
   return (
     <MobileListingShell
       stepId="race-specifications"
-      continueDisabled={false}
-      continueHref="/mobile-listing/condition"
+      continueDisabled={!isRaceBuildComplete(race)}
+      continueHref="/mobile-listing/race/safety"
     >
-      <div className="flex flex-col gap-6 px-6 pt-4 pb-6">
-        <div>
+      <div className="flex flex-col gap-5 px-6 pt-4 pb-6">
+        <div className="flex items-center gap-3 rounded-[14px] border border-[#e5e5ea] bg-white p-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <div className="h-14 w-[76px] shrink-0 overflow-hidden rounded-lg bg-[#e5e5ea]">
+            {hero ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={hero} alt="" className="h-full w-full object-cover" />
+            ) : null}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-[14px] font-bold leading-tight text-[#1c1c1e]">{title}</p>
+            {subtitle ? (
+              <p className="mt-1 truncate text-[12px] leading-snug text-[#636366]">{subtitle}</p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="space-y-2">
           <h1 className="text-[28px] font-extrabold leading-[1.2] text-[#1c1c1e]">
-            Race Specifications &amp; Modifications
+            {FLOW4_BUILD_COPY.title}
           </h1>
-          <p className="mt-2 text-[14px] text-[#636366]">
-            Document safety equipment and race / track categories.
-          </p>
+          <p className="text-[15px] leading-[1.4] text-[#636366]">{FLOW4_BUILD_COPY.subtext}</p>
         </div>
 
-        <section className="rounded-xl border border-[#e5e5ea]">
-          <button
-            type="button"
-            onClick={() => setShowSafety((open) => !open)}
-            className="flex h-12 w-full items-center justify-between px-3 text-left"
-          >
+        <div className="space-y-5 rounded-[16px] border border-[#e5e5ea] bg-white p-4">
+          <label className="block space-y-2">
             <span className="text-[13px] font-semibold text-[#1c1c1e]">
-              Safety Equipment Checklist
+              {FLOW4_BUILD_COPY.narrativeLabel}
             </span>
-            {showSafety ? (
-              <ChevronDown className="h-4 w-4 text-[#636366]" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-[#636366]" />
-            )}
-          </button>
+            <textarea
+              value={race.buildNarrative ?? ""}
+              onChange={(event) => patchRace({ buildNarrative: event.target.value })}
+              placeholder={FLOW4_BUILD_COPY.narrativePlaceholder}
+              className="min-h-40 w-full resize-none rounded-[12px] border border-[#e5e5ea] bg-[#fafafa] p-3 text-[14px] leading-relaxed text-[#1c1c1e] outline-none placeholder:text-[#8e8e93] focus:border-[#1b1464]"
+            />
+            <p className="text-[12px] leading-relaxed text-[#636366]">
+              {FLOW4_BUILD_COPY.narrativeHelper}
+            </p>
+          </label>
 
-          {showSafety ? (
-            <div className="space-y-5 border-t border-[#e5e5ea] p-3">
-              <div className="space-y-3">
-                {CORE_SAFETY_FIELDS.map((field) => (
-                  <React.Fragment key={field.key}>
-                    <label className="block space-y-1.5">
-                      <span className="text-[12px] font-semibold text-[#636366]">{field.label}</span>
-                      <input
-                        value={race.safety[field.key]}
-                        onChange={(event) => patchSafety({ [field.key]: event.target.value })}
-                        className="h-11 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none focus:border-[#1b1464]"
-                      />
-                    </label>
-                    {field.key === "rollCageType" ? (
-                      <MobileShopBuilderField
-                        label="Builder"
-                        value={race.safety.rollCageBuilder}
-                        placeholder="Search or add a builder"
-                        onPress={() =>
-                          openShopBuilder({
-                            target: "race.safety.rollCageBuilder",
-                            label: "Builder",
-                          })
-                        }
-                        busy={opening}
-                      />
-                    ) : null}
-                  </React.Fragment>
-                ))}
-              </div>
+          <div className="block space-y-2">
+            <span className="text-[13px] font-semibold text-[#1c1c1e]">
+              {FLOW4_BUILD_COPY.performedByLabel}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="relative flex h-12 w-full items-center rounded-[12px] border border-[#e5e5ea] bg-white text-left transition-colors hover:border-[#c7c7cc]"
+            >
+              <span
+                className={
+                  race.workPerformedBy
+                    ? "px-3 text-[14px] text-[#1c1c1e]"
+                    : "px-3 text-[14px] text-[#8e8e93]"
+                }
+              >
+                {race.workPerformedBy || "Select"}
+              </span>
+              <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4 text-[#636366]" />
+            </button>
+          </div>
 
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[12px] font-bold uppercase tracking-wide text-[#1b1464]">
-                    Certification Details
-                  </p>
-                  <p className="mt-1 text-[12px] text-[#636366]">
-                    Seat and equipment certification records for this build.
-                  </p>
-                </div>
-                {CERTIFICATION_FIELDS.map((field) => (
-                  <label key={field.key} className="block space-y-1.5">
-                    <span className="text-[12px] font-semibold text-[#636366]">{field.label}</span>
-                    <input
-                      type={field.type ?? "text"}
-                      value={race.safety[field.key]}
-                      onChange={(event) => patchSafety({ [field.key]: event.target.value })}
-                      className="h-11 w-full rounded-lg border border-[#e5e5ea] px-3 text-[13px] outline-none focus:border-[#1b1464]"
-                    />
-                  </label>
-                ))}
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[12px] font-bold uppercase tracking-wide text-[#1b1464]">
-                    Safety Equipment
-                  </p>
-                  <p className="mt-1 text-[12px] text-[#636366]">
-                    Confirm whether each item is installed on the vehicle.
-                  </p>
-                </div>
-                {SAFETY_EQUIPMENT_FIELDS.map((field) => (
-                  <SelectField
-                    key={field.key}
-                    label={field.label}
-                    value={race.safety[field.key]}
-                    placeholder="Installed / Not Installed"
-                    onPress={() => setPickerField(field.key)}
-                  />
-                ))}
-              </div>
-            </div>
+          {shouldShowRaceBuildShopBuilder(race.workPerformedBy) ? (
+            <MobileAddShopBuilderControl
+              value={race.shopBuilder}
+              onPress={() =>
+                openShopBuilder({
+                  target: "race.shopBuilder",
+                  label: "Shop / Builder",
+                })
+              }
+              busy={opening}
+            />
           ) : null}
-        </section>
-
-        <div>
-          <h2 className="text-[16px] font-bold text-[#1c1c1e]">Categories</h2>
-          <p className="mt-1 text-[12px] text-[#636366]">
-            {entries.length === 0
-              ? "No modification entries yet."
-              : `${entries.length} Modification${entries.length === 1 ? "" : "s"} Added`}
-          </p>
-        </div>
-
-        <div className="divide-y divide-[#e5e5ea] rounded-xl border border-[#e5e5ea]">
-          {CATEGORIES.map((category) => {
-            const open = expanded === category.id;
-            const categoryEntries = entries.filter((entry) => entry.categoryId === category.id);
-
-            return (
-              <div key={category.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExpanded(open ? null : category.id);
-                    updateWorkspace({ activeCategoryId: category.id });
-                  }}
-                  className="flex h-12 w-full items-center justify-between px-3 text-left"
-                >
-                  <span className="text-[13px] font-semibold text-[#1c1c1e]">
-                    {category.label}
-                    {categoryEntries.length > 0 ? (
-                      <span className="ml-2 text-[10px] font-medium text-[#7b78a3]">
-                        {categoryEntries.length}
-                      </span>
-                    ) : null}
-                  </span>
-                  {open ? (
-                    <ChevronDown className="h-4 w-4 text-[#636366]" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-[#636366]" />
-                  )}
-                </button>
-
-                {open ? (
-                  <div className="space-y-3 border-t border-[#e5e5ea] bg-[#fafafa] p-3">
-                    {categoryEntries.length === 0 ? (
-                      <p className="text-[12px] text-[#636366]">
-                        No modification entries in this category yet.
-                      </p>
-                    ) : (
-                      categoryEntries.map((entry) => (
-                        <div
-                          key={entry.id}
-                          className="rounded-lg border border-[#e5e5ea] bg-white px-3 py-2"
-                        >
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#636366]">
-                            {category.label}
-                          </p>
-                          <p className="mt-0.5 truncate text-[13px] font-semibold text-[#1c1c1e]">
-                            {entry.title || "Untitled modification"}
-                          </p>
-                          {entry.description || entry.typeOfWork ? (
-                            <p className="mt-1 line-clamp-2 text-[11px] text-[#636366]">
-                              {entry.description || entry.typeOfWork}
-                            </p>
-                          ) : null}
-                          <div className="mt-2 flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => editModification(entry.id)}
-                              className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#e5e5ea] px-2.5 text-[12px] font-semibold text-[#1c1c1e]"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => deleteEntry(entry.id)}
-                              className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#e5e5ea] px-2.5 text-[12px] font-semibold text-[#d34a4a]"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => addModification(category.id)}
-                      className="flex h-11 w-full items-center justify-center gap-1 rounded-lg border border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Entry
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
         </div>
       </div>
 
-      {pickerField ? (
-        <OptionSheet
-          label={
-            SAFETY_EQUIPMENT_FIELDS.find((field) => field.key === pickerField)?.label || "Select"
-          }
-          options={[...RACE_SAFETY_EQUIPMENT_OPTIONS]}
-          value={race.safety[pickerField]}
-          onClose={() => setPickerField(null)}
-          onSelect={(value) => {
-            patchSafety({ [pickerField]: value });
-            setPickerField(null);
-          }}
-        />
+      {pickerOpen ? (
+        <MobileOptionSheet
+          open
+          title="Who performed the build or preparation?"
+          onClose={() => setPickerOpen(false)}
+        >
+          <MobileOptionList
+            options={[...RACE_BUILD_PERFORMED_BY_OPTIONS]}
+            value={race.workPerformedBy}
+            onSelect={(value) => {
+              patchRace(raceBuildPerformedByPatch(race, value));
+              setPickerOpen(false);
+            }}
+          />
+        </MobileOptionSheet>
       ) : null}
     </MobileListingShell>
-  );
-}
-
-function SelectField({
-  label,
-  value,
-  placeholder,
-  onPress,
-}: {
-  label: string;
-  value: string;
-  placeholder: string;
-  onPress: () => void;
-}) {
-  return (
-    <div className="block space-y-1.5">
-      <span className="text-[12px] font-semibold text-[#636366]">{label}</span>
-      <button
-        type="button"
-        onClick={onPress}
-        className="relative flex h-11 w-full items-center rounded-lg border border-[#e5e5ea] bg-white text-left transition-colors hover:border-[#c7c7cc]"
-      >
-        <span className={value ? "px-3 text-[13px] text-[#1c1c1e]" : "px-3 text-[13px] text-[#9ca3af]"}>
-          {value || placeholder}
-        </span>
-        <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4 text-[#636366]" />
-      </button>
-    </div>
-  );
-}
-
-function OptionSheet({
-  label,
-  options,
-  value,
-  onClose,
-  onSelect,
-}: {
-  label: string;
-  options: string[];
-  value: string;
-  onClose: () => void;
-  onSelect: (value: string) => void;
-}) {
-    return (
-    <MobileOptionSheet open title={label} onClose={onClose}>
-      <MobileOptionList
-        options={options}
-        value={value}
-        onSelect={onSelect}
-      />
-    </MobileOptionSheet>
   );
 }

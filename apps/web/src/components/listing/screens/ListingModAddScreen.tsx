@@ -4,15 +4,19 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ListingStep } from "../ListingStep";
 import { useListingBuilder } from "../ListingBuilderContext";
+import { ModificationFormWithCategory } from "../specs/ModificationFormWithCategory";
 import { ModificationEntryForm } from "../specs/ModificationEntryForm";
+import { STANDARD_MODIFICATION_ENTRY_FORM_CONFIG } from "../specs/standard-modification-entry";
 import {
-  STOCK_ENTRY_FORM_CONFIG,
-} from "../specs/stock-lightly-modified";
-import { MODIFIED_PERFORMANCE_SPECS_CONFIG } from "../specs/modified-performance";
-import { RESTORED_RESTOMODE_SPECS_CONFIG } from "../specs/restored-restomod";
+  RESTORED_RESTOMODE_SPECS_CONFIG,
+  getRestorationBuildCategories,
+  shouldShowPartClassification,
+} from "../specs/restored-restomod";
 import { RACE_TRACK_SPECS_CONFIG } from "../specs/race-track";
+import { SHARED_MODIFICATION_CATEGORIES } from "../specs/shared-modification-categories";
 import { LISTING_PATHS } from "../listing-route-map";
 import type { ListingTypeId } from "../types";
+import type { SpecsCategoryDefinition } from "../specs/types";
 
 const BACK_BY_TYPE: Record<ListingTypeId, string> = {
   "stock-lightly-modified": LISTING_PATHS.stockSpecs,
@@ -21,19 +25,40 @@ const BACK_BY_TYPE: Record<ListingTypeId, string> = {
   "race-track-car": LISTING_PATHS.raceSpecs,
 };
 
-function formConfigForType(typeId: ListingTypeId | null) {
+function formConfigForType(
+  typeId: ListingTypeId | null,
+  restorationBuildType?: string | null,
+  partClassification?: string
+) {
   switch (typeId) {
     case "stock-lightly-modified":
-      return STOCK_ENTRY_FORM_CONFIG;
     case "modified-performance":
-      return MODIFIED_PERFORMANCE_SPECS_CONFIG.entryForm;
+      return STANDARD_MODIFICATION_ENTRY_FORM_CONFIG;
     case "restored-restomod-custom":
-      return RESTORED_RESTOMODE_SPECS_CONFIG.entryForm;
+      return {
+        ...RESTORED_RESTOMODE_SPECS_CONFIG.entryForm,
+        showPartClassification:
+          shouldShowPartClassification(restorationBuildType) || Boolean(partClassification),
+      };
     case "race-track-car":
       return RACE_TRACK_SPECS_CONFIG.entryForm;
     default:
-      return STOCK_ENTRY_FORM_CONFIG;
+      return STANDARD_MODIFICATION_ENTRY_FORM_CONFIG;
   }
+}
+
+function usesCategoryPicker(typeId: ListingTypeId | null) {
+  return typeId !== "race-track-car";
+}
+
+function categoriesForType(
+  typeId: ListingTypeId | null,
+  restorationBuildType?: string | null
+): SpecsCategoryDefinition[] {
+  if (typeId === "restored-restomod-custom") {
+    return getRestorationBuildCategories(restorationBuildType);
+  }
+  return SHARED_MODIFICATION_CATEGORIES;
 }
 
 /** Nested modification add/edit form for type-specific routes. */
@@ -61,24 +86,47 @@ export function ListingModAddScreen() {
     );
   }
 
+  const restorationBuildType = draft.modificationWorkspace.restoration.buildType;
+  const formConfig = formConfigForType(
+    typeId,
+    restorationBuildType,
+    editingEntry.partClassification
+  );
+
   return (
     <ListingStep
       title={editingEntry.title.trim() ? "Edit Modification" : "Add Modification"}
       description="Document the work, then save to return to specifications."
     >
       <div className="max-w-2xl">
-        <ModificationEntryForm
-          entry={editingEntry}
-          formConfig={formConfigForType(typeId)}
-          onSave={(entry) => {
-            saveEntry(entry);
-            router.push(backHref);
-          }}
-          onCancel={() => {
-            cancelEntryEdit();
-            router.push(backHref);
-          }}
-        />
+        {usesCategoryPicker(typeId) ? (
+          <ModificationFormWithCategory
+            entry={editingEntry}
+            formConfig={formConfig}
+            categories={categoriesForType(typeId, restorationBuildType)}
+            onSave={(entry) => {
+              saveEntry(entry);
+              router.push(backHref);
+            }}
+            onCancel={() => {
+              cancelEntryEdit();
+              router.push(backHref);
+            }}
+          />
+        ) : (
+          <ModificationEntryForm
+            entry={editingEntry}
+            formConfig={formConfig}
+            onSave={(entry) => {
+              saveEntry(entry);
+              router.push(backHref);
+            }}
+            onCancel={() => {
+              cancelEntryEdit();
+              router.push(backHref);
+            }}
+          />
+        )}
       </div>
     </ListingStep>
   );

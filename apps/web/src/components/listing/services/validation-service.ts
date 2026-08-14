@@ -6,6 +6,15 @@ import {
   MIN_LISTING_PHOTOS,
   specsEntryHref,
 } from "../listing-route-map";
+import {
+  isRaceBuildComplete,
+  isRaceCompetitionHistoryComplete,
+  isRaceDocumentationComplete,
+  isRacePrimaryUseComplete,
+  isRaceSparesComplete,
+  shouldShowDocumentationOther,
+} from "../specs/race-track";
+import { isFactoryCorrectOriginalityComplete } from "../specs/restored-restomod";
 
 export type ValidationSeverity = "required" | "optional" | "warning" | "information" | "error";
 
@@ -146,6 +155,47 @@ const RULES: Rule[] = [
         };
   },
   (draft) => {
+    if (draft.listingTypeId !== "restored-restomod-custom") return null;
+    return draft.modificationWorkspace.restoration.buildStatus
+      ? null
+      : {
+          id: "build-status-required",
+          stepId: "details",
+          href: LISTING_PATHS.details,
+          field: "buildStatus",
+          message: "Build status is required for restored listings.",
+          severity: "error",
+        };
+  },
+  (draft) => {
+    if (draft.listingTypeId !== "restored-restomod-custom") return null;
+    return draft.modificationWorkspace.restoration.workPerformedBy
+      ? null
+      : {
+          id: "work-performed-by-required",
+          stepId: "details",
+          href: LISTING_PATHS.details,
+          field: "workPerformedBy",
+          message: "Work performed by is required for restored listings.",
+          severity: "error",
+        };
+  },
+  (draft) => {
+    if (draft.listingTypeId !== "restored-restomod-custom") return null;
+    const resto = draft.modificationWorkspace.restoration;
+    if (resto.buildType !== "factory-correct-restoration") return null;
+    return isFactoryCorrectOriginalityComplete(resto.factoryCorrect)
+      ? null
+      : {
+          id: "factory-correct-originality-required",
+          stepId: "specifications",
+          href: LISTING_PATHS.restoredSpecs,
+          field: "factoryCorrect",
+          message: "Answer Yes, No, or Unknown for each originality item.",
+          severity: "error",
+        };
+  },
+  (draft) => {
     if (draft.listingTypeId !== "stock-lightly-modified") return null;
     return draft.modificationWorkspace.hasModifications !== null
       ? null
@@ -155,6 +205,76 @@ const RULES: Rule[] = [
           href: LISTING_PATHS.stockSpecs,
           field: "hasModifications",
           message: "Confirm whether the vehicle is stock.",
+          severity: "error",
+        };
+  },
+  (draft) => {
+    if (draft.listingTypeId !== "race-track-car") return null;
+    return isRacePrimaryUseComplete(draft.modificationWorkspace.race.competition)
+      ? null
+      : {
+          id: "race-primary-use-required",
+          stepId: "specifications",
+          href: LISTING_PATHS.raceSummary,
+          field: "primaryDiscipline",
+          message: "Primary use is required.",
+          severity: "error",
+        };
+  },
+  (draft) => {
+    if (draft.listingTypeId !== "race-track-car") return null;
+    return isRaceBuildComplete(draft.modificationWorkspace.race)
+      ? null
+      : {
+          id: "race-build-narrative-required",
+          stepId: "specifications",
+          href: LISTING_PATHS.raceSpecs,
+          field: "buildNarrative",
+          message: "Tell buyers about the race / track build to continue.",
+          severity: "error",
+        };
+  },
+  (draft) => {
+    if (draft.listingTypeId !== "race-track-car") return null;
+    return isRaceCompetitionHistoryComplete(draft.modificationWorkspace.race)
+      ? null
+      : {
+          id: "race-organized-competition-required",
+          stepId: "specifications",
+          href: LISTING_PATHS.raceBiography,
+          field: "organizedCompetition",
+          message: "Say whether this vehicle has competed in organized competition.",
+          severity: "error",
+        };
+  },
+  (draft) => {
+    if (draft.listingTypeId !== "race-track-car") return null;
+    const race = draft.modificationWorkspace.race;
+    if (isRaceDocumentationComplete(race)) return null;
+    const needsOther =
+      shouldShowDocumentationOther(race.documentationTypes) &&
+      !race.documentationOther?.trim();
+    return {
+      id: "race-documentation-required",
+      stepId: "specifications",
+      href: LISTING_PATHS.raceDocumentation,
+      field: needsOther ? "documentationOther" : "documentationTypes",
+      message: needsOther
+        ? "Describe the other race / track documentation."
+        : "Select race / track documentation, or None.",
+      severity: "error",
+    };
+  },
+  (draft) => {
+    if (draft.listingTypeId !== "race-track-car") return null;
+    return isRaceSparesComplete(draft.modificationWorkspace.race)
+      ? null
+      : {
+          id: "race-spares-description-required",
+          stepId: "specifications",
+          href: LISTING_PATHS.raceSpares,
+          field: "sparesDescription",
+          message: "Describe the spares and support equipment included with the sale.",
           severity: "error",
         };
   },
