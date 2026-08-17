@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { auctionService, vehicleService, postService } from "@carasta/mock-data/services";
+import { auctionService, postService } from "@carasta/mock-data/services";
 import { HomePageClient } from "./HomePageClient";
 
 export const metadata: Metadata = {
@@ -7,21 +7,22 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [featuredAuctions, endingSoon, upcomingAuctions, brands, communityHighlights] = await Promise.all([
-    auctionService.getFeaturedAuctions(6),
-    auctionService.getEndingSoon(),
-    auctionService.getUpcomingAuctions(),
-    vehicleService.getPopularBrands(),
-    postService.getCommunityHighlights(4),
-  ]);
+  const [featuredAuctions, endingSoon, upcomingAuctions, communityHighlights, carmunityFeed] =
+    await Promise.all([
+      auctionService.getFeaturedAuctions(6),
+      auctionService.getEndingSoon(),
+      auctionService.getUpcomingAuctions(),
+      postService.getCommunityHighlights(4),
+      postService.getFeed(1, 6),
+    ]);
 
   return (
     <HomePageClient
       featuredAuctions={featuredAuctions}
       endingSoon={endingSoon}
       upcomingAuctions={upcomingAuctions}
-      brands={brands}
       communityHighlights={communityHighlights}
+      carmunityPosts={carmunityFeed.data}
     />
   );
 }

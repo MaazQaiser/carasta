@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Shield, Users, Gavel, FileText, TrendingUp, Eye, CheckCircle, X, AlertTriangle } from "lucide-react";
+import { Shield, Users, Gavel, TrendingUp, Eye, CheckCircle, X, AlertTriangle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -10,6 +10,7 @@ import { MOCK_VEHICLES } from "@carasta/mock-data";
 import { MOCK_AUCTIONS } from "@carasta/mock-data";
 import { MOCK_USERS } from "@carasta/mock-data";
 import { formatPrice } from "@/lib/utils";
+import { readHomepageUpcomingIds, writeHomepageUpcomingIds } from "@/lib/homepage-upcoming";
 
 const MOCK_REPORTS = [
   { id: "r-1", type: "listing", title: "Misleading photos on auction a-003", reporter: "priya_wheels", status: "pending", createdAt: "2024-01-22T10:00:00Z" },
@@ -28,6 +29,20 @@ export function AdminDashboard() {
   const [reportStatuses, setReportStatuses] = useState<Record<string, string>>(
     Object.fromEntries(MOCK_REPORTS.map((r) => [r.id, r.status]))
   );
+  const [homepageUpcomingIds, setHomepageUpcomingIds] = useState<string[]>(readHomepageUpcomingIds);
+  const upcomingCandidates = MOCK_AUCTIONS.filter((auction) => auction.status === "upcoming");
+
+  const toggleHomepageUpcoming = (id: string) => {
+    setHomepageUpcomingIds((current) => {
+      const next = current.includes(id)
+        ? current.filter((item) => item !== id)
+        : current.length >= 3
+          ? current
+          : [...current, id];
+      writeHomepageUpcomingIds(next);
+      return next;
+    });
+  };
 
   return (
     <div className="mx-auto max-w-screen-2xl px-4 lg:px-6 py-8">
@@ -59,6 +74,7 @@ export function AdminDashboard() {
       <Tabs defaultValue="auctions">
         <TabsList className="mb-6">
           <TabsTrigger value="auctions">Live Auctions</TabsTrigger>
+          <TabsTrigger value="homepage">Homepage</TabsTrigger>
           <TabsTrigger value="listings">Listings</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="reports">Reports <Badge variant="destructive" className="ml-1.5 text-[10px] h-4 px-1.5">2</Badge></TabsTrigger>
@@ -87,6 +103,55 @@ export function AdminDashboard() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Homepage upcoming picker */}
+        <TabsContent value="homepage">
+          <div className="rounded-2xl border overflow-hidden">
+            <div className="px-4 py-3 bg-muted/30 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Calendar className="h-4 w-4" />
+                Homepage upcoming auctions
+              </div>
+              <p className="text-xs text-muted-foreground">{homepageUpcomingIds.length}/3 selected</p>
+            </div>
+            <div className="px-4 py-3 text-sm text-muted-foreground border-b">
+              Choose up to 3 upcoming listings to feature on the homepage. Changes apply the next time the homepage loads.
+            </div>
+            <div className="divide-y">
+              {upcomingCandidates.map((auction) => {
+                const selected = homepageUpcomingIds.includes(auction.id);
+                const blocked = !selected && homepageUpcomingIds.length >= 3;
+                return (
+                  <div key={auction.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/20">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-10 w-14 rounded-lg overflow-hidden bg-muted shrink-0">
+                        {auction.vehicle.images[0] && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={auction.vehicle.images[0].url} alt={auction.vehicle.title} className="h-full w-full object-cover" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{auction.vehicle.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Starts {new Date(auction.startTime).toLocaleDateString()} · {formatPrice(auction.startingBid)}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant={selected ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 text-xs"
+                      disabled={blocked}
+                      onClick={() => toggleHomepageUpcoming(auction.id)}
+                    >
+                      {selected ? "Selected" : "Feature"}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </TabsContent>

@@ -29,7 +29,6 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     links: [
       { label: "About", href: "/about" },
       { label: "Carmunity", href: "/carmunity" },
-      { label: "Careers", href: "/help" },
       { label: "Contact", href: "/support" },
     ],
   },

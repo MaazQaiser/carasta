@@ -14,8 +14,10 @@ import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
+import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
+import ThumbDownAltIcon from "@mui/icons-material/ThumbDownAlt";
+import ThumbDownOffAltIcon from "@mui/icons-material/ThumbDownOffAlt";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
@@ -30,13 +32,37 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, compact = false }: PostCardProps) {
-  const [liked, setLiked] = useState(post.isLiked ?? false);
+  const [reaction, setReaction] = useState<"like" | "dislike" | null>(post.isLiked ? "like" : null);
   const [likeCount, setLikeCount] = useState(post.likes);
+  const [dislikeCount, setDislikeCount] = useState(0);
   const primaryImage = post.images[0];
 
   const handleLike = () => {
-    setLiked((l) => !l);
-    setLikeCount((c) => (liked ? c - 1 : c + 1));
+    setReaction((current) => {
+      if (current === "like") {
+        setLikeCount((count) => count - 1);
+        return null;
+      }
+      if (current === "dislike") {
+        setDislikeCount((count) => Math.max(0, count - 1));
+      }
+      setLikeCount((count) => count + 1);
+      return "like";
+    });
+  };
+
+  const handleDislike = () => {
+    setReaction((current) => {
+      if (current === "dislike") {
+        setDislikeCount((count) => Math.max(0, count - 1));
+        return null;
+      }
+      if (current === "like") {
+        setLikeCount((count) => count - 1);
+      }
+      setDislikeCount((count) => count + 1);
+      return "dislike";
+    });
   };
 
   if (compact) {
@@ -55,9 +81,44 @@ export function PostCard({ post, compact = false }: PostCardProps) {
               {post.caption}
             </Typography>
           )}
-          <Stack direction="row" spacing={1.5} sx={{ mt: 1 }}>
-            <Typography variant="caption" color="text.secondary">{likeCount.toLocaleString()} likes</Typography>
-            <Typography variant="caption" color="text.secondary">{post.commentCount} comments</Typography>
+          <Stack direction="row" spacing={0.5} sx={{ mt: 1, alignItems: "center" }}>
+            <IconButton
+              size="small"
+              onClick={handleLike}
+              aria-label="Like"
+              sx={{ color: reaction === "like" ? brand.urgent : "text.secondary" }}
+            >
+              {reaction === "like" ? (
+                <ThumbUpAltIcon sx={{ fontSize: 16 }} />
+              ) : (
+                <ThumbUpOffAltIcon sx={{ fontSize: 16 }} />
+              )}
+            </IconButton>
+            <Typography variant="caption" color="text.secondary" sx={{ minWidth: 18 }}>
+              {likeCount.toLocaleString()}
+            </Typography>
+            <IconButton
+              size="small"
+              onClick={handleDislike}
+              aria-label="Dislike"
+              sx={{ color: reaction === "dislike" ? brand.ink : "text.secondary" }}
+            >
+              {reaction === "dislike" ? (
+                <ThumbDownAltIcon sx={{ fontSize: 16 }} />
+              ) : (
+                <ThumbDownOffAltIcon sx={{ fontSize: 16 }} />
+              )}
+            </IconButton>
+            <Typography variant="caption" color="text.secondary" sx={{ minWidth: 12 }}>
+              {dislikeCount.toLocaleString()}
+            </Typography>
+            <Button
+              size="small"
+              startIcon={<ChatBubbleOutlineIcon sx={{ fontSize: 16 }} />}
+              sx={{ color: "text.secondary", minWidth: 0, px: 0.75, ml: 0.5 }}
+            >
+              {post.commentCount}
+            </Button>
           </Stack>
         </CardContent>
       </Card>
@@ -117,11 +178,19 @@ export function PostCard({ post, compact = false }: PostCardProps) {
       <CardActions sx={{ px: 2, pb: 2 }}>
         <Button
           size="small"
-          startIcon={liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+          startIcon={reaction === "like" ? <ThumbUpAltIcon /> : <ThumbUpOffAltIcon />}
           onClick={handleLike}
-          sx={{ color: liked ? brand.urgent : "text.secondary" }}
+          sx={{ color: reaction === "like" ? brand.urgent : "text.secondary" }}
         >
           {likeCount.toLocaleString()}
+        </Button>
+        <Button
+          size="small"
+          startIcon={reaction === "dislike" ? <ThumbDownAltIcon /> : <ThumbDownOffAltIcon />}
+          onClick={handleDislike}
+          sx={{ color: reaction === "dislike" ? brand.ink : "text.secondary" }}
+        >
+          {dislikeCount.toLocaleString()}
         </Button>
         <Button size="small" startIcon={<ChatBubbleOutlineIcon />} sx={{ color: "text.secondary" }}>
           {post.commentCount}

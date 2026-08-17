@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, Plus, Users, X,
 } from "lucide-react";
-import type { Post, Club, Story, User as UserType } from "@carasta/types";
+import type { Post, Club, User as UserType } from "@carasta/types";
 import { userService } from "@carasta/mock-data/services";
 import { PostCard } from "@/components/community/PostCard";
 import { CreatePostFab, CreatePostModal } from "@/components/community/create-post";
@@ -18,10 +18,9 @@ import { useAuth } from "@/lib/context/auth-context";
 interface Props {
   initialPosts: Post[];
   clubs: Club[];
-  stories: Story[];
 }
 
-export function CarmunityClient({ initialPosts, clubs, stories }: Props) {
+export function CarmunityClient({ initialPosts, clubs }: Props) {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,44 +88,6 @@ export function CarmunityClient({ initialPosts, clubs, stories }: Props) {
   return (
     <div className="mx-auto max-w-screen-2xl px-4 lg:px-6 py-6">
       <div className="w-full max-w-[680px] mx-auto">
-        {/* Stories — left-aligned, Add Story always first */}
-        <div className="flex justify-start gap-3 overflow-x-auto scrollbar-hide pb-2 mb-5">
-          <Link
-            href={user ? "/carmunity" : "/sign-in?redirect=/carmunity"}
-            className="flex flex-col items-center gap-1 shrink-0"
-          >
-            <div className="h-14 w-14 rounded-full border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary transition-colors bg-muted">
-              {user?.avatar?.url ? (
-                <div className="relative h-full w-full">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={user.avatar.url}
-                    alt="Your story"
-                    className="h-full w-full rounded-full object-cover opacity-80"
-                  />
-                  <span className="absolute bottom-0 right-0 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center border-2 border-background">
-                    <Plus className="h-3 w-3" />
-                  </span>
-                </div>
-              ) : (
-                <Plus className="h-5 w-5 text-muted-foreground" />
-              )}
-            </div>
-            <span className="text-[10px] text-muted-foreground">Add story</span>
-          </Link>
-          {stories.map((story) => (
-            <div key={story.id} className="flex flex-col items-center gap-1 shrink-0">
-              <div className="h-14 w-14 rounded-full ring-2 ring-primary overflow-hidden cursor-pointer">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={story.mediaUrl} alt={story.author.displayName} className="h-full w-full object-cover" />
-              </div>
-              <span className="text-[10px] text-muted-foreground max-w-[56px] truncate text-center">
-                {story.author.username}
-              </span>
-            </div>
-          ))}
-        </div>
-
         {/* Composer entry — opens Create Post flow */}
         <div className="rounded-2xl border bg-card p-4 mb-4">
           <div className="flex gap-3 items-center">

@@ -90,7 +90,9 @@ export const auctionService = {
 
   async getEndingSoon(): Promise<Auction[]> {
     await delay(100);
-    return MOCK_AUCTIONS.filter(isEndingSoon);
+    return MOCK_AUCTIONS.filter(isEndingSoon).sort(
+      (a, b) => new Date(a.endTime).getTime() - new Date(b.endTime).getTime()
+    );
   },
 
   async getCompletedAuctions(page = 1, pageSize = 12): Promise<PaginatedResponse<Auction>> {

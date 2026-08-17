@@ -78,7 +78,7 @@ export default async function AboutPage() {
         <div>
           <h2 className="text-xl font-bold mb-1">Get in Touch</h2>
           <p className="text-muted-foreground text-sm">Our team is here to help — whether you&apos;re buying, selling, or just curious.</p>
-          <p className="text-sm mt-2 font-medium">hello@carasta.com · +1 (800) 555-0199</p>
+          <p className="text-sm mt-2 font-medium">hello@carasta.com</p>
         </div>
         <Link href="/support">
           <Button variant="bid" className="gap-1.5 shrink-0">

@@ -5,14 +5,13 @@ import { CarmunityClient } from "./CarmunityClient";
 
 export const metadata: Metadata = {
   title: "Carmunity",
-  description: "Discover builds, photos, and stories from the Carasta automotive community.",
+  description: "Discover builds, photos, and posts from the Carasta automotive community.",
 };
 
 export default async function CarmunityPage() {
-  const [feed, clubs, stories] = await Promise.all([
+  const [feed, clubs] = await Promise.all([
     postService.getFeed(1, 12),
     postService.getClubs(),
-    postService.getStories(),
   ]);
 
   return (
@@ -20,7 +19,6 @@ export default async function CarmunityPage() {
       <CarmunityClient
         initialPosts={feed.data}
         clubs={clubs.data}
-        stories={stories}
       />
     </Suspense>
   );

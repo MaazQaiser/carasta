@@ -41,6 +41,8 @@ export function ReserveMeterGauge({
   size?: number;
   className?: string;
 }) {
+  const uid = React.useId().replace(/:/g, "");
+  const gradId = `reserveArcGrad-${uid}`;
   const clamped = Math.max(0, Math.min(1, progress));
   const angle = -90 + clamped * 180;
   const r = size * 0.36;
@@ -60,7 +62,7 @@ export function ReserveMeterGauge({
       aria-hidden
     >
       <defs>
-        <linearGradient id="reserveArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#e53935" />
           <stop offset="35%" stopColor="#fb8c00" />
           <stop offset="65%" stopColor="#fdd835" />
@@ -70,7 +72,7 @@ export function ReserveMeterGauge({
       <path
         d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
         fill="none"
-        stroke="url(#reserveArcGrad)"
+        stroke={`url(#${gradId})`}
         strokeWidth={size * 0.11}
         strokeLinecap="round"
       />

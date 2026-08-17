@@ -4,7 +4,8 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import { ReserveMeterGauge } from "./AuctionStatusCard";
+import { formatAuctionCountdown, ReserveMeterGauge } from "./AuctionStatusCard";
+import { Clock } from "lucide-react";
 
 export function MobileBuyerShell({
   children,
@@ -57,6 +58,10 @@ export function MobileBuyerShell({
               <div className="min-w-0 shrink-0">
                 <p className="text-[16px] font-extrabold leading-none text-white">
                   {formatPrice(auctionSticky.currentBid)}
+                </p>
+                <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-white/90">
+                  <Clock className="h-3 w-3" />
+                  {formatAuctionCountdown(auctionSticky.endsAt)}
                 </p>
               </div>
               <button

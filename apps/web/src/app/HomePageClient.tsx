@@ -2,54 +2,151 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
 import Grid2 from "@mui/material/Grid2";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import NorthEastRoundedIcon from "@mui/icons-material/NorthEastRounded";
-import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
-import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import GppGoodOutlinedIcon from "@mui/icons-material/GppGoodOutlined";
 import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
+import Diversity3OutlinedIcon from "@mui/icons-material/Diversity3Outlined";
 import FacebookRoundedIcon from "@mui/icons-material/FacebookRounded";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import XIcon from "@mui/icons-material/X";
-import type { Auction, Post } from "@carasta/types";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
+import type { Auction, AuctionSortField, Post, Vehicle } from "@carasta/types";
 import { AuctionCard } from "@/components/auction/AuctionCard";
-import { formatPrice } from "@/lib/utils";
+import { HomeCarmunityFeed } from "@/components/community/HomeCarmunityFeed";
+import { FaqAccordion } from "@/components/faq/FaqAccordion";
+import { formatPrice, formatRelativeTime, truncate } from "@/lib/utils";
 import { brand } from "@/theme/carastaTheme";
-import { mergePublishedAuctions } from "@/lib/marketplace-listings";
+import { mergePublishedAuctions, sortAuctions } from "@/lib/marketplace-listings";
+import { pickHomepageUpcoming } from "@/lib/homepage-upcoming";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import MenuItem from "@mui/material/MenuItem";
+import InputAdornment from "@mui/material/InputAdornment";
+
+const HERO_FALLBACK = {
+  href: "/auctions",
+  image:
+    "https://images.unsplash.com/photo-1750957823101-87ec89cf6862?w=1400&auto=format&fit=crop",
+  title: "1963 Jaguar E-Type Series 1",
+  specs: "Matching numbers • 3.8L Inline-6 • 4-Speed",
+  bid: 155000,
+  timeLeft: "72h",
+} as const;
+
+function transmissionLabel(transmission: Vehicle["spec"]["transmission"]): string {
+  if (transmission === "manual") return "4-Speed";
+  if (transmission === "automatic") return "Automatic";
+  if (transmission === "semi-automatic") return "Semi-Auto";
+  return transmission.toUpperCase();
+}
+
+function heroSpecLine(vehicle: Vehicle): string {
+  const matching = vehicle.features?.find((feature) => /matching/i.test(feature));
+  return [matching, vehicle.spec.engineSize, transmissionLabel(vehicle.spec.transmission)]
+    .filter(Boolean)
+    .join(" • ");
+}
+
+function compactHoursLeft(endTime: string): string {
+  const ms = new Date(endTime).getTime() - Date.now();
+  if (ms <= 0) return "0h";
+  const hours = Math.round(ms / 3600000);
+  if (hours < 1) return `${Math.max(1, Math.round(ms / 60000))}m`;
+  return `${hours}h`;
+}
+
+function TimeLeftBadge({ label }: { label: string }) {
+  return (
+    <Box
+      sx={{
+        position: "relative",
+        width: { xs: 76, md: 88 },
+        height: { xs: 76, md: 88 },
+        flexShrink: 0,
+      }}
+    >
+      <Box
+        component="svg"
+        viewBox="0 0 88 88"
+        sx={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+      >
+        <circle cx="44" cy="44" r="41" fill="#fff" stroke="rgba(20,20,20,0.22)" strokeWidth="1.5" />
+        <circle
+          cx="44"
+          cy="44"
+          r="41"
+          fill="none"
+          stroke={brand.primary}
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeDasharray="92 166"
+          transform="rotate(105 44 44)"
+        />
+      </Box>
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          px: 1,
+          textAlign: "center",
+        }}
+      >
+        <Typography
+          fontWeight={800}
+          sx={{ fontSize: { xs: 18, md: 22 }, lineHeight: 1, color: brand.ink, letterSpacing: "-0.03em" }}
+        >
+          {label}
+        </Typography>
+        <Typography sx={{ mt: 0.35, fontSize: 10, fontWeight: 500, color: brand.inkSoft, lineHeight: 1 }}>
+          Time left
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
 
 interface Props {
   featuredAuctions: Auction[];
   endingSoon: Auction[];
   upcomingAuctions: Auction[];
-  brands: { name: string; count: number; imageUrl: string }[];
   communityHighlights: Post[];
+  carmunityPosts: Post[];
 }
 
 /** White rounded section card inset on gray-50 page canvas */
 function SectionCard({
   children,
   sx,
-  dark,
 }: {
   children: React.ReactNode;
   sx?: object;
-  dark?: boolean;
 }) {
   return (
     <Box
       sx={{
         mx: "18px",
         mb: "18px",
-        bgcolor: dark ? brand.ink : "#fff",
+        bgcolor: "#fff",
         borderRadius: "8px",
         overflow: "hidden",
-        boxShadow: dark ? "none" : "0 8px 28px -22px rgba(20,20,20,0.22)",
+        boxShadow: "0 8px 28px -22px rgba(20,20,20,0.22)",
         ...sx,
       }}
     >
@@ -113,57 +210,152 @@ function SectionHeader({
   );
 }
 
-function CompactListing({ auction }: { auction: Auction }) {
-  const img = auction.vehicle.images[0];
+function HeroCommunityCard({ posts }: { posts: Post[] }) {
+  const highlights = posts.filter((post) => post.images[0]).slice(0, 2);
+  if (highlights.length === 0) return null;
+
   return (
-    <Stack
-      direction="row"
-      spacing={2}
-      component={Link}
-      href={`/vehicles/${auction.vehicle.id}`}
+    <Box
       sx={{
-        alignItems: "center",
-        p: 1.25,
-        border: `1px solid ${brand.border}`,
-        borderRadius: "8px",
-        bgcolor: brand.softer,
-        transition: "border-color 0.2s, box-shadow 0.2s",
-        "&:hover": { borderColor: "rgba(20,20,20,0.18)", boxShadow: "0 10px 24px -14px rgba(20,20,20,0.25)" },
+        width: { xs: "100%", md: 260, lg: 280 },
+        flexShrink: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignSelf: "stretch",
+        bgcolor: "#fff",
+        borderRadius: "20px",
+        p: 2,
+        boxShadow: "0 18px 40px -18px rgba(20,20,20,0.35)",
       }}
     >
-      <Box sx={{ width: 96, height: 68, borderRadius: "8px", overflow: "hidden", flexShrink: 0, bgcolor: brand.soft }}>
-        {img && <Box component="img" src={img.url} alt={img.alt} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography fontWeight={700} noWrap sx={{ letterSpacing: "-0.01em" }}>
-          {auction.vehicle.title}
+      <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 1.75 }}>
+        <Typography
+          sx={{
+            fontSize: 12,
+            fontWeight: 800,
+            letterSpacing: "0.02em",
+            color: brand.ink,
+          }}
+        >
+          From the community
         </Typography>
-        <Typography variant="body2" color="text.secondary" noWrap>
-          {auction.vehicle.location.city}, {auction.vehicle.location.state}
-        </Typography>
-      </Box>
-      <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.2 }}>
-          Current bid
-        </Typography>
-        <Typography fontWeight={800} sx={{ letterSpacing: "-0.01em" }}>
-          {formatPrice(auction.currentBid)}
-        </Typography>
-      </Box>
-    </Stack>
+        <Stack
+          component={Link}
+          href="/carmunity"
+          direction="row"
+          spacing={0.25}
+          sx={{
+            alignItems: "center",
+            fontSize: 12,
+            fontWeight: 700,
+            color: brand.ink,
+            textDecoration: "none",
+            "&:hover": { color: brand.primary },
+          }}
+        >
+          View all
+          <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
+        </Stack>
+      </Stack>
+
+      <Stack spacing={2}>
+        {highlights.map((post) => {
+          const image = post.images[0]!;
+          return (
+            <Box
+              key={post.id}
+              component={Link}
+              href="/carmunity"
+              sx={{ display: "block", color: "inherit", textDecoration: "none" }}
+            >
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
+                <Avatar src={post.author.avatar?.url} alt={post.author.displayName} sx={{ width: 28, height: 28 }} />
+                <Stack direction="row" spacing={0.75} sx={{ alignItems: "baseline", minWidth: 0, flex: 1 }}>
+                  <Typography noWrap sx={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>
+                    {post.author.displayName}
+                  </Typography>
+                  <Typography sx={{ fontSize: 11, color: brand.muted, flexShrink: 0 }}>
+                    {formatRelativeTime(post.createdAt)}
+                  </Typography>
+                </Stack>
+                <MoreHorizIcon sx={{ fontSize: 16, color: brand.muted, flexShrink: 0 }} />
+              </Stack>
+              <Box
+                sx={{
+                  height: 96,
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  bgcolor: brand.soft,
+                  mb: 1,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={image.url}
+                  alt={image.alt}
+                  sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              </Box>
+              {post.caption ? (
+                <Typography sx={{ fontSize: 13, lineHeight: 1.4, color: brand.ink, mb: 0.75 }}>
+                  {truncate(post.caption, 72)}
+                </Typography>
+              ) : null}
+              <Stack direction="row" spacing={1.75} sx={{ color: brand.muted }}>
+                <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                  <FavoriteBorderIcon sx={{ fontSize: 16 }} />
+                  <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{post.likes.toLocaleString()}</Typography>
+                </Stack>
+                <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                  <ChatBubbleOutlineIcon sx={{ fontSize: 16 }} />
+                  <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{post.commentCount.toLocaleString()}</Typography>
+                </Stack>
+              </Stack>
+            </Box>
+          );
+        })}
+      </Stack>
+    </Box>
+  );
+}
+
+function AuctionGrid({ auctions, columns = 4 }: { auctions: Auction[]; columns?: 3 | 4 }) {
+  return (
+    <Box
+      sx={{
+        display: "grid",
+        gap: 2.5,
+        gridTemplateColumns: {
+          xs: "1fr",
+          sm: "repeat(2, minmax(0, 1fr))",
+          md: `repeat(${columns}, minmax(0, 1fr))`,
+        },
+      }}
+    >
+      {auctions.map((auction) => (
+        <Box key={auction.id} sx={{ minWidth: 0 }}>
+          <AuctionCard auction={auction} />
+        </Box>
+      ))}
+    </Box>
   );
 }
 
 export function HomePageClient({
   featuredAuctions,
   endingSoon,
-  brands,
+  upcomingAuctions,
   communityHighlights,
+  carmunityPosts,
 }: Props) {
   const [contact, setContact] = useState({ first: "", last: "", email: "", subject: "", message: "" });
   const [sent, setSent] = useState(false);
   const [featured, setFeatured] = useState(featuredAuctions);
   const [soon, setSoon] = useState(endingSoon);
+  const [upcoming, setUpcoming] = useState(upcomingAuctions);
+  const [latestPage, setLatestPage] = useState(0);
+  const [auctionQuery, setAuctionQuery] = useState("");
+  const [auctionSort, setAuctionSort] = useState<AuctionSortField>("ending-soon");
 
   useEffect(() => {
     setFeatured(mergePublishedAuctions(featuredAuctions, { sort: "newest" }));
@@ -173,75 +365,137 @@ export function HomePageClient({
         sort: "ending-soon",
       })
     );
-  }, [featuredAuctions, endingSoon]);
+    setUpcoming(pickHomepageUpcoming(upcomingAuctions));
+  }, [featuredAuctions, endingSoon, upcomingAuctions]);
 
-  const latest = featured.slice(0, 6);
-  const brandLeft = brands.slice(0, 2);
-  const sideListings = soon.slice(0, 4);
+  const endingSoonList = soon.slice(0, 4);
+  const upcomingList = upcoming.slice(0, 3);
+  const latestPool = (() => {
+    const first = endingSoonList;
+    const seen = new Set(first.map((auction) => auction.id));
+    const upcomingFill = upcomingAuctions.filter((auction) => !seen.has(auction.id)).slice(0, 4);
+    upcomingFill.forEach((auction) => seen.add(auction.id));
+    const liveFill = featured.filter((auction) => !seen.has(auction.id)).slice(0, Math.max(0, 4 - upcomingFill.length));
+    return [...first, ...upcomingFill, ...liveFill];
+  })();
+  const queriedLatest = latestPool.filter((auction) => {
+    const q = auctionQuery.trim().toLowerCase();
+    if (!q) return true;
+    const { vehicle } = auction;
+    return [vehicle.title, vehicle.spec.make, vehicle.spec.model, String(vehicle.spec.year)]
+      .join(" ")
+      .toLowerCase()
+      .includes(q);
+  });
+  const sortedLatest = sortAuctions(queriedLatest, auctionSort);
+  const LATEST_PAGE_SIZE = 4;
+  const latestVisible = sortedLatest.slice(
+    latestPage * LATEST_PAGE_SIZE,
+    latestPage * LATEST_PAGE_SIZE + LATEST_PAGE_SIZE
+  );
+  const canPrevLatest = latestPage > 0;
+  const canNextLatest = (latestPage + 1) * LATEST_PAGE_SIZE < sortedLatest.length;
+  const heroAuction =
+    featured.find((auction) => auction.vehicle.id === "v-002") ??
+    featured.find((auction) => /jaguar/i.test(auction.vehicle.title)) ??
+    featured[0];
+  const hero = heroAuction
+    ? {
+        href: `/vehicles/${heroAuction.vehicle.id}`,
+        image: heroAuction.vehicle.images[0]?.url ?? HERO_FALLBACK.image,
+        title: heroAuction.vehicle.title.replace(/\s+\d+\.\d+\s+Coupe$/i, ""),
+        specs: heroSpecLine(heroAuction.vehicle) || HERO_FALLBACK.specs,
+        bid: heroAuction.currentBid,
+        timeLeft: compactHoursLeft(heroAuction.endTime),
+      }
+    : HERO_FALLBACK;
 
   return (
     <Box sx={{ bgcolor: brand.canvas, pb: "18px" }}>
       {/* Hero section card */}
       <SectionCard>
         <SectionInner sx={{ py: { xs: 4, md: 7 } }}>
-          <Grid2 container spacing={{ xs: 4, md: 5 }} sx={{ alignItems: "center" }}>
-            <Grid2 size={{ xs: 12, md: 5 }}>
+          <Grid2 container spacing={{ xs: 4, md: 4 }} sx={{ alignItems: "center" }}>
+            <Grid2 size={{ xs: 12, md: 4 }}>
               <Typography
                 variant="h1"
                 component="h1"
-                sx={{ fontSize: { xs: "2.4rem", md: "3.4rem" }, mb: 2.5, lineHeight: 1.08 }}
+                sx={{ fontSize: { xs: "2.4rem", md: "2.65rem", lg: "3.2rem" }, mb: 2.5, lineHeight: 1.08 }}
               >
-                Explore quality{" "}
+                Built by{" "}
                 <Box component="span" sx={{ color: brand.primary }}>
-                  cars
-                </Box>{" "}
-                you can trust.
-              </Typography>
-              <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", mb: 4, maxWidth: 440 }}>
-                <Typography color="text.secondary" sx={{ fontSize: "1rem", lineHeight: 1.65, flex: 1 }}>
-                  A curated auctions platform for vintage &amp; collector cars — transparent bidding, documented histories, verified sellers.
-                </Typography>
-                <Box
-                  sx={{
-                    flexShrink: 0,
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    bgcolor: brand.primary,
-                    color: "#fff",
-                    display: { xs: "none", sm: "flex" },
-                    alignItems: "center",
-                    justifyContent: "center",
-                    mt: 0.25,
-                  }}
-                >
-                  <NorthEastRoundedIcon sx={{ fontSize: 18 }} />
+                  enthusiasts
                 </Box>
-              </Stack>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                {" For "}
+                <Box component="span" sx={{ color: brand.primary }}>
+                  enthusiasts
+                </Box>
+              </Typography>
+              <Typography color="text.secondary" sx={{ fontSize: "1rem", lineHeight: 1.65, mb: 4, maxWidth: 520 }}>
+                Discover, buy, and sell enthusiast vehicles, then connect with the cars, owners, and stories you love through our growing Carmunity.
+              </Typography>
+              <Stack spacing={1.25} sx={{ width: "100%", maxWidth: 360 }}>
                 <Button
                   component={Link}
                   href="/auctions"
                   variant="contained"
-                  color="secondary"
                   size="large"
                   endIcon={<ArrowForwardRoundedIcon />}
-                  sx={{ borderRadius: 999, bgcolor: brand.ink, color: "#fff", "&:hover": { bgcolor: "#000" } }}
+                  sx={{
+                    width: "100%",
+                    borderRadius: 999,
+                    bgcolor: brand.ink,
+                    color: "#fff",
+                    px: 2.5,
+                    py: 1.15,
+                    whiteSpace: "nowrap",
+                    boxShadow: "none",
+                    "&:hover": { bgcolor: "#000", boxShadow: "none" },
+                  }}
                 >
                   Browse auctions
+                </Button>
+                <Button
+                  component={Link}
+                  href="/carmunity"
+                  variant="outlined"
+                  size="large"
+                  endIcon={<ArrowForwardRoundedIcon />}
+                  sx={{
+                    width: "100%",
+                    borderRadius: 999,
+                    bgcolor: "transparent",
+                    color: brand.ink,
+                    border: `1.5px solid ${brand.ink}`,
+                    px: 2.5,
+                    py: 1.15,
+                    whiteSpace: "nowrap",
+                    boxShadow: "none",
+                    "&:hover": { bgcolor: brand.ink, color: "#fff", borderColor: brand.ink },
+                  }}
+                >
+                  Explore the Carmunity
                 </Button>
               </Stack>
             </Grid2>
 
-            <Grid2 size={{ xs: 12, md: 7 }}>
-              <Box sx={{ position: "relative", pr: { xs: 0, md: 2 }, pb: { xs: 0, md: 2 } }}>
+            <Grid2 size={{ xs: 12, md: 8 }}>
+              <Box
+                sx={{
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: { xs: "column", md: "row" },
+                  alignItems: "stretch",
+                  gap: 2,
+                }}
+              >
                 {/* Vertical social strip */}
                 <Stack
                   spacing={0}
                   sx={{
                     position: "absolute",
-                    left: { xs: 8, md: -8 },
-                    top: "50%",
+                    left: { xs: 8, md: -20 },
+                    top: { xs: "38%", md: "50%" },
                     transform: "translateY(-50%)",
                     zIndex: 2,
                     display: { xs: "none", sm: "flex" },
@@ -276,84 +530,127 @@ export function HomePageClient({
                 <Box
                   sx={{
                     position: "relative",
-                    height: { xs: 280, md: 420 },
-                    borderRadius: "8px",
+                    flex: 1,
+                    minWidth: 0,
+                    minHeight: { xs: 300, md: 440 },
+                    height: { xs: 300, md: "auto" },
+                    alignSelf: "stretch",
+                    borderRadius: "20px",
                     overflow: "hidden",
                     bgcolor: brand.soft,
+                    boxShadow: "0 18px 40px -22px rgba(0,0,0,0.45)",
                   }}
                 >
                   <Box
                     component="img"
-                    src="https://images.unsplash.com/photo-1750957823101-87ec89cf6862?w=1400&auto=format&fit=crop"
-                    alt="Featured classic car"
+                    src={hero.image}
+                    alt={hero.title}
                     sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      inset: 0,
+                      background:
+                        "linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.12) 58%, rgba(0,0,0,0.62) 100%)",
+                    }}
                   />
 
                   <Box
                     sx={{
                       position: "absolute",
-                      top: { xs: 14, md: 22 },
-                      right: { xs: 14, md: 22 },
-                      width: { xs: 72, md: 82 },
-                      height: { xs: 72, md: 82 },
-                      borderRadius: "50%",
-                      bgcolor: "rgba(255,255,255,0.96)",
-                      border: `3px solid ${brand.primary}`,
+                      inset: 0,
+                      zIndex: 1,
+                      p: { xs: 2.25, md: 3 },
                       display: "flex",
                       flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 12px 26px -14px rgba(0,0,0,0.45)",
+                      justifyContent: "space-between",
                     }}
                   >
-                    <Typography fontWeight={800} sx={{ fontSize: { xs: 15, md: 17 }, lineHeight: 1 }}>
-                      72h
-                    </Typography>
-                    <Typography sx={{ fontSize: 9, color: brand.muted, fontWeight: 700 }}>
-                      Time left
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Box
-                  sx={{
-                    position: { xs: "static", md: "absolute" },
-                    right: { md: -4 },
-                    bottom: { md: -4 },
-                    mt: { xs: 2, md: 0 },
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                    bgcolor: "#fff",
-                    borderRadius: "8px",
-                    p: 1.25,
-                    pr: 2.5,
-                    boxShadow: "0 18px 40px -20px rgba(0,0,0,0.4)",
-                    border: `1px solid ${brand.border}`,
-                    maxWidth: 320,
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=200&auto=format&fit=crop"
-                    alt="Classic car detail"
-                    sx={{ width: 56, height: 56, borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
-                  />
-                  <Box>
-                    <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.25 }}>
-                      <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: brand.primary }} />
-                      <Typography variant="caption" color="text.secondary">
-                        Featured · ending soon
-                      </Typography>
+                    <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
+                      <Box sx={{ minWidth: 0, pr: 1 }}>
+                        <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
+                          <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: brand.primary, flexShrink: 0 }} />
+                          <Typography
+                            sx={{
+                              color: "#fff",
+                              fontWeight: 700,
+                              fontSize: { xs: 11, md: 12 },
+                              letterSpacing: "0.14em",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Featured Auction
+                          </Typography>
+                        </Stack>
+                        <Typography
+                          sx={{
+                            color: "#fff",
+                            fontWeight: 800,
+                            fontSize: { xs: "1.35rem", md: "1.85rem" },
+                            lineHeight: 1.15,
+                            letterSpacing: "-0.03em",
+                          }}
+                        >
+                          {hero.title}
+                        </Typography>
+                        {hero.specs ? (
+                          <Typography sx={{ mt: 0.75, color: "rgba(255,255,255,0.92)", fontSize: { xs: 13, md: 14.5 }, fontWeight: 500 }}>
+                            {hero.specs}
+                          </Typography>
+                        ) : null}
+                      </Box>
+                      <TimeLeftBadge label={hero.timeLeft} />
                     </Stack>
-                    <Typography fontWeight={800} sx={{ letterSpacing: "-0.01em", fontSize: 14 }}>
-                      1963 Jaguar E-Type Series 1
-                    </Typography>
-                    <Typography fontWeight={800} sx={{ color: brand.primary }}>
-                      {formatPrice(155000)}
-                    </Typography>
+
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      sx={{ alignItems: "flex-end", justifyContent: "space-between" }}
+                    >
+                      <Box>
+                        <Typography sx={{ color: "rgba(255,255,255,0.82)", fontSize: 13, fontWeight: 500, mb: 0.35 }}>
+                          Current Bid
+                        </Typography>
+                        <Typography
+                          sx={{
+                            color: "#fff",
+                            fontWeight: 800,
+                            fontSize: { xs: "1.55rem", md: "1.85rem" },
+                            letterSpacing: "-0.03em",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {formatPrice(hero.bid)}
+                        </Typography>
+                      </Box>
+                      <Button
+                        component={Link}
+                        href={hero.href}
+                        endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 18 }} />}
+                        sx={{
+                          flexShrink: 0,
+                          borderRadius: 999,
+                          color: "#fff",
+                          border: "1px solid rgba(255,255,255,0.92)",
+                          px: { xs: 2, md: 2.5 },
+                          py: 0.9,
+                          textTransform: "none",
+                          fontWeight: 600,
+                          fontSize: { xs: 13, md: 14 },
+                          bgcolor: "transparent",
+                          "&:hover": {
+                            bgcolor: "rgba(255,255,255,0.12)",
+                            borderColor: "#fff",
+                          },
+                        }}
+                      >
+                        View Auction
+                      </Button>
+                    </Stack>
                   </Box>
                 </Box>
+                <HeroCommunityCard posts={communityHighlights} />
               </Box>
             </Grid2>
           </Grid2>
@@ -365,9 +662,21 @@ export function HomePageClient({
         <SectionInner sx={{ py: { xs: 3, md: 4 } }}>
           <Grid2 container spacing={0}>
             {[
-              { icon: <VerifiedRoundedIcon />, title: "Documented histories", desc: "Matching numbers, build sheets, provenance." },
-              { icon: <GavelRoundedIcon />, title: "Transparent bidding", desc: "Live bids, no hidden reserves." },
-              { icon: <LocalShippingOutlinedIcon />, title: "Enclosed transport", desc: "White-glove classic car delivery." },
+              {
+                icon: <GppGoodOutlinedIcon />,
+                title: "Built for Enthusiasts",
+                desc: "A better, verified way to buy and sell great cars courtesy of KeySavvy transactions",
+              },
+              {
+                icon: <GavelRoundedIcon />,
+                title: "Better Auctions",
+                desc: "Detailed listings, straightforward bidding, and cars worth getting excited about.",
+              },
+              {
+                icon: <Diversity3OutlinedIcon />,
+                title: "More Than Auctions",
+                desc: "Follow cars, share your garage, and connect with fellow enthusiasts.",
+              },
             ].map((v, i) => (
               <Grid2
                 key={v.title}
@@ -381,7 +690,9 @@ export function HomePageClient({
                 <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
                   <Box sx={{ color: brand.primary, display: "flex" }}>{v.icon}</Box>
                   <Box>
-                    <Typography fontWeight={700}>{v.title}</Typography>
+                    <Typography fontWeight={700} sx={{ color: brand.primary }}>
+                      {v.title}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {v.desc}
                     </Typography>
@@ -396,225 +707,143 @@ export function HomePageClient({
       {/* Latest Auctions */}
       <SectionCard>
         <SectionInner>
-          <SectionHeader eyebrow="Live now" title="Latest auctions" href="/auctions" />
-          <Grid2 container spacing={3}>
-            {latest.map((auction) => (
-              <Grid2 key={auction.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-                <AuctionCard auction={auction} />
-              </Grid2>
-            ))}
-          </Grid2>
-        </SectionInner>
-      </SectionCard>
-
-      {/* Category banners */}
-      <SectionCard>
-        <SectionInner>
-          <Typography
-            variant="h4"
-            sx={{ fontSize: { xs: "1.6rem", md: "2rem" }, mb: 4, textAlign: { xs: "left", md: "center" } }}
+          <Stack
+            direction="row"
+            sx={{ justifyContent: "space-between", alignItems: "flex-end", mb: { xs: 3, md: 4 }, gap: 2 }}
           >
-            Experience the{" "}
-            <Box component="span" sx={{ color: brand.primary }}>
-              future
-            </Box>{" "}
-            of performance
-          </Typography>
-          <Grid2 container spacing={3}>
-            {[
-              {
-                title: "American muscle",
-                sub: "Big-block legends",
-                href: "/auctions?make=Chevrolet",
-                image: "https://images.unsplash.com/photo-1584345274849-e9596d6ea12d?w=1000&auto=format&fit=crop",
-              },
-              {
-                title: "European classics",
-                sub: "Timeless grand tourers",
-                href: "/auctions?make=Jaguar",
-                image: "https://images.unsplash.com/photo-1655207297101-74aadf311205?w=1000&auto=format&fit=crop",
-              },
-            ].map((banner) => (
-              <Grid2 key={banner.title} size={{ xs: 12, md: 6 }}>
-                <Box
-                  component={Link}
-                  href={banner.href}
-                  sx={{
-                    position: "relative",
-                    display: "block",
-                    height: { xs: 220, md: 280 },
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    backgroundImage: `url(${banner.image})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    transition: "transform 0.4s ease",
-                    "&:hover": { transform: "scale(1.01)" },
-                    "&::before": {
-                      content: '""',
-                      position: "absolute",
-                      inset: 0,
-                      background: "linear-gradient(90deg, rgba(10,10,10,0.72) 0%, rgba(10,10,10,0.15) 75%)",
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      position: "relative",
-                      zIndex: 1,
-                      p: { xs: 3, md: 4 },
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    <Typography sx={{ color: "rgba(255,255,255,0.8)", fontWeight: 600, mb: 0.5 }}>
-                      {banner.sub}
-                    </Typography>
-                    <Typography variant="h5" sx={{ color: "#fff", fontWeight: 800, mb: 2 }}>
-                      {banner.title}
-                    </Typography>
-                    <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", color: "#fff" }}>
-                      <Typography sx={{ fontWeight: 700 }}>Explore</Typography>
-                      <NorthEastRoundedIcon sx={{ fontSize: 18 }} />
-                    </Stack>
-                  </Box>
-                </Box>
-              </Grid2>
-            ))}
-          </Grid2>
+            <Box>
+              <Typography
+                sx={{
+                  color: brand.primary,
+                  fontWeight: 700,
+                  fontSize: 12.5,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  mb: 1,
+                }}
+              >
+                Live now
+              </Typography>
+              <Typography variant="h4" sx={{ fontSize: { xs: "1.6rem", md: "2rem" } }}>
+                Latest auctions
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexShrink: 0 }}>
+              <Button
+                component={Link}
+                href="/auctions"
+                endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 18 }} />}
+                sx={{ color: brand.ink, "&:hover": { color: brand.primary, bgcolor: "transparent" } }}
+              >
+                View all
+              </Button>
+              <IconButton
+                aria-label="Previous auctions"
+                onClick={() => setLatestPage((page) => Math.max(0, page - 1))}
+                disabled={!canPrevLatest}
+                sx={{
+                  width: 36,
+                  height: 36,
+                  border: `1px solid ${brand.border}`,
+                  bgcolor: "#fff",
+                  "&.Mui-disabled": { opacity: 0.35 },
+                }}
+              >
+                <ChevronLeftRoundedIcon />
+              </IconButton>
+              <IconButton
+                aria-label="Show 4 more auctions"
+                onClick={() => setLatestPage((page) => page + 1)}
+                disabled={!canNextLatest}
+                sx={{
+                  width: 36,
+                  height: 36,
+                  border: `1px solid ${brand.border}`,
+                  bgcolor: "#fff",
+                  "&.Mui-disabled": { opacity: 0.35 },
+                }}
+              >
+                <ChevronRightRoundedIcon />
+              </IconButton>
+            </Stack>
+          </Stack>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
+            sx={{ mb: 3, alignItems: { sm: "center" } }}
+          >
+            <TextField
+              value={auctionQuery}
+              onChange={(event) => {
+                setAuctionQuery(event.target.value);
+                setLatestPage(0);
+              }}
+              placeholder="Search auctions"
+              size="small"
+              fullWidth
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchRoundedIcon sx={{ fontSize: 18, color: brand.muted }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                maxWidth: { sm: 360 },
+                "& .MuiOutlinedInput-root": { borderRadius: 999, bgcolor: "#fff" },
+              }}
+            />
+            <TextField
+              select
+              size="small"
+              value={auctionSort}
+              onChange={(event) => {
+                setAuctionSort(event.target.value as AuctionSortField);
+                setLatestPage(0);
+              }}
+              sx={{
+                minWidth: 180,
+                "& .MuiOutlinedInput-root": { borderRadius: 999, bgcolor: "#fff" },
+              }}
+            >
+              <MenuItem value="ending-soon">Ending soon</MenuItem>
+              <MenuItem value="newest">Newest</MenuItem>
+              <MenuItem value="highest-bid">Highest bid</MenuItem>
+              <MenuItem value="lowest-price">Lowest price</MenuItem>
+            </TextField>
+          </Stack>
+          <AuctionGrid auctions={latestVisible} />
         </SectionInner>
       </SectionCard>
 
       {/* Ending soon */}
       <SectionCard>
         <SectionInner>
-          <SectionHeader eyebrow="Closing today" title="Ending soon" href="/auctions?status=ending-soon" />
-          <Grid2 container spacing={3}>
-            <Grid2 size={{ xs: 12, md: 5 }}>
-              <Stack spacing={2}>
-                {brandLeft.map((b) => (
-                  <Box
-                    key={b.name}
-                    component={Link}
-                    href={`/auctions?make=${encodeURIComponent(b.name)}`}
-                    sx={{
-                      position: "relative",
-                      height: 168,
-                      borderRadius: "8px",
-                      overflow: "hidden",
-                      display: "block",
-                      backgroundImage: `url(${b.imageUrl})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      "&::before": {
-                        content: '""',
-                        position: "absolute",
-                        inset: 0,
-                        background: "linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.72))",
-                      },
-                    }}
-                  >
-                    <Box sx={{ position: "relative", zIndex: 1, p: 2.5, height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-                      <Typography variant="h6" sx={{ color: "#fff", fontWeight: 800 }}>
-                        {b.name}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.82)" }}>
-                        {b.count} vehicles available
-                      </Typography>
-                    </Box>
-                  </Box>
-                ))}
-              </Stack>
-            </Grid2>
-            <Grid2 size={{ xs: 12, md: 7 }}>
-              <Stack spacing={1.5}>
-                {sideListings.map((auction) => (
-                  <CompactListing key={auction.id} auction={auction} />
-                ))}
-              </Stack>
-            </Grid2>
-          </Grid2>
+          <SectionHeader eyebrow="Ending soon" title="Ending soon" href="/auctions?status=ending-soon" cta="View all auctions" />
+          <AuctionGrid auctions={endingSoonList} />
         </SectionInner>
       </SectionCard>
 
-      {/* Brands */}
+      {/* Upcoming auctions */}
       <SectionCard>
         <SectionInner>
-          <SectionHeader eyebrow="Browse" title="Shop by brand" href="/marketplace/brands" cta="All brands" />
-          <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: "wrap" }}>
-            {brands.map((b) => (
-              <Stack
-                key={b.name}
-                direction="row"
-                spacing={1.25}
-                component={Link}
-                href={`/auctions?make=${encodeURIComponent(b.name)}`}
-                sx={{
-                  alignItems: "center",
-                  px: 2,
-                  py: 1.25,
-                  borderRadius: 999,
-                  border: `1px solid ${brand.border}`,
-                  transition: "0.2s",
-                  "&:hover": { borderColor: brand.ink, bgcolor: brand.softer },
-                }}
-              >
-                <Box component="img" src={b.imageUrl} alt={b.name} sx={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
-                <Typography variant="body2" fontWeight={700}>
-                  {b.name}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
+          <SectionHeader eyebrow="Coming up" title="Upcoming auctions" href="/auctions?status=upcoming" cta="View all" />
+          <AuctionGrid auctions={upcomingList} columns={3} />
         </SectionInner>
       </SectionCard>
 
-      {/* Community */}
+      {/* Carmunity feed */}
       <SectionCard>
         <SectionInner>
-          <SectionHeader eyebrow="From the community" title="Latest stories" href="/community" cta="Visit community" />
-          <Grid2 container spacing={3}>
-            {communityHighlights.slice(0, 3).map((post) => (
-              <Grid2 key={post.id} size={{ xs: 12, md: 4 }}>
-                <Box
-                  component={Link}
-                  href="/community"
-                  sx={{
-                    display: "block",
-                    bgcolor: brand.softer,
-                    borderRadius: "8px",
-                    border: `1px solid ${brand.border}`,
-                    overflow: "hidden",
-                    height: "100%",
-                    transition: "border-color 0.2s, box-shadow 0.2s",
-                    "&:hover": { borderColor: "rgba(20,20,20,0.18)", boxShadow: "0 12px 30px -16px rgba(20,20,20,0.28)" },
-                  }}
-                >
-                  <Box sx={{ height: 180, bgcolor: brand.soft }}>
-                    {post.images[0] && (
-                      <Box
-                        component="img"
-                        src={post.images[0].url}
-                        alt={post.images[0].alt}
-                        sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                    )}
-                  </Box>
-                  <Box sx={{ p: 2.5 }}>
-                    <Typography fontWeight={700} sx={{ mb: 1, lineHeight: 1.4, letterSpacing: "-0.01em" }}>
-                      {(post.caption ?? "Community update").slice(0, 72)}
-                      {(post.caption?.length ?? 0) > 72 ? "…" : ""}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      By {post.author.displayName}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid2>
-            ))}
-          </Grid2>
+          <HomeCarmunityFeed posts={carmunityPosts} />
+        </SectionInner>
+      </SectionCard>
+
+      {/* FAQ */}
+      <SectionCard>
+        <SectionInner>
+          <SectionHeader eyebrow="Support" title="Frequently asked questions" href="/faq" cta="View all FAQs" />
+          <FaqAccordion />
         </SectionInner>
       </SectionCard>
 
@@ -634,10 +863,7 @@ export function HomePageClient({
               <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 380 }}>
                 Our team is here to help you through your first auction or your fiftieth. Drop us a note and we&apos;ll get back within a day.
               </Typography>
-              <Stack spacing={1.5}>
-                <Typography fontWeight={600}>hello@carasta.com</Typography>
-                <Typography fontWeight={600}>+1 (800) 555-0199</Typography>
-              </Stack>
+              <Typography fontWeight={600}>Info@carasta.com</Typography>
             </Grid2>
             <Grid2 size={{ xs: 12, md: 7 }}>
               <Box
@@ -696,42 +922,6 @@ export function HomePageClient({
               </Box>
             </Grid2>
           </Grid2>
-        </SectionInner>
-      </SectionCard>
-
-      {/* Sell CTA */}
-      <SectionCard dark>
-        <SectionInner>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={3}
-            sx={{ alignItems: { md: "center" }, justifyContent: "space-between" }}
-          >
-            <Box>
-              <Typography variant="h4" sx={{ color: "#fff", mb: 1 }}>
-                Have a classic to sell?
-              </Typography>
-              <Typography sx={{ color: "rgba(255,255,255,0.7)", maxWidth: 480 }}>
-                Reach thousands of serious collectors. List in minutes, sell with confidence.
-              </Typography>
-            </Box>
-            <Button
-              component={Link}
-              href="/list/new"
-              variant="contained"
-              color="secondary"
-              size="large"
-              endIcon={<ArrowForwardRoundedIcon />}
-              sx={{
-                flexShrink: 0,
-                borderRadius: 999,
-                bgcolor: brand.primary,
-                "&:hover": { bgcolor: brand.primaryDark },
-              }}
-            >
-              Start selling
-            </Button>
-          </Stack>
         </SectionInner>
       </SectionCard>
     </Box>

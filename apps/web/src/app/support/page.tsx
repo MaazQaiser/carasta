@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { MessageSquare, HelpCircle, Mail, Phone, Send, CheckCircle2 } from "lucide-react";
+import { MessageSquare, HelpCircle, Mail, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -21,14 +21,13 @@ export default function SupportPage() {
     <div className="mx-auto max-w-screen-xl px-4 lg:px-6 py-12">
       <div className="text-center mb-12 max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Support Center</h1>
-        <p className="text-muted-foreground">We&apos;re here to help. Reach us via chat, email, or phone.</p>
+        <p className="text-muted-foreground">We&apos;re here to help. Reach us via chat or email.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         {[
           { icon: MessageSquare, title: "Live Chat", body: "Chat with our team in real time during business hours (Mon–Fri, 9am–6pm ET).", cta: "Start Chat", href: "#" },
           { icon: Mail, title: "Email Support", body: "Send a message and we'll respond within one business day.", cta: "Email Us", href: "mailto:hello@carasta.com" },
-          { icon: Phone, title: "Phone", body: "Speak directly with our buyer or seller specialists.", cta: "+1 (800) 555-0199", href: "tel:18005550199" },
         ].map(({ icon: Icon, title, body, cta, href }) => (
           <div key={title} className="rounded-2xl border bg-card p-6 text-center flex flex-col items-center">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
