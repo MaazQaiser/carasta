@@ -6,7 +6,6 @@ import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
 import Grid2 from "@mui/material/Grid2";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -21,19 +20,14 @@ import XIcon from "@mui/icons-material/X";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
-import type { Auction, AuctionSortField, Post, Vehicle } from "@carasta/types";
+import type { Auction, Post, Vehicle } from "@carasta/types";
 import { AuctionCard } from "@/components/auction/AuctionCard";
 import { HomeCarmunityFeed } from "@/components/community/HomeCarmunityFeed";
 import { FaqAccordion } from "@/components/faq/FaqAccordion";
 import { formatPrice, formatRelativeTime, truncate } from "@/lib/utils";
 import { brand } from "@/theme/carastaTheme";
-import { mergePublishedAuctions, sortAuctions } from "@/lib/marketplace-listings";
+import { mergePublishedAuctions } from "@/lib/marketplace-listings";
 import { pickHomepageUpcoming } from "@/lib/homepage-upcoming";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import MenuItem from "@mui/material/MenuItem";
-import InputAdornment from "@mui/material/InputAdornment";
 
 const HERO_FALLBACK = {
   href: "/auctions",
@@ -353,9 +347,6 @@ export function HomePageClient({
   const [featured, setFeatured] = useState(featuredAuctions);
   const [soon, setSoon] = useState(endingSoon);
   const [upcoming, setUpcoming] = useState(upcomingAuctions);
-  const [latestPage, setLatestPage] = useState(0);
-  const [auctionQuery, setAuctionQuery] = useState("");
-  const [auctionSort, setAuctionSort] = useState<AuctionSortField>("ending-soon");
 
   useEffect(() => {
     setFeatured(mergePublishedAuctions(featuredAuctions, { sort: "newest" }));
@@ -370,31 +361,6 @@ export function HomePageClient({
 
   const endingSoonList = soon.slice(0, 4);
   const upcomingList = upcoming.slice(0, 3);
-  const latestPool = (() => {
-    const first = endingSoonList;
-    const seen = new Set(first.map((auction) => auction.id));
-    const upcomingFill = upcomingAuctions.filter((auction) => !seen.has(auction.id)).slice(0, 4);
-    upcomingFill.forEach((auction) => seen.add(auction.id));
-    const liveFill = featured.filter((auction) => !seen.has(auction.id)).slice(0, Math.max(0, 4 - upcomingFill.length));
-    return [...first, ...upcomingFill, ...liveFill];
-  })();
-  const queriedLatest = latestPool.filter((auction) => {
-    const q = auctionQuery.trim().toLowerCase();
-    if (!q) return true;
-    const { vehicle } = auction;
-    return [vehicle.title, vehicle.spec.make, vehicle.spec.model, String(vehicle.spec.year)]
-      .join(" ")
-      .toLowerCase()
-      .includes(q);
-  });
-  const sortedLatest = sortAuctions(queriedLatest, auctionSort);
-  const LATEST_PAGE_SIZE = 4;
-  const latestVisible = sortedLatest.slice(
-    latestPage * LATEST_PAGE_SIZE,
-    latestPage * LATEST_PAGE_SIZE + LATEST_PAGE_SIZE
-  );
-  const canPrevLatest = latestPage > 0;
-  const canNextLatest = (latestPage + 1) * LATEST_PAGE_SIZE < sortedLatest.length;
   const heroAuction =
     featured.find((auction) => auction.vehicle.id === "v-002") ??
     featured.find((auction) => /jaguar/i.test(auction.vehicle.title)) ??
@@ -704,118 +670,6 @@ export function HomePageClient({
         </SectionInner>
       </SectionCard>
 
-      {/* Latest Auctions */}
-      <SectionCard>
-        <SectionInner>
-          <Stack
-            direction="row"
-            sx={{ justifyContent: "space-between", alignItems: "flex-end", mb: { xs: 3, md: 4 }, gap: 2 }}
-          >
-            <Box>
-              <Typography
-                sx={{
-                  color: brand.primary,
-                  fontWeight: 700,
-                  fontSize: 12.5,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  mb: 1,
-                }}
-              >
-                Live now
-              </Typography>
-              <Typography variant="h4" sx={{ fontSize: { xs: "1.6rem", md: "2rem" } }}>
-                Latest auctions
-              </Typography>
-            </Box>
-            <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexShrink: 0 }}>
-              <Button
-                component={Link}
-                href="/auctions"
-                endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 18 }} />}
-                sx={{ color: brand.ink, "&:hover": { color: brand.primary, bgcolor: "transparent" } }}
-              >
-                View all
-              </Button>
-              <IconButton
-                aria-label="Previous auctions"
-                onClick={() => setLatestPage((page) => Math.max(0, page - 1))}
-                disabled={!canPrevLatest}
-                sx={{
-                  width: 36,
-                  height: 36,
-                  border: `1px solid ${brand.border}`,
-                  bgcolor: "#fff",
-                  "&.Mui-disabled": { opacity: 0.35 },
-                }}
-              >
-                <ChevronLeftRoundedIcon />
-              </IconButton>
-              <IconButton
-                aria-label="Show 4 more auctions"
-                onClick={() => setLatestPage((page) => page + 1)}
-                disabled={!canNextLatest}
-                sx={{
-                  width: 36,
-                  height: 36,
-                  border: `1px solid ${brand.border}`,
-                  bgcolor: "#fff",
-                  "&.Mui-disabled": { opacity: 0.35 },
-                }}
-              >
-                <ChevronRightRoundedIcon />
-              </IconButton>
-            </Stack>
-          </Stack>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1.5}
-            sx={{ mb: 3, alignItems: { sm: "center" } }}
-          >
-            <TextField
-              value={auctionQuery}
-              onChange={(event) => {
-                setAuctionQuery(event.target.value);
-                setLatestPage(0);
-              }}
-              placeholder="Search auctions"
-              size="small"
-              fullWidth
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchRoundedIcon sx={{ fontSize: 18, color: brand.muted }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                maxWidth: { sm: 360 },
-                "& .MuiOutlinedInput-root": { borderRadius: 999, bgcolor: "#fff" },
-              }}
-            />
-            <TextField
-              select
-              size="small"
-              value={auctionSort}
-              onChange={(event) => {
-                setAuctionSort(event.target.value as AuctionSortField);
-                setLatestPage(0);
-              }}
-              sx={{
-                minWidth: 180,
-                "& .MuiOutlinedInput-root": { borderRadius: 999, bgcolor: "#fff" },
-              }}
-            >
-              <MenuItem value="ending-soon">Ending soon</MenuItem>
-              <MenuItem value="newest">Newest</MenuItem>
-              <MenuItem value="highest-bid">Highest bid</MenuItem>
-              <MenuItem value="lowest-price">Lowest price</MenuItem>
-            </TextField>
-          </Stack>
-          <AuctionGrid auctions={latestVisible} />
-        </SectionInner>
-      </SectionCard>
-
       {/* Ending soon */}
       <SectionCard>
         <SectionInner>
@@ -824,10 +678,10 @@ export function HomePageClient({
         </SectionInner>
       </SectionCard>
 
-      {/* Upcoming auctions */}
+      {/* Coming soon */}
       <SectionCard>
         <SectionInner>
-          <SectionHeader eyebrow="Coming up" title="Upcoming auctions" href="/auctions?status=upcoming" cta="View all" />
+          <SectionHeader eyebrow="Coming soon" title="Coming soon" href="/auctions?status=upcoming" cta="View all" />
           <AuctionGrid auctions={upcomingList} columns={3} />
         </SectionInner>
       </SectionCard>
