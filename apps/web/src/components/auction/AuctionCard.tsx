@@ -3,20 +3,23 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Card from "@mui/material/Card";
-import CardActionArea from "@mui/material/CardActionArea";
-import CardContent from "@mui/material/CardContent";
-import CardMedia from "@mui/material/CardMedia";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import Chip from "@mui/material/Chip";
-import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
+import IconButton from "@mui/material/IconButton";
+import Chip from "@mui/material/Chip";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import StarOutlineRoundedIcon from "@mui/icons-material/StarOutlineRounded";
+import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
+import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
+import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import IosShareOutlinedIcon from "@mui/icons-material/IosShareOutlined";
 import type { Auction, MarketplaceListingType, MarketplaceSaleType } from "@carasta/types";
 import { formatPrice, formatMileage, formatTimeRemaining } from "@/lib/utils";
-import { formatAuctionCountdown, ReserveMeterGauge } from "@/components/mobile-buyer/AuctionStatusCard";
 import { useWatchlist } from "@/lib/context/watchlist-context";
 import { brand } from "@/theme/carastaTheme";
 
@@ -34,72 +37,70 @@ const SALE_TYPE_LABELS: Record<MarketplaceSaleType, string> = {
   "make-offer": "Make Offer",
 };
 
-const chipSx = {
-  height: 22,
-  fontSize: 10,
-  fontWeight: 600,
-  borderColor: brand.border,
-  color: brand.inkSoft,
-  bgcolor: "#fff",
-  "& .MuiChip-label": { px: 0.85 },
-} as const;
-
 interface AuctionCardProps {
   auction: Auction;
   view?: "grid" | "list";
+  /** Show seller Edit / Share actions at the bottom of the card. */
+  showOwnerActions?: boolean;
 }
 
-function capitalize(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function transmissionLabel(value: string) {
-  if (value === "manual") return "Manual";
-  if (value === "automatic") return "Automatic";
-  if (value === "semi-automatic") return "Semi-Auto";
-  return capitalize(value);
+function transmissionLabel(v: string) {
+  if (v === "manual") return "Manual";
+  if (v === "automatic") return "Automatic";
+  if (v === "semi-automatic") return "Semi-Auto";
+  return capitalize(v);
 }
 
 function reserveProgress(auction: Auction): number {
   if (auction.reserveMet) return 1;
   const reserve = auction.reservePrice ?? auction.vehicle.reservePrice;
-  if (!reserve || reserve <= 0) return 0.2;
-  return Math.max(0.08, Math.min(0.97, auction.currentBid / reserve));
+  if (!reserve || reserve <= 0) return 0.18;
+  return Math.max(0.06, Math.min(0.97, auction.currentBid / reserve));
 }
 
-function MarketplaceBadges({ auction }: { auction: Auction }) {
-  const { vehicle } = auction;
-  const listingLabel = vehicle.listingType ? LISTING_TYPE_LABELS[vehicle.listingType] : undefined;
-  const saleLabel = vehicle.saleType
-    ? SALE_TYPE_LABELS[vehicle.saleType]
-    : auction.reservePrice
-      ? SALE_TYPE_LABELS["reserve-auction"]
-      : undefined;
-
+/** Gradient bar matching the image's red → orange → yellow → green reserve meter. */
+function ReserveBar({ progress }: { progress: number }) {
+  const pct = Math.round(Math.min(1, Math.max(0, progress)) * 100);
   return (
-    <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" sx={{ mt: 1, rowGap: 0.5 }}>
-      <Chip size="small" variant="outlined" label={capitalize(vehicle.condition)} sx={chipSx} />
-      {listingLabel ? <Chip size="small" variant="outlined" label={listingLabel} sx={chipSx} /> : null}
-      {saleLabel ? <Chip size="small" variant="outlined" label={saleLabel} sx={chipSx} /> : null}
-      {vehicle.vinVerified ? <Chip size="small" variant="outlined" label="VIN Verified" sx={chipSx} /> : null}
-      {vehicle.documentsAvailable ? (
-        <Chip size="small" variant="outlined" label="Documents Available" sx={chipSx} />
-      ) : null}
-      {vehicle.carastaVerified ? (
-        <Chip
-          size="small"
-          label="Carasta Verified"
-          sx={{ ...chipSx, bgcolor: brand.ink, color: "#fff", borderColor: brand.ink }}
+    <Box sx={{ px: 2, pb: 1.75 }}>
+      <Typography
+        sx={{ fontSize: 10, fontWeight: 600, color: brand.muted, mb: 0.6, letterSpacing: "0.02em" }}
+      >
+        Reserve estimate
+      </Typography>
+      <Box sx={{ position: "relative", height: 6, borderRadius: 99, overflow: "hidden", bgcolor: "#F0F0F0" }}>
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to right, #e53935 0%, #fb8c00 30%, #fdd835 60%, #43a047 100%)",
+          }}
         />
-      ) : null}
-    </Stack>
+        {/* White mask from right to hide unfilled portion */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: `${100 - pct}%`,
+            bgcolor: "#F0F0F0",
+          }}
+        />
+      </Box>
+    </Box>
   );
 }
 
-function TimeLeftBadge({ endTime, upcoming }: { endTime: string; upcoming?: boolean }) {
+/** Countdown pill overlaid on the image. */
+function CountdownBadge({ endTime, upcoming }: { endTime: string; upcoming?: boolean }) {
   const [, setTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 30000);
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
     return () => clearInterval(id);
   }, []);
   const { label, urgent } = formatTimeRemaining(endTime);
@@ -108,168 +109,346 @@ function TimeLeftBadge({ endTime, upcoming }: { endTime: string; upcoming?: bool
   return (
     <Stack
       direction="row"
-      spacing={0.75}
+      spacing={0.65}
       sx={{
         alignItems: "center",
-        bgcolor: "rgba(15,15,15,0.82)",
+        bgcolor: "rgba(12,12,12,0.84)",
+        backdropFilter: "blur(4px)",
         color: "#fff",
-        px: 1.15,
-        py: 0.45,
-        borderRadius: 999,
+        px: 1.1,
+        py: 0.5,
+        borderRadius: 99,
       }}
     >
-      <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: urgent && !upcoming ? brand.primary : brand.primary, flexShrink: 0 }} />
-      <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.01em", fontVariantNumeric: "tabular-nums" }}>
+      <Box
+        sx={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          bgcolor: urgent && !upcoming ? "#f87171" : "#4ade80",
+          flexShrink: 0,
+        }}
+      />
+      <Typography
+        sx={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.01em",
+          fontVariantNumeric: "tabular-nums",
+          lineHeight: 1,
+        }}
+      >
         {text}
       </Typography>
     </Stack>
   );
 }
 
-function AuctionAppBidBar({ auction, href }: { auction: Auction; href: string }) {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 30000);
-    return () => clearInterval(id);
-  }, []);
+/** Badge chips row matching the image style — small outlined pills with leading icons. */
+function BadgePills({ auction }: { auction: Auction }) {
+  const { vehicle } = auction;
+  const conditionLabel = vehicle.condition ? capitalize(vehicle.condition) : null;
+  const listingLabel = vehicle.listingType ? LISTING_TYPE_LABELS[vehicle.listingType] : null;
+  const saleLabel = vehicle.saleType
+    ? SALE_TYPE_LABELS[vehicle.saleType]
+    : auction.reservePrice
+      ? SALE_TYPE_LABELS["reserve-auction"]
+      : null;
 
-  const isUpcoming = auction.status === "upcoming";
-  const isBuyNow = auction.vehicle.saleType === "buy-it-now";
-  const cta = isUpcoming ? "View" : isBuyNow ? "Buy Now" : "Bid Now";
-  const countdown = formatAuctionCountdown(isUpcoming ? auction.startTime : auction.endTime);
-  const progress = reserveProgress(auction);
-  const showReserve = Boolean(auction.reservePrice || auction.vehicle.reservePrice);
+  const pillSx = {
+    height: 24,
+    fontSize: 10.5,
+    fontWeight: 600,
+    borderColor: brand.border,
+    color: brand.inkSoft,
+    bgcolor: "#fff",
+    borderRadius: "6px",
+    "& .MuiChip-label": { px: 0.85 },
+    "& .MuiChip-icon": { fontSize: 12, color: brand.muted, ml: "5px", mr: "-2px" },
+  } as const;
 
   return (
-    <Box
-      sx={{
-        bgcolor: "#1b1464",
-        px: 1.25,
-        py: 1.1,
-        display: "flex",
-        alignItems: "center",
-        gap: 1,
-      }}
-    >
-      <Box sx={{ minWidth: 0, flexShrink: 0 }}>
-        <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: 13, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
-          {formatPrice(auction.currentBid)}
-        </Typography>
-        <Stack direction="row" spacing={0.4} sx={{ alignItems: "center", mt: 0.4, color: "rgba(255,255,255,0.92)" }}>
-          <AccessTimeRoundedIcon sx={{ fontSize: 12 }} />
-          <Typography sx={{ fontSize: 10, fontWeight: 600, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-            {isUpcoming ? `in ${countdown}` : countdown}
-          </Typography>
-        </Stack>
-      </Box>
-      <Box
-        component={Link}
-        href={href}
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          height: 36,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          bgcolor: "#fff",
-          color: "#1b1464",
-          borderRadius: "8px",
-          fontWeight: 800,
-          fontSize: 12,
-          letterSpacing: "-0.01em",
-          "&:hover": { bgcolor: "#f4f4f4" },
-        }}
-      >
-        {cta}
-      </Box>
-      {showReserve ? (
-        <Box
-          component={Link}
-          href={href}
-          aria-label="Reserve meter"
-          sx={{
-            width: 36,
-            height: 36,
-            flexShrink: 0,
-            bgcolor: "#fff",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            "&:hover": { bgcolor: "#f4f4f4" },
-          }}
-        >
-          <ReserveMeterGauge progress={progress} size={32} />
-        </Box>
+    <Stack direction="row" useFlexGap flexWrap="wrap" sx={{ gap: 0.6, mt: 1.25 }}>
+      {conditionLabel ? (
+        <Chip
+          size="small"
+          variant="outlined"
+          icon={<StarOutlineRoundedIcon />}
+          label={conditionLabel}
+          sx={pillSx}
+        />
       ) : null}
-    </Box>
+      {listingLabel ? (
+        <Chip
+          size="small"
+          variant="outlined"
+          icon={<BuildOutlinedIcon />}
+          label={listingLabel}
+          sx={pillSx}
+        />
+      ) : null}
+      {saleLabel ? (
+        <Chip
+          size="small"
+          variant="outlined"
+          icon={<MonetizationOnOutlinedIcon />}
+          label={saleLabel}
+          sx={pillSx}
+        />
+      ) : null}
+      {vehicle.vinVerified ? (
+        <Chip
+          size="small"
+          variant="outlined"
+          icon={<VerifiedUserOutlinedIcon />}
+          label="VIN Verified"
+          sx={pillSx}
+        />
+      ) : null}
+      {vehicle.carastaVerified ? (
+        <Chip
+          size="small"
+          label="Carasta Verified"
+          sx={{ ...pillSx, bgcolor: brand.ink, color: "#fff", borderColor: brand.ink }}
+        />
+      ) : null}
+    </Stack>
   );
 }
 
-export function AuctionCard({ auction, view = "grid" }: AuctionCardProps) {
+/** Price + Bid Now / Buy Now CTA row. */
+function BidRow({ auction, href }: { auction: Auction; href: string }) {
+  const isUpcoming = auction.status === "upcoming";
+  const isBuyNow = auction.vehicle.saleType === "buy-it-now";
+  const bidLabel = isUpcoming ? "Starting bid" : "Current bid";
+
+  return (
+    <Stack
+      direction="row"
+      sx={{
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 1.5,
+        px: 2,
+        pt: 1.5,
+        pb: 1.25,
+        borderTop: `1px solid ${brand.border}`,
+      }}
+    >
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          sx={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: brand.muted,
+            lineHeight: 1,
+          }}
+        >
+          {bidLabel}
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: 22,
+            fontWeight: 800,
+            letterSpacing: "-0.03em",
+            lineHeight: 1.15,
+            color: brand.ink,
+            mt: 0.3,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {formatPrice(auction.currentBid)}
+        </Typography>
+      </Box>
+
+      {isUpcoming ? (
+        /* Upcoming auction → icon-only arrow circle */
+        <Box
+          component={Link}
+          href={href}
+          aria-label="View auction"
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 40,
+            height: 40,
+            flexShrink: 0,
+            bgcolor: brand.ink,
+            color: "#fff",
+            borderRadius: "50%",
+            transition: "background 0.15s, transform 0.15s",
+            "&:hover": { bgcolor: "#2a2a2a", transform: "scale(1.06)" },
+          }}
+        >
+          <ArrowForwardRoundedIcon sx={{ fontSize: 20 }} />
+        </Box>
+      ) : (
+        /* Live / completed → Bid Now / Buy Now pill button */
+        <Box
+          component={Link}
+          href={href}
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.6,
+            bgcolor: brand.ink,
+            color: "#fff",
+            px: 2,
+            py: 1.1,
+            borderRadius: "10px",
+            fontWeight: 700,
+            fontSize: 13,
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            transition: "background 0.15s",
+            "&:hover": { bgcolor: "#2a2a2a" },
+          }}
+        >
+          <GavelRoundedIcon sx={{ fontSize: 15 }} />
+          {isBuyNow ? "Buy Now" : "Bid Now"}
+        </Box>
+      )}
+    </Stack>
+  );
+}
+
+export function AuctionCard({ auction, view = "grid", showOwnerActions = false }: AuctionCardProps) {
   const { isWatched, toggle } = useWatchlist();
   const watched = isWatched(auction.vehicle.id);
   const primaryImage = auction.vehicle.images[0];
   const isUpcoming = auction.status === "upcoming";
   const detailHref = `/vehicles/${auction.vehicle.id}`;
-  const locationLabel = `${auction.vehicle.location.city}, ${auction.vehicle.location.state}`;
+
+  const locationLabel = [auction.vehicle.location.city, auction.vehicle.location.state]
+    .filter(Boolean)
+    .join(", ");
   const metaLine = [
     formatMileage(auction.vehicle.spec.mileage),
     transmissionLabel(auction.vehicle.spec.transmission),
     locationLabel,
-  ].join(" • ");
-  const listMetaLine = [String(auction.vehicle.spec.year), metaLine].join(" • ");
+  ]
+    .filter(Boolean)
+    .join(" • ");
 
+  const showReserve = Boolean(auction.reservePrice || auction.vehicle.reservePrice);
+  const progress = reserveProgress(auction);
+
+  // ─── List view ───
   if (view === "list") {
     return (
-      <Card sx={{ "&:hover": { transform: "none" } }}>
-        <CardActionArea
+      <Card
+        sx={{
+          display: "flex",
+          alignItems: "stretch",
+          overflow: "hidden",
+          borderRadius: "14px",
+          border: `1px solid ${brand.border}`,
+          boxShadow: "none",
+          bgcolor: "#fff",
+          "&:hover": { boxShadow: "0 4px 24px -8px rgba(0,0,0,0.12)" },
+          transition: "box-shadow 0.2s",
+        }}
+      >
+        <Box
           component={Link}
           href={detailHref}
-          sx={{ display: "flex", alignItems: "stretch", p: 1.5, gap: 2 }}
+          sx={{
+            width: 140,
+            height: 96,
+            flexShrink: 0,
+            bgcolor: brand.soft,
+            overflow: "hidden",
+            display: "block",
+          }}
         >
-          <Box sx={{ width: 140, height: 96, borderRadius: 2, overflow: "hidden", flexShrink: 0, bgcolor: brand.soft }}>
-            {primaryImage && (
-              <CardMedia component="img" image={primaryImage.url} alt={primaryImage.alt} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            )}
+          {primaryImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={primaryImage.url}
+              alt={primaryImage.alt}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          ) : null}
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 2, p: 1.5 }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              component={Link}
+              href={detailHref}
+              sx={{ fontWeight: 700, fontSize: 14, color: "text.primary", "&:hover": { color: "primary.main" } }}
+              noWrap
+            >
+              {auction.vehicle.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" noWrap sx={{ fontSize: 12 }}>
+              {metaLine}
+            </Typography>
           </Box>
-          <Box sx={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 2 }}>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography fontWeight={700} noWrap>{auction.vehicle.title}</Typography>
-              <Typography variant="body2" color="text.secondary" noWrap>
-                {listMetaLine}
-              </Typography>
-              <MarketplaceBadges auction={auction} />
-            </Box>
-            <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-              <Typography variant="caption" color="text.secondary">{isUpcoming ? "Starting bid" : "Current bid"}</Typography>
-              <Typography variant="h6" fontWeight={800}>{formatPrice(auction.currentBid)}</Typography>
-            </Box>
+          <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+            <Typography sx={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: brand.muted }}>
+              {isUpcoming ? "Starting bid" : "Current bid"}
+            </Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.02em", color: brand.ink }}>
+              {formatPrice(auction.currentBid)}
+            </Typography>
           </Box>
-        </CardActionArea>
+        </Box>
       </Card>
     );
   }
 
+  // ─── Grid view ───
   return (
-    <Card sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-      <Box sx={{ position: "relative" }}>
-        <CardActionArea component={Link} href={detailHref}>
-          <CardMedia
-            component="img"
-            image={primaryImage?.url}
-            alt={primaryImage?.alt ?? auction.vehicle.title}
-            sx={{ aspectRatio: "16/10", objectFit: "cover", bgcolor: brand.soft }}
-          />
-        </CardActionArea>
+    <Card
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        borderRadius: "16px",
+        border: `1px solid ${brand.border}`,
+        boxShadow: "0 2px 12px -4px rgba(0,0,0,0.08)",
+        bgcolor: "#fff",
+        minWidth: 0,
+        transition: "box-shadow 0.2s, transform 0.2s",
+        "&:hover": {
+          boxShadow: "0 8px 32px -8px rgba(0,0,0,0.16)",
+          transform: "translateY(-2px)",
+        },
+      }}
+    >
+      {/* ── Hero image ── */}
+      <Box sx={{ position: "relative", flexShrink: 0 }}>
+        <Box
+          component={Link}
+          href={detailHref}
+          sx={{ display: "block", aspectRatio: "16/10", bgcolor: brand.soft, overflow: "hidden" }}
+        >
+          {primaryImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={primaryImage.url}
+              alt={primaryImage.alt ?? auction.vehicle.title}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          ) : null}
+        </Box>
 
-        {auction.status !== "completed" && (
+        {/* Countdown badge */}
+        {auction.status !== "completed" ? (
           <Box sx={{ position: "absolute", top: 10, left: 10 }}>
-            <TimeLeftBadge endTime={isUpcoming ? auction.startTime : auction.endTime} upcoming={isUpcoming} />
+            <CountdownBadge
+              endTime={isUpcoming ? auction.startTime : auction.endTime}
+              upcoming={isUpcoming}
+            />
           </Box>
-        )}
+        ) : null}
 
+        {/* Watchlist heart */}
         <IconButton
           size="small"
           onClick={(e) => {
@@ -281,44 +460,110 @@ export function AuctionCard({ auction, view = "grid" }: AuctionCardProps) {
             position: "absolute",
             top: 10,
             right: 10,
-            width: 34,
-            height: 34,
-            bgcolor: watched ? brand.primary : "rgba(255,255,255,0.95)",
+            width: 32,
+            height: 32,
+            bgcolor: watched ? brand.primary : "rgba(255,255,255,0.96)",
             color: watched ? "#fff" : brand.ink,
-            boxShadow: "0 6px 16px -10px rgba(20,20,20,0.45)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
             "&:hover": { bgcolor: watched ? brand.primaryDark : "#fff" },
+            transition: "background 0.15s",
           }}
         >
-          {watched ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+          {watched ? (
+            <FavoriteIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <FavoriteBorderIcon sx={{ fontSize: 16 }} />
+          )}
         </IconButton>
       </Box>
 
-      <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2 }}>
-        <Typography
-          component={Link}
-          href={detailHref}
-          sx={{
-            fontWeight: 800,
-            fontSize: "1.02rem",
-            letterSpacing: "-0.02em",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            color: "text.primary",
-            lineHeight: 1.25,
-            "&:hover": { color: "primary.main" },
-          }}
-        >
-          {auction.vehicle.title}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.6 }} noWrap>
-          {metaLine}
-        </Typography>
+      {/* ── Content ── */}
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <Box sx={{ px: 2, pt: 1.75, pb: 0.5 }}>
+          {/* Title */}
+          <Typography
+            component={Link}
+            href={detailHref}
+            sx={{
+              fontWeight: 800,
+              fontSize: "1.05rem",
+              letterSpacing: "-0.025em",
+              lineHeight: 1.2,
+              color: brand.ink,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              "&:hover": { color: "#444" },
+            }}
+          >
+            {auction.vehicle.title}
+          </Typography>
 
-        <MarketplaceBadges auction={auction} />
-      </CardContent>
-      <AuctionAppBidBar auction={auction} href={detailHref} />
+          {/* Meta line */}
+          <Typography
+            noWrap
+            sx={{ fontSize: 12.5, color: brand.muted, mt: 0.5, letterSpacing: "-0.005em" }}
+          >
+            {metaLine}
+          </Typography>
+
+          {/* Badge pills */}
+          <BadgePills auction={auction} />
+        </Box>
+
+        {/* Spacer */}
+        <Box sx={{ flex: 1 }} />
+
+        {/* ── Bid row ── */}
+        <BidRow auction={auction} href={detailHref} />
+
+        {/* ── Reserve bar ── */}
+        {showReserve ? <ReserveBar progress={progress} /> : null}
+
+        {/* ── Owner actions (optional) ── */}
+        {showOwnerActions ? (
+          <Stack
+            direction="row"
+            sx={{
+              alignItems: "center",
+              justifyContent: "space-between",
+              px: 2,
+              py: 1.25,
+              borderTop: `1px solid ${brand.border}`,
+            }}
+          >
+            <Box
+              component={Link}
+              href={`/vehicles/${auction.vehicle.id}/edit`}
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.5,
+                bgcolor: brand.soft,
+                color: brand.inkSoft,
+                px: 1.5,
+                py: 0.6,
+                borderRadius: 99,
+                fontWeight: 600,
+                fontSize: 12,
+                "&:hover": { bgcolor: brand.border },
+                transition: "background 0.15s",
+              }}
+            >
+              <EditOutlinedIcon sx={{ fontSize: 14 }} />
+              Edit
+            </Box>
+            <IconButton
+              size="small"
+              sx={{ color: brand.muted, "&:hover": { color: brand.ink } }}
+              aria-label="Share"
+            >
+              <IosShareOutlinedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Stack>
+        ) : null}
+      </Box>
     </Card>
   );
 }
