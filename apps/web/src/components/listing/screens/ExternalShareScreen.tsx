@@ -51,7 +51,7 @@ export function ExternalShareScreen() {
       sharedAt,
     });
     if (destination === "Copy Link") {
-      const link = `${window.location.origin}/sell/listings`;
+      const link = `${window.location.origin}/profile?tab=listings`;
       void navigator.clipboard?.writeText(link);
       notify({ title: "Link copied", tone: "success" });
     }

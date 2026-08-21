@@ -74,7 +74,7 @@ export function ListingPreviewScreen() {
       <div>
         <h2 className="text-xl font-semibold">Listing Review</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Review each section of your listing draft. Use Edit to jump back and make changes.
+          Make sure everything looks good before continuing to Buyer View Preview.
         </p>
       </div>
 

@@ -102,7 +102,7 @@ export function IdentifyManualScreen() {
       return;
     }
 
-    setDecodeState("loading");
+      setDecodeState("loading");
     window.setTimeout(() => {
       updateDetails(result.details);
       setVinImportedFields([
@@ -134,6 +134,8 @@ export function IdentifyManualScreen() {
       });
       addActivity("VIN decoded", "identify");
       setDecodeState("success");
+      // Auto-advance to Vehicle Details after successful decode (matches mobile UX)
+      router.push(LISTING_PATHS.details);
     }, 1200);
   };
 

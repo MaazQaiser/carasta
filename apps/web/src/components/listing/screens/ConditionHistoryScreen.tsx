@@ -85,7 +85,7 @@ export function ConditionHistoryScreen() {
   return (
     <ListingStep
       title="Condition & History"
-      description="Capture condition and ownership context buyers care about. Shared across all listing types."
+      description="Tell buyers about your vehicle's history and condition."
     >
       <div className="space-y-6">
         <div
@@ -248,14 +248,6 @@ export function ConditionHistoryScreen() {
           </div>
         </ListingSection>
 
-        <ListingSection title="General Notes">
-          <textarea
-            className={textareaClassName}
-            value={c.generalNotes}
-            onChange={(e) => set("generalNotes", e.target.value)}
-            placeholder="Anything else about condition or history..."
-          />
-        </ListingSection>
       </div>
     </ListingStep>
   );

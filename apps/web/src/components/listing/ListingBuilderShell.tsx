@@ -2,29 +2,32 @@
 
 import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { ListingLayout } from "./ListingLayout";
 import { ListingProgress } from "./ListingProgress";
-import { ListingSummary } from "./ListingSummary";
 import { ListingFooter } from "./ListingFooter";
-import { LISTING_STEPS } from "./config";
 import { ListingBuilderProvider, useListingBuilder } from "./ListingBuilderContext";
 import { NotificationProvider, useListingNotifications } from "./notifications/NotificationProvider";
-import { DraftRecovery } from "./DraftRecovery";
 import { useAutosave } from "./hooks/useAutosave";
-import { useCompletion } from "./hooks/useCompletion";
 import { useUnsavedChanges } from "./hooks/useUnsavedChanges";
 import { useListingKeyboardShortcuts } from "./hooks/useListingKeyboardShortcuts";
 import {
   DraftService,
   isMeaningfulDraft,
-  type PersistedListingDraft,
 } from "./services/draft-service";
 import {
   isNestedListingFlow,
-  isTypeSpecificSpecsPath,
   LISTING_PATHS,
 } from "./listing-route-map";
+
+/** Context for triggering the Save Draft & Exit dialog from the footer. */
+type SaveDraftExitContextValue = { openSaveDraftExit: () => void };
+const SaveDraftExitContext = React.createContext<SaveDraftExitContextValue | null>(null);
+
+export function useSaveDraftExit() {
+  const ctx = React.useContext(SaveDraftExitContext);
+  if (!ctx) throw new Error("useSaveDraftExit must be used within ListingBuilderShell");
+  return ctx;
+}
 
 function ListingProductionBridge({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -41,39 +44,37 @@ function ListingProductionBridge({ children }: { children: React.ReactNode }) {
     cancelEntryEdit,
   } = useListingBuilder();
   const { notify } = useListingNotifications();
-  const { completion, validation } = useCompletion(draft);
 
-  const [pendingRecovery, setPendingRecovery] = React.useState<PersistedListingDraft | null>(null);
   const [recoveryChecked, setRecoveryChecked] = React.useState(false);
-  const lastToastStatus = React.useRef<string>("idle");
+  const [saveExitOpen, setSaveExitOpen] = React.useState(false);
+  const initialized = React.useRef(false);
 
   React.useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
     const saved = DraftService.load();
     if (saved && isMeaningfulDraft(saved.draft) && !isMeaningfulDraft(draft)) {
-      setPendingRecovery(saved);
+      replaceDraft(saved.draft);
+      setActivity(saved.activity ?? []);
+      if (saved.lastPath && saved.lastPath !== pathname) {
+        router.replace(saved.lastPath);
+      }
     }
     setRecoveryChecked(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { status, lastSavedAt, saveNow } = useAutosave(draft, {
-    enabled: recoveryChecked && !pendingRecovery,
+  const { status, saveNow } = useAutosave(draft, {
+    enabled: recoveryChecked,
     debounceMs: 1500,
     lastPath: pathname,
     activity,
-    onSaved: () => {
-      markClean();
-      if (lastToastStatus.current !== "saved") {
-        // Avoid toast spam — only notify on explicit save shortcut or status transition handled below.
-      }
-      lastToastStatus.current = "saved";
-    },
+    onSaved: () => markClean(),
   });
 
   React.useEffect(() => {
-    if (status === "failed" && lastToastStatus.current !== "failed") {
+    if (status === "failed") {
       notify({ title: "Draft save failed", tone: "error" });
-      lastToastStatus.current = "failed";
     }
   }, [notify, status]);
 
@@ -93,87 +94,72 @@ function ListingProductionBridge({ children }: { children: React.ReactNode }) {
     onEscape: () => cancelEntryEdit(),
   });
 
-  const isTypeSpecificSpecsWorkspace = isTypeSpecificSpecsPath(pathname);
   const isNestedFlow = isNestedListingFlow(pathname);
-
   const isPostSubmitFlow =
     pathname.startsWith(LISTING_PATHS.submitted) ||
     pathname.startsWith(LISTING_PATHS.share);
+  // Per plan: hide progress only on nested mod-add/shop-builder, not on submitted/share.
+  const hideProgress = isNestedFlow;
 
-  const handleResume = () => {
-    if (!pendingRecovery) return;
-    replaceDraft(pendingRecovery.draft);
-    setActivity(
-      pendingRecovery.activity.length
-        ? pendingRecovery.activity
-        : [
-            {
-              id: "resumed",
-              type: "system",
-              label: "Draft resumed",
-              at: new Date().toISOString(),
-            },
-          ]
-    );
-    markClean();
-    setPendingRecovery(null);
-    notify({ title: "Draft resumed", tone: "success" });
-    if (pendingRecovery.lastPath) {
-      router.push(pendingRecovery.lastPath);
-    }
-  };
+  const handleSaveAndExit = React.useCallback(() => {
+    if (isDirty) saveNow();
+    setSaveExitOpen(false);
+    router.push("/");
+  }, [isDirty, saveNow, router]);
 
-  const handleStartNew = () => {
+  const handleDiscardAndExit = React.useCallback(() => {
     DraftService.clear();
     resetDraft();
-    markClean();
-    setPendingRecovery(null);
-    notify({ title: "Started new listing", tone: "default" });
-    router.push(LISTING_PATHS.type);
-  };
+    setSaveExitOpen(false);
+    router.push("/");
+  }, [resetDraft, router]);
 
-  const hideChromeExtras = isPostSubmitFlow || isNestedFlow;
+  const saveDraftExitCtx = React.useMemo<SaveDraftExitContextValue>(
+    () => ({ openSaveDraftExit: () => setSaveExitOpen(true) }),
+    []
+  );
 
   return (
-    <ListingLayout
-      titleActions={
-        !isPostSubmitFlow && pendingRecovery ? (
-          <>
-            <Button type="button" size="sm" onClick={handleResume}>
-              Resume Draft
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={handleStartNew}>
-              Start New Listing
-            </Button>
-          </>
-        ) : undefined
-      }
-      progress={
-        hideChromeExtras ? undefined : (
-          <ListingProgress
-            steps={LISTING_STEPS}
-            completionPercent={completion.overallPercent}
-          />
-        )
-      }
-      summary={
-        isTypeSpecificSpecsWorkspace || hideChromeExtras ? undefined : (
-          <ListingSummary validation={validation} />
-        )
-      }
-      footer={
-        hideChromeExtras ? undefined : <ListingFooter inset />
-      }
-      header={
-        isPostSubmitFlow ? undefined : pendingRecovery ? (
-          <div className="mb-4 sm:mb-6">
-            <DraftRecovery saved={pendingRecovery} />
+    <SaveDraftExitContext.Provider value={saveDraftExitCtx}>
+      <ListingLayout
+        progress={hideProgress ? undefined : <ListingProgress />}
+        footer={hideProgress || isPostSubmitFlow ? undefined : <ListingFooter inset />}
+      >
+        {children}
+      </ListingLayout>
+
+      {saveExitOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
+          <div className="w-full max-w-[330px] rounded-2xl bg-white p-5 text-center shadow-xl">
+            <h2 className="text-[18px] font-bold text-foreground">Save Draft?</h2>
+            <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+              Your progress will be saved and you can continue listing later.
+            </p>
+            <button
+              type="button"
+              onClick={handleSaveAndExit}
+              className="mt-5 h-11 w-full rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground"
+            >
+              Save &amp; Exit
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscardAndExit}
+              className="mt-3 text-[12px] font-semibold text-destructive"
+            >
+              Discard Changes
+            </button>
+            <button
+              type="button"
+              onClick={() => setSaveExitOpen(false)}
+              className="mt-3 block w-full text-[12px] text-muted-foreground"
+            >
+              Cancel
+            </button>
           </div>
-        ) : undefined
-      }
-    >
-      {children}
-    </ListingLayout>
+        </div>
+      ) : null}
+    </SaveDraftExitContext.Provider>
   );
 }
 

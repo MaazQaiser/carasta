@@ -8,8 +8,17 @@ import { useListingBuilder } from "../ListingBuilderContext";
 import { AUCTION_SETTINGS_COPY } from "../auction-settings-copy";
 import { cn } from "@/lib/utils";
 
+function digitsOnly(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function formatMoneyDisplay(value: string) {
+  const digits = digitsOnly(value);
+  if (!digits) return "";
+  return `$${Number(digits).toLocaleString("en-US")}`;
+}
+
 function deriveSaleType(buyNowPrice: string, reservePrice: string): string {
-  if (buyNowPrice && reservePrice) return "Auction + Buy Now";
   if (buyNowPrice) return "Buy Now";
   if (reservePrice) return "Auction";
   return "Auction";
@@ -34,7 +43,6 @@ export function SaleSettingsScreen() {
               onChange={(checked) =>
                 updateSaleSettings({
                   buyNowPrice: checked ? s.buyNowPrice || "150000" : "",
-                  // Only one pricing option can be active.
                   reservePrice: checked ? "" : s.reservePrice,
                   saleType: deriveSaleType(checked ? s.buyNowPrice || "150000" : "", checked ? "" : s.reservePrice),
                 })
@@ -43,18 +51,19 @@ export function SaleSettingsScreen() {
           </div>
           {buyNowOn ? (
             <div className="mt-3">
-              <FieldLabel htmlFor="buy-now-price">Buy Now Price</FieldLabel>
+              <FieldLabel htmlFor="buy-now-price">Buy It Now price</FieldLabel>
               <Input
                 id="buy-now-price"
-                value={s.buyNowPrice}
-                onChange={(e) =>
+                value={formatMoneyDisplay(s.buyNowPrice)}
+                onChange={(e) => {
+                  const digits = digitsOnly(e.target.value);
                   updateSaleSettings({
-                    buyNowPrice: e.target.value,
+                    buyNowPrice: digits,
                     reservePrice: "",
-                    saleType: deriveSaleType(e.target.value, ""),
-                  })
-                }
-                placeholder="e.g. 95000"
+                    saleType: deriveSaleType(digits, ""),
+                  });
+                }}
+                placeholder="$0"
                 inputMode="decimal"
               />
             </div>
@@ -77,18 +86,19 @@ export function SaleSettingsScreen() {
           </div>
           {reserveOn ? (
             <div className="mt-3">
-              <FieldLabel htmlFor="reserve-price">Reserve Price</FieldLabel>
+              <FieldLabel htmlFor="reserve-price">Reserve price</FieldLabel>
               <Input
                 id="reserve-price"
-                value={s.reservePrice}
-                onChange={(e) =>
+                value={formatMoneyDisplay(s.reservePrice)}
+                onChange={(e) => {
+                  const digits = digitsOnly(e.target.value);
                   updateSaleSettings({
-                    reservePrice: e.target.value,
+                    reservePrice: digits,
                     buyNowPrice: "",
-                    saleType: deriveSaleType("", e.target.value),
-                  })
-                }
-                placeholder="e.g. 75000"
+                    saleType: deriveSaleType("", digits),
+                  });
+                }}
+                placeholder="$0"
                 inputMode="decimal"
               />
             </div>

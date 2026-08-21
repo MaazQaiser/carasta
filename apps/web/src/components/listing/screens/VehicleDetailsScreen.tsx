@@ -42,15 +42,39 @@ import {
 } from "../vehicle-details-copy";
 import { VIN_IDENTIFY_COPY } from "../vin-identify-copy";
 
-const IDENTITY_FIELDS: {
+/** Year / Make / Model rendered as Selects with same option lists as mobile. */
+const IDENTITY_SELECT_FIELDS: {
+  key: "year" | "make" | "model";
+  label: string;
+  placeholder: string;
+  options: string[];
+}[] = [
+  {
+    key: "year",
+    label: "Year",
+    placeholder: "Select year",
+    options: ["2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015"],
+  },
+  {
+    key: "make",
+    label: "Make",
+    placeholder: "Select make",
+    options: ["Porsche", "BMW", "Ford", "Audi", "Mercedes-Benz", "Toyota", "Chevrolet", "Dodge", "Ferrari", "Lamborghini"],
+  },
+  {
+    key: "model",
+    label: "Model",
+    placeholder: "Select model",
+    options: ["911 GT3", "M3", "Mustang", "RS 6", "AMG GT", "Camaro", "Challenger", "Supra", "Corvette"],
+  },
+];
+
+const TEXT_IDENTITY_FIELDS: {
   key: keyof ListingVehicleDetails;
   label: string;
   placeholder: string;
   required?: boolean;
 }[] = [
-  { key: "year", label: "Year", placeholder: "e.g. 2019", required: true },
-  { key: "make", label: "Make", placeholder: "e.g. Porsche", required: true },
-  { key: "model", label: "Model", placeholder: "e.g. 911", required: true },
   { key: "trim", label: "Trim", placeholder: "e.g. Carrera S", required: true },
   { key: "mileage", label: "Mileage", placeholder: VEHICLE_DETAILS_COPY.mileagePlaceholder, required: true },
 ];
@@ -106,7 +130,38 @@ export function VehicleDetailsScreen() {
           }
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {IDENTITY_FIELDS.map((field) => {
+            {IDENTITY_SELECT_FIELDS.map((field) => {
+              const isImported = imported.has(field.key) && Boolean(draft.details[field.key]);
+              const currentValue = draft.details[field.key] as string | undefined;
+              const needsCustomOption =
+                currentValue && !field.options.includes(currentValue) ? currentValue : undefined;
+              return (
+                <div key={field.key}>
+                  <FieldLabel htmlFor={`detail-${field.key}`}>
+                    {field.label} *
+                    {isImported ? <VinImportedBadge /> : null}
+                  </FieldLabel>
+                  <Select
+                    value={currentValue || undefined}
+                    onValueChange={(v) => updateDetails({ [field.key]: v })}
+                  >
+                    <SelectTrigger id={`detail-${field.key}`}>
+                      <SelectValue placeholder={field.placeholder} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {needsCustomOption ? (
+                        <SelectItem value={needsCustomOption}>{needsCustomOption}</SelectItem>
+                      ) : null}
+                      {field.options.map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })}
+
+            {TEXT_IDENTITY_FIELDS.map((field) => {
               const fieldIssue = issues.find((issue) => issue.field === field.key);
               const isImported = imported.has(field.key) && Boolean(draft.details[field.key]);
               return (

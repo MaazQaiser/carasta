@@ -18,8 +18,8 @@ export interface ListingLayoutProps {
 }
 
 /**
- * Listing Builder workspace shell.
- * Stepper sits full-width above content; summary is a right column from lg.
+ * Carasta Listing workspace shell.
+ * Linear Step X of 15 progress sits above content; no sidebar summary.
  * When a footer is present, step body + Back/Continue share one card.
  */
 export function ListingLayout({
@@ -30,8 +30,8 @@ export function ListingLayout({
   titleActions,
   children,
   className,
-  title = "Listing Builder",
-  description = "Create a listing using the shared Carasta workspace.",
+  title = "Carasta Listing",
+  description,
 }: ListingLayoutProps) {
   const hasSummary = Boolean(summary);
 
@@ -43,7 +43,7 @@ export function ListingLayout({
           className
         )}
       >
-        <div className="mb-5 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+        <div className="mb-5 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{title}</h1>
             {description ? (
@@ -59,7 +59,7 @@ export function ListingLayout({
 
         {header}
 
-        {progress ? <div className="mb-4 sm:mb-6 w-full min-w-0">{progress}</div> : null}
+        {progress ? <div className="mb-4 sm:mb-5 w-full min-w-0">{progress}</div> : null}
 
         <div
           className={cn(

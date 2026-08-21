@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { GripVertical, Trash2, Upload, FileText, Film, ImageIcon } from "lucide-react";
+import { GripVertical, Trash2, Upload, FileText, Film, ImageIcon, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ListingMediaItem } from "./types";
@@ -30,6 +30,8 @@ export interface MediaUploadZoneProps {
   items: ListingMediaItem[];
   onAdd: (items: ListingMediaItem[]) => void;
   onRemove: (id: string) => void;
+  /** Replace a single item with a new file. */
+  onReplace?: (id: string, item: ListingMediaItem) => void;
   /** When provided, enables move-left / move-right reorder controls. */
   onReorder?: (fromIndex: number, toIndex: number) => void;
   /** Auction cover photo id — shows COVER badge on matching item. */
@@ -51,6 +53,7 @@ export function MediaUploadZone({
   items,
   onAdd,
   onRemove,
+  onReplace,
   onReorder,
   coverItemId,
   onSetCover,
@@ -59,11 +62,18 @@ export function MediaUploadZone({
   className,
 }: MediaUploadZoneProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const replaceInputRef = React.useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = React.useState(false);
+  const [replacingId, setReplacingId] = React.useState<string | null>(null);
 
   const handleFiles = (files: FileList | null) => {
     const next = createListingMediaItems(files);
     if (next.length) onAdd(next);
+  };
+
+  const handleReplace = (id: string) => {
+    setReplacingId(id);
+    replaceInputRef.current?.click();
   };
 
   return (
@@ -108,8 +118,10 @@ export function MediaUploadZone({
             <ImageIcon className="h-4 w-4" />
           )}
         </div>
-        <p className="text-sm font-medium">Drag & drop files here</p>
-        <p className="text-xs text-muted-foreground mt-1">or browse from your computer</p>
+        <p className="text-sm font-medium">
+          {variant === "video" ? "Drop videos here" : variant === "file" ? "Drop files here" : "Drop photos here"}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">or choose files from your device</p>
         <Button
           type="button"
           variant="outline"
@@ -118,7 +130,7 @@ export function MediaUploadZone({
           onClick={() => inputRef.current?.click()}
         >
           <Upload className="h-4 w-4" />
-          Browse
+          {variant === "video" ? "Add Videos" : variant === "file" ? "Add Files" : "Add Photos"}
         </Button>
         <input
           ref={inputRef}
@@ -128,6 +140,25 @@ export function MediaUploadZone({
           className="hidden"
           onChange={(e) => {
             handleFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        <input
+          ref={replaceInputRef}
+          type="file"
+          accept={accept}
+          className="hidden"
+          onChange={(e) => {
+            if (replacingId && e.target.files?.length) {
+              const [replaced] = createListingMediaItems(e.target.files);
+              if (replaced && onReplace) {
+                onReplace(replacingId, replaced);
+              } else if (replaced) {
+                onRemove(replacingId);
+                onAdd([replaced]);
+              }
+            }
+            setReplacingId(null);
             e.target.value = "";
           }}
         />
@@ -208,35 +239,32 @@ export function MediaUploadZone({
                       style={{ width: `${item.progress ?? 100}%` }}
                     />
                   </div>
-                  <div className="flex items-center justify-between gap-1">
-                    {onReorder ? (
-                      <div className="inline-flex items-center gap-0.5">
-                        <button
-                          type="button"
-                          disabled={index === 0}
-                          onClick={() => onReorder(index, index - 1)}
-                          className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-                          aria-label="Move earlier"
-                        >
-                          <GripVertical className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="text-[11px] text-muted-foreground">Reorder</span>
-                        <button
-                          type="button"
-                          disabled={index >= items.length - 1}
-                          onClick={() => onReorder(index, index + 1)}
-                          className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30 px-1"
-                          aria-label="Move later"
-                        >
-                          →
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <GripVertical className="h-3.5 w-3.5" />
-                        Reorder
-                      </span>
-                    )}
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <div className="inline-flex items-center gap-0.5">
+                      {onReorder ? (
+                        <>
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => onReorder(index, index - 1)}
+                            className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+                            aria-label="Move earlier"
+                          >
+                            <GripVertical className="h-3.5 w-3.5" />
+                          </button>
+                          <span className="text-[11px] text-muted-foreground">Move</span>
+                          <button
+                            type="button"
+                            disabled={index >= items.length - 1}
+                            onClick={() => onReorder(index, index + 1)}
+                            className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30 px-1"
+                            aria-label="Move later"
+                          >
+                            →
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
                     <div className="inline-flex items-center gap-2">
                       {onSetCover && coverItemId !== item.id ? (
                         <button
@@ -244,16 +272,24 @@ export function MediaUploadZone({
                           onClick={() => onSetCover(item.id)}
                           className="text-[11px] text-muted-foreground hover:text-foreground"
                         >
-                          Set cover
+                          Cover
                         </button>
                       ) : null}
                       <button
                         type="button"
-                        onClick={() => onRemove(item.id)}
-                        className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive"
+                        onClick={() => handleReplace(item.id)}
+                        className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Remove
+                        <RefreshCw className="h-3 w-3" />
+                        Replace
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRemove(item.id)}
+                        className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Delete
                       </button>
                     </div>
                   </div>

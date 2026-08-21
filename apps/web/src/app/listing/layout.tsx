@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ListingBuilderShell } from "@/components/listing";
 
 export const metadata: Metadata = {
-  title: "Listing Builder — Carasta",
+  title: "Carasta Listing",
 };
 
 export default function ListingBuilderLayout({

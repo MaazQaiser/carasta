@@ -1,10 +1,8 @@
 "use client";
 
-import * as React from "react";
-import Link from "next/link";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Keyboard, ScanLine, SkipForward } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ListingStep } from "../ListingStep";
 import { LISTING_PATHS } from "../listing-route-map";
 import { VIN_IDENTIFY_COPY } from "../vin-identify-copy";
@@ -15,7 +13,7 @@ function MethodCard({
   description,
   onClick,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   description: string;
   onClick: () => void;
@@ -40,11 +38,10 @@ function MethodCard({
 
 /**
  * Shared beginning screen for every listing flow.
- * All sellers get Scan / Enter Manually / Continue Without VIN.
+ * Scan VIN → manual entry; Enter Manually; Continue Without VIN.
  */
 export function IdentifyVehicleScreen() {
   const router = useRouter();
-  const [scanNote, setScanNote] = React.useState(false);
 
   return (
     <ListingStep title={VIN_IDENTIFY_COPY.title} description={VIN_IDENTIFY_COPY.subtext}>
@@ -53,7 +50,7 @@ export function IdentifyVehicleScreen() {
           icon={<ScanLine className="h-5 w-5" />}
           title={VIN_IDENTIFY_COPY.scan.title}
           description={VIN_IDENTIFY_COPY.scan.description}
-          onClick={() => setScanNote(true)}
+          onClick={() => router.push(LISTING_PATHS.identifyManual)}
         />
         <MethodCard
           icon={<Keyboard className="h-5 w-5" />}
@@ -68,24 +65,6 @@ export function IdentifyVehicleScreen() {
           onClick={() => router.push(LISTING_PATHS.details)}
         />
       </div>
-
-      {scanNote ? (
-        <div className="mt-6 max-w-2xl rounded-2xl border bg-muted/30 p-4 space-y-3">
-          <p className="text-sm font-medium">Barcode scan coming soon</p>
-          <p className="text-sm text-muted-foreground">
-            Use manual VIN entry for now, or continue without a VIN — decode failure never blocks
-            listing creation.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={() => router.push(LISTING_PATHS.identifyManual)}>
-              {VIN_IDENTIFY_COPY.manual.title}
-            </Button>
-            <Button type="button" variant="outline" asChild>
-              <Link href={LISTING_PATHS.details}>{VIN_IDENTIFY_COPY.withoutVin.title}</Link>
-            </Button>
-          </div>
-        </div>
-      ) : null}
     </ListingStep>
   );
 }
