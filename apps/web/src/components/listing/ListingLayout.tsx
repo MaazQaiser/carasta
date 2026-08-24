@@ -20,7 +20,7 @@ export interface ListingLayoutProps {
 /**
  * Carasta Listing workspace shell.
  * Linear Step X of 15 progress sits above content; no sidebar summary.
- * When a footer is present, step body + Back/Continue share one card.
+ * Back / Continue / Save Draft sit in the title row; step body is a single card.
  */
 export function ListingLayout({
   progress,
@@ -43,16 +43,17 @@ export function ListingLayout({
           className
         )}
       >
-        <div className="mb-5 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+        <div className="mb-5 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{title}</h1>
             {description ? (
               <p className="text-muted-foreground mt-0.5 text-sm sm:text-base">{description}</p>
             ) : null}
           </div>
-          {titleActions ? (
+          {titleActions || footer ? (
             <div className="flex flex-wrap items-center gap-2 sm:justify-end shrink-0">
               {titleActions}
+              {footer}
             </div>
           ) : null}
         </div>
@@ -70,8 +71,7 @@ export function ListingLayout({
           <div className="min-w-0 w-full space-y-4 sm:space-y-6">
             {footer ? (
               <div className="rounded-2xl border bg-card overflow-hidden">
-                <div className="p-4 sm:p-6">{children}</div>
-                <div className="border-t">{footer}</div>
+                <div className="px-20 py-4 sm:py-6">{children}</div>
               </div>
             ) : (
               children
