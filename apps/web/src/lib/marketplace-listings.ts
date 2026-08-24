@@ -161,7 +161,8 @@ export function updatePublishedAuction(auction: Auction): boolean {
 export function placePublishedBid(
   auctionId: string,
   amount: number,
-  bidder?: User
+  bidder?: User,
+  options?: { autoBid?: boolean }
 ): { bid: Bid; auction: Auction } {
   const record = PublishedListingService.resolve(auctionId);
   if (!record) {
@@ -211,7 +212,7 @@ export function placePublishedBid(
     auctionId: auction.id,
     bidder: resolvedBidder,
     amount,
-    isAutoBid: false,
+    isAutoBid: Boolean(options?.autoBid),
     createdAt: new Date().toISOString(),
   };
 

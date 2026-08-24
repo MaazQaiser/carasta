@@ -46,10 +46,10 @@ export function ShareConfirmationScreen() {
       </div>
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button type="button" asChild>
-          <Link href="/sell/listings">Done</Link>
+          <Link href="/profile?tab=auctions">Done</Link>
         </Button>
         <Button type="button" variant="outline" asChild>
-          <Link href="/sell/listings">Back to Listing</Link>
+          <Link href="/profile?tab=auctions">Back to Listing</Link>
         </Button>
         <Button type="button" variant="ghost" asChild>
           <Link href="/">Return to Dashboard</Link>

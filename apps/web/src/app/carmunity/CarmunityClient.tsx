@@ -26,7 +26,7 @@ export function CarmunityClient({ initialPosts, clubs }: Props) {
   const searchParams = useSearchParams();
   const [following, setFollowing] = useState<string[]>([]);
   const [joinedClubs, setJoinedClubs] = useState<string[]>(clubs.filter((c) => c.isJoined).map((c) => c.id));
-  const [feedFilter, setFeedFilter] = useState<"for-you" | "following" | "builds" | "events">("for-you");
+  const [feedFilter, setFeedFilter] = useState<"for-you" | "following">("for-you");
 
   // Search (independent, under composer)
   const [searchQuery, setSearchQuery] = useState("");
@@ -79,9 +79,7 @@ export function CarmunityClient({ initialPosts, clubs }: Props) {
   const feedPosts =
     feedFilter === "following"
       ? posts.filter((p) => following.includes(p.author.id))
-      : feedFilter === "builds"
-        ? posts.filter((p) => p.type === "build" || p.category === "build-update" || p.category === "restoration")
-        : posts;
+      : posts;
 
   const isSearching = searchQuery.trim().length > 0;
 
@@ -225,7 +223,7 @@ export function CarmunityClient({ initialPosts, clubs }: Props) {
           <>
             {/* Feed filter tabs */}
             <div className="flex justify-start gap-3 mb-5 overflow-x-auto scrollbar-hide">
-              {(["for-you", "following", "builds", "events"] as const).map((f) => (
+              {(["for-you", "following"] as const).map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -242,11 +240,7 @@ export function CarmunityClient({ initialPosts, clubs }: Props) {
               ))}
             </div>
 
-            {feedFilter === "events" ? (
-              <div className="flex flex-col items-center py-16 text-center">
-                <p className="text-muted-foreground">Car events coming soon.</p>
-              </div>
-            ) : feedPosts.length === 0 ? (
+            {feedPosts.length === 0 ? (
               <div className="flex flex-col items-center py-16 text-center">
                 <Users className="h-12 w-12 text-muted-foreground/30 mb-3" />
                 <p className="font-semibold mb-1">

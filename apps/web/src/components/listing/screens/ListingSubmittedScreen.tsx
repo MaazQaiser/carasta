@@ -9,7 +9,7 @@ import { SubmissionSession } from "../services/submission-session";
 
 export function ListingSubmittedScreen() {
   const [reference, setReference] = React.useState<string>("—");
-  const [listingHref, setListingHref] = React.useState("/profile?tab=listings");
+  const [listingHref, setListingHref] = React.useState("/profile?tab=auctions");
 
   React.useEffect(() => {
     const session = SubmissionSession.load();
@@ -17,11 +17,11 @@ export function ListingSubmittedScreen() {
       setReference(session.reference);
     }
     if (session?.vehicleId) {
-      setListingHref(`/m/listings/v/${session.vehicleId}`);
+      setListingHref(`/vehicles/${session.vehicleId}`);
     } else if (session?.auctionId) {
-      setListingHref(`/m/listings/v/${session.auctionId}`);
+      setListingHref(`/vehicles/${session.auctionId}`);
     } else {
-      setListingHref("/profile?tab=listings");
+      setListingHref("/profile?tab=auctions");
     }
   }, []);
 

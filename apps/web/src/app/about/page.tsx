@@ -25,7 +25,7 @@ export default async function AboutPage() {
           <Link href="/auctions">
             <Button variant="bid" size="lg">Browse Auctions</Button>
           </Link>
-          <Link href="/list/new">
+          <Link href="/listing">
             <Button variant="outline" size="lg">Sell Your Car</Button>
           </Link>
         </div>

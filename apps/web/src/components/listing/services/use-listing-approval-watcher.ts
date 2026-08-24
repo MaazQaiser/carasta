@@ -30,7 +30,7 @@ export function useListingApprovalWatcher(options?: {
 
       for (const record of toNotify) {
         const title = record.auction.vehicle.title;
-        const href = `/m/listings/v/${record.auction.vehicle.id}`;
+        const href = `/vehicles/${record.auction.vehicle.id}`;
         await notificationService.create({
           type: "system",
           title: "Auction approved",

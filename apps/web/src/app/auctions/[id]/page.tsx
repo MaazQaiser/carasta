@@ -8,7 +8,7 @@ interface Props {
 
 /**
  * `/auctions/:id` is not a listing page.
- * Listing URLs are `/vehicles/{vehicleId}`. Live rooms are `/auctions/{auctionId}/live`.
+ * Listing URLs are `/vehicles/{vehicleId}`.
  * This route only exists to bounce old / mixed IDs to the canonical listing.
  */
 export default async function AuctionDetailRedirect({ params }: Props) {

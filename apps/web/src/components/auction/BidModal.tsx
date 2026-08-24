@@ -29,8 +29,6 @@ interface BidModalProps {
   vehicle: Vehicle;
   /** Called after a bid is successfully placed so parents can sync auction state. */
   onBidPlaced?: (bid: Bid) => void;
-  /** Optional: navigate into the live room after success. */
-  onEnterLiveRoom?: () => void;
 }
 
 type BidState = "input" | "confirm" | "success" | "error";
@@ -41,10 +39,10 @@ export function BidModal({
   auction,
   vehicle,
   onBidPlaced,
-  onEnterLiveRoom,
 }: BidModalProps) {
   const { user, isAuthenticated } = useAuth();
   const [bidAmount, setBidAmount] = useState("");
+  const [autoBid, setAutoBid] = useState(false);
   const [state, setState] = useState<BidState>("input");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -53,6 +51,7 @@ export function BidModal({
   useEffect(() => {
     if (open && auction) {
       setBidAmount("");
+      setAutoBid(false);
       setState("input");
       setErrorMessage("");
     }
@@ -73,13 +72,13 @@ export function BidModal({
       const previousReserveMet = auction.reserveMet;
       let bid: Bid;
       try {
-        bid = await auctionService.placeBid(auction.id, amount, user ?? undefined);
+        bid = await auctionService.placeBid(auction.id, amount, user ?? undefined, { autoBid });
       } catch (err) {
         const isMissing =
           err instanceof BidError && String(err.message).toLowerCase().includes("not found");
         const isPublished = Boolean(PublishedListingService.resolve(auction.id));
         if (!isMissing && !isPublished) throw err;
-        bid = placePublishedBid(auction.id, amount, user ?? undefined).bid;
+        bid = placePublishedBid(auction.id, amount, user ?? undefined, { autoBid }).bid;
       }
       setPlacedAmount(amount);
       onBidPlaced?.(bid);
@@ -121,6 +120,7 @@ export function BidModal({
     setTimeout(() => {
       setState("input");
       setBidAmount("");
+      setAutoBid(false);
       setErrorMessage("");
       setPlacedAmount(0);
     }, 300);
@@ -228,6 +228,15 @@ export function BidModal({
                   Bid must be at least {formatPrice(minBid)}
                 </div>
               )}
+              <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoBid}
+                  onChange={(e) => setAutoBid(e.target.checked)}
+                  className="h-4 w-4 accent-foreground"
+                />
+                Enable auto bid up to this amount
+              </label>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={handleClose}>
@@ -259,6 +268,10 @@ export function BidModal({
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Your bid</span>
                   <span className="font-bold text-lg">{formatPrice(parseInt(bidAmount, 10))}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Auto bid</span>
+                  <span className="font-medium">{autoBid ? "Enabled" : "Off"}</span>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -312,30 +325,15 @@ export function BidModal({
                 <span className="text-muted-foreground">Auction Remaining Time</span>
                 <CountdownTimer endTime={auction.endTime} size="sm" showIcon={false} />
               </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Auto bid</span>
+                <span className="font-medium">{autoBid ? "Enabled" : "Off"}</span>
+              </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 w-full">
-              <Button variant="outline" className="flex-1" onClick={handleClose}>
-                Continue Watching
-              </Button>
-              <Button
-                variant="bid"
-                className="flex-1"
-                onClick={() => {
-                  handleClose();
-                  onEnterLiveRoom?.();
-                }}
-              >
-                Enter Live Room
-              </Button>
-            </div>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
+            <Button variant="bid" className="w-full" onClick={handleClose}>
               Close
-            </button>
+            </Button>
           </div>
         )}
 

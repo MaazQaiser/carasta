@@ -272,22 +272,13 @@ export function useMobileBuyerActions(
             >
               Increase Bid
             </button>
-            {listing.auctionId ? (
-              <Link
-                href={`/auctions/${listing.auctionId}/live`}
-                className="flex h-11 items-center justify-center rounded-lg border border-[#1b1464] text-[13px] font-semibold text-[#1b1464]"
-              >
-                Watch Auction
-              </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setSheet(null)}
-                className="h-11 rounded-lg border border-[#e5e5ea] text-[13px] font-semibold text-[#1c1c1e]"
-              >
-                Close
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setSheet(null)}
+              className="h-11 rounded-lg border border-[#e5e5ea] text-[13px] font-semibold text-[#1c1c1e]"
+            >
+              Close
+            </button>
           </div>
         }
       >

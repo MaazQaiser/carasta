@@ -49,7 +49,7 @@ function GarageVehicleCard({ entry }: { entry: GarageEntry }) {
             <Button variant="outline" size="sm" className="w-full text-xs">View</Button>
           </Link>
           {entry.type === "owned" && (
-            <Link href={`/sell?vehicle=${entry.vehicle.id}`} className="flex-1">
+            <Link href={`/listing`} className="flex-1">
               <Button variant="default" size="sm" className="w-full text-xs">Sell</Button>
             </Link>
           )}
@@ -123,7 +123,7 @@ export function GarageClient({ entries, stats, drafts }: Props) {
                    key === "wins" ? "Vehicles you've won at auction appear here." :
                    "Your sold vehicles will appear here."}
                 </p>
-                <Link href={key === "wishlist" || key === "wins" ? "/auctions" : "/sell"}>
+                <Link href={key === "wishlist" || key === "wins" ? "/auctions" : "/listing"}>
                   <Button variant="outline" size="sm">{key === "owned" ? "Add Vehicle" : key === "wishlist" || key === "wins" ? "Browse Auctions" : "Sell a Vehicle"}</Button>
                 </Link>
               </div>
@@ -140,7 +140,7 @@ export function GarageClient({ entries, stats, drafts }: Props) {
             <div className="flex flex-col items-center py-20 text-center">
               <Gavel className="h-12 w-12 text-muted-foreground/30 mb-3" />
               <p className="font-semibold mb-1">No drafts</p>
-              <Link href="/sell"><Button variant="outline" size="sm">Start a Listing</Button></Link>
+              <Link href="/listing"><Button variant="outline" size="sm">Start a Listing</Button></Link>
             </div>
           ) : (
             <div className="space-y-3">

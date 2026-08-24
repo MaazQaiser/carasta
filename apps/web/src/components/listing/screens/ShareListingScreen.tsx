@@ -21,7 +21,7 @@ export function ShareListingScreen() {
           from the same control.
         </p>
         <Button type="button" asChild>
-          <Link href="/profile?tab=listings">Go to Auctions on your profile</Link>
+          <Link href="/profile?tab=auctions">Go to Auctions on your profile</Link>
         </Button>
       </div>
     </ListingStep>

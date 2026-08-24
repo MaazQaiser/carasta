@@ -48,7 +48,7 @@ export function PublishedListingFallback({ id }: { id: string }) {
           This listing may have been published in another browser session.
         </p>
         <Button asChild variant="outline">
-          <Link href="/profile?tab=listings">Back to Profile Listings</Link>
+          <Link href="/profile?tab=auctions">Back to Profile Listings</Link>
         </Button>
       </div>
     );

@@ -7,16 +7,13 @@ import {
   MapPin,
   Settings,
   CheckCircle,
-  Star,
   Car,
   Gavel,
-  ShoppingBag,
-  Heart,
   Users,
   NotebookPen,
 } from "lucide-react";
 import type { Auction, GarageEntry, User } from "@carasta/types";
-import type { ProfileBid, ProfilePurchase, ProfileTabData } from "@carasta/mock-data/services";
+import type { ProfileTabData } from "@carasta/mock-data/services";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +24,7 @@ import { PublishedListingService } from "@/components/listing/services/published
 import { useListingApprovalWatcher } from "@/components/listing/services/use-listing-approval-watcher";
 import { cn, formatPrice, formatMileage } from "@/lib/utils";
 
-type ProfileMode = "system" | "community";
+type ProfileTab = "posts" | "bio" | "auctions" | "garage" | "followers" | "following";
 
 interface Props {
   user: User;
@@ -98,10 +95,9 @@ function GarageCard({ entry }: { entry: GarageEntry }) {
 function ListingCard({ auction }: { auction: Auction }) {
   const img = auction.vehicle.images[0];
   const pending = auction.status === "upcoming" || auction.vehicle.status === "pending-review";
-  const href = `/m/listings/v/${auction.vehicle.id}`;
   return (
     <Link
-      href={href}
+      href={`/vehicles/${auction.vehicle.id}`}
       className="rounded-2xl border bg-card overflow-hidden hover:shadow-md transition-all duration-200 block"
     >
       <div className="aspect-[16/10] bg-muted overflow-hidden">
@@ -130,61 +126,6 @@ function ListingCard({ auction }: { auction: Auction }) {
   );
 }
 
-function BidRow({ bid }: { bid: ProfileBid }) {
-  return (
-    <Link
-      href={`/vehicles/${bid.auction.vehicle.id}`}
-      className="flex items-center gap-4 p-4 rounded-2xl border bg-card hover:shadow-sm transition-shadow"
-    >
-      <div className="h-16 w-24 rounded-xl overflow-hidden bg-muted shrink-0">
-        {bid.auction.vehicle.images[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={bid.auction.vehicle.images[0].url}
-            alt={bid.auction.vehicle.images[0].alt}
-            className="h-full w-full object-cover"
-          />
-        ) : null}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate">{bid.auction.vehicle.title}</p>
-        <p className="text-xs text-muted-foreground mt-0.5 capitalize">
-          {bid.auction.status.replace("-", " ")} · Your bid {formatPrice(bid.amount)}
-        </p>
-      </div>
-      <div className="text-right shrink-0">
-        <p className="text-sm font-semibold">{formatPrice(bid.auction.currentBid)}</p>
-        <Badge variant={bid.isLeading ? "default" : "secondary"} className="mt-1 text-[10px]">
-          {bid.isLeading ? "Leading" : "Outbid"}
-        </Badge>
-      </div>
-    </Link>
-  );
-}
-
-function PurchaseRow({ purchase }: { purchase: ProfilePurchase }) {
-  return (
-    <Link
-      href={`/vehicles/${purchase.vehicleId}`}
-      className="flex items-center gap-4 p-4 rounded-2xl border bg-card hover:shadow-sm transition-shadow"
-    >
-      <div className="h-16 w-24 rounded-xl overflow-hidden bg-muted shrink-0">
-        {purchase.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={purchase.imageUrl} alt={purchase.vehicleTitle} className="h-full w-full object-cover" />
-        ) : null}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate">{purchase.vehicleTitle}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Purchased {new Date(purchase.purchasedAt).toLocaleDateString()}
-        </p>
-      </div>
-      <p className="text-sm font-semibold shrink-0">{formatPrice(purchase.amount)}</p>
-    </Link>
-  );
-}
-
 function FollowerRow({ follower }: { follower: User }) {
   return (
     <Link
@@ -204,19 +145,24 @@ function FollowerRow({ follower }: { follower: User }) {
   );
 }
 
+function parseProfileTab(value: string | null): ProfileTab | null {
+  if (!value) return null;
+  if (value === "listings" || value === "auctions") return "auctions";
+  if (value === "posts" || value === "bio" || value === "garage" || value === "followers" || value === "following") {
+    return value;
+  }
+  return null;
+}
+
 export function ProfileClient({ user, isOwn, tabs }: Props) {
   const searchParams = useSearchParams();
   const [isFollowing, setIsFollowing] = useState(false);
-  const [mode, setMode] = useState<ProfileMode>("system");
-  const [systemTab, setSystemTab] = useState("garage");
+  const [activeTab, setActiveTab] = useState<ProfileTab>("posts");
   const [publishedListings, setPublishedListings] = useState<Auction[]>([]);
 
   useEffect(() => {
-    const tab = searchParams.get("tab");
-    if (tab === "listings" || tab === "auctions" || tab === "garage" || tab === "bids" || tab === "purchases" || tab === "saved" || tab === "followers" || tab === "following") {
-      setMode("system");
-      setSystemTab(tab === "auctions" ? "listings" : tab);
-    }
+    const next = parseProfileTab(searchParams.get("tab"));
+    if (next) setActiveTab(next);
   }, [searchParams]);
 
   useEffect(() => {
@@ -238,7 +184,6 @@ export function ProfileClient({ user, isOwn, tabs }: Props) {
     const builderListings = isOwn
       ? publishedListings
       : PublishedListingService.getAuctionsForSeller(user.id);
-    // Drop the fabricated profile fallback once real builder listings exist.
     const seed = tabs.listings.filter(
       (auction) =>
         auction.id !== "profile-listing-1" || builderListings.length === 0
@@ -247,33 +192,21 @@ export function ProfileClient({ user, isOwn, tabs }: Props) {
     return [...builderListings, ...seed.filter((a) => !seen.has(a.id))];
   }, [isOwn, publishedListings, tabs.listings, user.id]);
 
-  const systemStats = [
-    { label: "Vehicles Listed", value: Math.max(user.stats.totalListings, listings.length) },
-    { label: "Sales", value: user.stats.totalSales },
-    { label: "Bids Placed", value: user.stats.totalBids },
-    { label: "Followers", value: user.stats.followersCount.toLocaleString() },
-    { label: "Following", value: user.stats.followingCount.toLocaleString() },
-  ];
-
-  const communityStats = [
-    { label: "Posts", value: tabs.posts.length },
-    { label: "Followers", value: user.stats.followersCount.toLocaleString() },
-    { label: "Following", value: user.stats.followingCount.toLocaleString() },
-    { label: "Garage", value: tabs.garage.length },
-    { label: "Auctions", value: listings.length + tabs.bids.length },
-  ];
-
-  const stats = mode === "system" ? systemStats : communityStats;
-  const garageEntries = tabs.garage;
-  const savedEntries =
-    tabs.saved.length > 0 ? tabs.saved : tabs.garage.filter((e) => e.type === "wishlist");
-  const communityGarage = tabs.garage.filter(
+  const garageEntries = tabs.garage.filter(
     (e) => e.type === "owned" || e.type === "auction-win"
   );
 
+  const stats: { label: string; value: string | number; tab?: ProfileTab }[] = [
+    { label: "Posts", value: tabs.posts.length, tab: "posts" },
+    { label: "Followers", value: user.stats.followersCount.toLocaleString(), tab: "followers" },
+    { label: "Following", value: user.stats.followingCount.toLocaleString(), tab: "following" },
+  ];
+
+  const primaryTab =
+    activeTab === "followers" || activeTab === "following" ? "posts" : activeTab;
+
   return (
     <div className="mx-auto max-w-screen-xl px-4 lg:px-6 py-8">
-      {/* Cover */}
       <div className="h-40 lg:h-56 rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-muted overflow-hidden mb-0 relative">
         {user.coverImage && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -281,7 +214,6 @@ export function ProfileClient({ user, isOwn, tabs }: Props) {
         )}
       </div>
 
-      {/* Profile header */}
       <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12 sm:-mt-16 px-4 mb-6">
         <div className="relative">
           <Avatar className="h-24 w-24 sm:h-32 sm:w-32 ring-4 ring-background">
@@ -318,15 +250,9 @@ export function ProfileClient({ user, isOwn, tabs }: Props) {
                   <Settings className="h-4 w-4" /> Settings
                 </Button>
               </Link>
-              {mode === "system" ? (
-                <Link href="/listing">
-                  <Button size="sm">Sell a Vehicle</Button>
-                </Link>
-              ) : (
-                <Link href="/carmunity">
-                  <Button size="sm">Open Carmunity</Button>
-                </Link>
-              )}
+              <Link href="/listing">
+                <Button size="sm">Sell a Vehicle</Button>
+              </Link>
             </>
           ) : (
             <>
@@ -347,198 +273,80 @@ export function ProfileClient({ user, isOwn, tabs }: Props) {
         </div>
       </div>
 
-      {/* Profile mode switcher */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {(
-          [
-            { id: "system" as const, label: "System Profile" },
-            { id: "community" as const, label: "Community Profile" },
-          ] as const
-        ).map((item) => (
+      <div className="grid grid-cols-3 gap-4 mb-8 max-w-lg">
+        {stats.map(({ label, value, tab }) => (
           <button
-            key={item.id}
+            key={label}
             type="button"
-            onClick={() => setMode(item.id)}
+            onClick={() => tab && setActiveTab(tab)}
             className={cn(
-              "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
-              mode === item.id
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-muted-foreground border-border hover:border-primary/50"
+              "text-center p-3 rounded-xl border bg-card transition-colors",
+              tab && activeTab === tab ? "border-primary" : "hover:border-primary/40"
             )}
           >
-            {item.label}
+            <p className="text-xl font-bold">{value}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
           </button>
         ))}
       </div>
 
-      {/* Bio + stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-        <div className="lg:col-span-1">
-          {user.bio && <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{user.bio}</p>}
-          {user.stats.rating && mode === "system" ? (
-            <div className="flex items-center gap-2 text-sm">
-              <Star className="h-4 w-4 text-yellow-500 fill-current" />
-              <span className="font-semibold">{user.stats.rating.toFixed(1)}</span>
-              <span className="text-muted-foreground">({user.stats.reviewCount} reviews)</span>
-            </div>
-          ) : null}
-          {mode === "community" ? (
-            <p className="text-xs text-muted-foreground">
-              Carmunity presence — posts, auctions, and garage.
-            </p>
-          ) : null}
-        </div>
-        <div className="lg:col-span-3">
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
-            {stats.map(({ label, value }) => (
-              <div key={label} className="text-center p-3 rounded-xl border bg-card">
-                <p className="text-xl font-bold">{value}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <Separator className="mb-6" />
 
-      {mode === "system" ? (
-        <Tabs value={systemTab} onValueChange={setSystemTab} key="system">
-          <TabsList className="mb-6">
-            <TabsTrigger value="garage">Garage</TabsTrigger>
-            <TabsTrigger value="listings">Auctions</TabsTrigger>
-            {isOwn && <TabsTrigger value="bids">My Bids</TabsTrigger>}
-            {isOwn && <TabsTrigger value="purchases">Purchases</TabsTrigger>}
-            {isOwn && <TabsTrigger value="saved">Saved</TabsTrigger>}
-            <TabsTrigger value="followers">Followers</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="garage">
-            {garageEntries.length === 0 ? (
-              <EmptyTab
-                icon={Car}
-                message="Garage is empty"
-                action={
-                  isOwn ? (
-                    <Link href="/garage" className="mt-3">
-                      <Button variant="outline" size="sm">
-                        Open Garage
-                      </Button>
-                    </Link>
-                  ) : undefined
-                }
-              />
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {garageEntries.map((entry) => (
-                    <GarageCard key={entry.id} entry={entry} />
-                  ))}
-                </div>
-                {isOwn ? (
-                  <div className="flex justify-center pt-2">
-                    <Link href="/garage">
-                      <Button variant="outline" size="sm">
-                        Open Garage
-                      </Button>
-                    </Link>
-                  </div>
-                ) : null}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="listings">
-            {listings.length === 0 ? (
-              <EmptyTab
-                icon={Gavel}
-                message="No active listings"
-                action={
-                  isOwn ? (
-                    <Link href="/listing" className="mt-3">
-                      <Button variant="outline" size="sm">
-                        Create Listing
-                      </Button>
-                    </Link>
-                  ) : undefined
-                }
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {listings.map((auction) => (
-                  <ListingCard key={auction.id} auction={auction} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="bids">
-            {tabs.bids.length === 0 ? (
-              <EmptyTab
-                icon={Gavel}
-                message="No active bids"
-                action={
-                  <Link href="/auctions" className="mt-3">
-                    <Button variant="outline" size="sm">
-                      Browse Auctions
-                    </Button>
-                  </Link>
-                }
-              />
-            ) : (
-              <div className="space-y-3">
-                {tabs.bids.map((bid) => (
-                  <BidRow key={bid.id} bid={bid} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="purchases">
-            {tabs.purchases.length === 0 ? (
-              <EmptyTab icon={ShoppingBag} message="No purchases yet" />
-            ) : (
-              <div className="space-y-3">
-                {tabs.purchases.map((purchase) => (
-                  <PurchaseRow key={purchase.id} purchase={purchase} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="saved">
-            {savedEntries.length === 0 ? (
-              <EmptyTab icon={Heart} message="No saved vehicles" />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {savedEntries.map((entry) => (
-                  <GarageCard key={entry.id} entry={entry} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="followers">
-            {tabs.followers.length === 0 ? (
-              <EmptyTab icon={Heart} message="No followers yet" />
+      {activeTab === "followers" || activeTab === "following" ? (
+        <div>
+          <div className="flex gap-2 mb-6">
+            <button
+              type="button"
+              onClick={() => setActiveTab("followers")}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium border transition-colors",
+                activeTab === "followers"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "text-muted-foreground border-border hover:border-primary/50"
+              )}
+            >
+              Followers
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("following")}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium border transition-colors",
+                activeTab === "following"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "text-muted-foreground border-border hover:border-primary/50"
+              )}
+            >
+              Following
+            </button>
+          </div>
+          {activeTab === "followers" ? (
+            tabs.followers.length === 0 ? (
+              <EmptyTab icon={Users} message="No followers yet" />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {tabs.followers.map((follower) => (
                   <FollowerRow key={follower.id} follower={follower} />
                 ))}
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            )
+          ) : tabs.following.length === 0 ? (
+            <EmptyTab icon={Users} message="Not following anyone yet" />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {tabs.following.map((person) => (
+                <FollowerRow key={person.id} follower={person} />
+              ))}
+            </div>
+          )}
+        </div>
       ) : (
-        <Tabs defaultValue="posts" key="community">
+        <Tabs value={primaryTab} onValueChange={(v) => setActiveTab(v as ProfileTab)}>
           <TabsList className="mb-6">
             <TabsTrigger value="posts">Posts</TabsTrigger>
             <TabsTrigger value="bio">Bio</TabsTrigger>
             <TabsTrigger value="auctions">Auctions</TabsTrigger>
             <TabsTrigger value="garage">Garage</TabsTrigger>
-            <TabsTrigger value="followers">Followers</TabsTrigger>
-            <TabsTrigger value="following">Following</TabsTrigger>
           </TabsList>
 
           <TabsContent value="posts">
@@ -621,36 +429,31 @@ export function ProfileClient({ user, isOwn, tabs }: Props) {
           </TabsContent>
 
           <TabsContent value="auctions">
-            {listings.length === 0 && tabs.bids.length === 0 ? (
-              <EmptyTab icon={Gavel} message="No auction activity yet" />
+            {listings.length === 0 ? (
+              <EmptyTab
+                icon={Gavel}
+                message="No auction activity yet"
+                action={
+                  isOwn ? (
+                    <Link href="/listing" className="mt-3">
+                      <Button variant="outline" size="sm">
+                        Create Listing
+                      </Button>
+                    </Link>
+                  ) : undefined
+                }
+              />
             ) : (
-              <div className="space-y-6">
-                {listings.length > 0 ? (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-3">Listings</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {listings.map((auction) => (
-                        <ListingCard key={auction.id} auction={auction} />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                {tabs.bids.length > 0 ? (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-3">Bids</h3>
-                    <div className="space-y-3">
-                      {tabs.bids.map((bid) => (
-                        <BidRow key={bid.id} bid={bid} />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {listings.map((auction) => (
+                  <ListingCard key={auction.id} auction={auction} />
+                ))}
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="garage">
-            {communityGarage.length === 0 ? (
+            {garageEntries.length === 0 ? (
               <EmptyTab
                 icon={Car}
                 message="Garage is empty"
@@ -666,32 +469,8 @@ export function ProfileClient({ user, isOwn, tabs }: Props) {
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {communityGarage.map((entry) => (
+                {garageEntries.map((entry) => (
                   <GarageCard key={entry.id} entry={entry} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="followers">
-            {tabs.followers.length === 0 ? (
-              <EmptyTab icon={Users} message="No followers yet" />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {tabs.followers.map((follower) => (
-                  <FollowerRow key={follower.id} follower={follower} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="following">
-            {tabs.following.length === 0 ? (
-              <EmptyTab icon={Users} message="Not following anyone yet" />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {tabs.following.map((person) => (
-                  <FollowerRow key={person.id} follower={person} />
                 ))}
               </div>
             )}

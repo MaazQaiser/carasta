@@ -5,7 +5,7 @@ import { CarmunityClient } from "./CarmunityClient";
 
 export const metadata: Metadata = {
   title: "Carmunity",
-  description: "Discover builds, photos, and posts from the Carasta automotive community.",
+  description: "Discover photos and posts from the Carasta automotive community.",
 };
 
 export default async function CarmunityPage() {

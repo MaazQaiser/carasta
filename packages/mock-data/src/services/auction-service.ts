@@ -103,7 +103,12 @@ export const auctionService = {
     return { data: data.slice(start, start + pageSize), total, page, pageSize, hasNextPage: start + pageSize < total };
   },
 
-  async placeBid(auctionId: string, amount: number, bidder?: User): Promise<Bid> {
+  async placeBid(
+    auctionId: string,
+    amount: number,
+    bidder?: User,
+    options?: { autoBid?: boolean }
+  ): Promise<Bid> {
     await delay(300);
 
     const auction = MOCK_AUCTIONS.find((a) => a.id === auctionId);
@@ -126,7 +131,7 @@ export const auctionService = {
       auctionId,
       bidder: me,
       amount,
-      isAutoBid: false,
+      isAutoBid: Boolean(options?.autoBid),
       createdAt: new Date().toISOString(),
     };
 

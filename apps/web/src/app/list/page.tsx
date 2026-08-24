@@ -20,7 +20,7 @@ export default async function ListPage() {
           <h1 className="text-2xl font-bold">My Listings</h1>
           <p className="text-muted-foreground mt-0.5">Track bids, views, and auction performance</p>
         </div>
-        <Link href="/list/new">
+        <Link href="/listing">
           <Button>
             <Plus className="h-4 w-4 mr-1.5" /> New Listing
           </Button>

@@ -27,7 +27,6 @@ import {
   OwnerNotesSection,
 } from "@/components/vehicle/VehicleListingParity";
 import { BidModal } from "@/components/auction/BidModal";
-import { EnterAuctionRoomModal } from "@/components/auction/EnterAuctionRoomModal";
 import { cn, formatPrice, formatMileage } from "@/lib/utils";
 import { listingTypeLabel, saleTypeLabel } from "@/lib/listing-labels";
 import { useWatchlist } from "@/lib/context/watchlist-context";
@@ -116,7 +115,6 @@ function CommentsSection({ vehicleId }: { vehicleId: string }) {
 export function VehicleDetailClient({ vehicle, auction: initialAuction, similar }: Props) {
   const [activeImg, setActiveImg] = useState(0);
   const [bidOpen, setBidOpen] = useState(false);
-  const [roomOpen, setRoomOpen] = useState(false);
   const [wonOpen, setWonOpen] = useState(false);
   const [auction, setAuction] = useState(initialAuction);
   const [userParticipated, setUserParticipated] = useState(false);
@@ -583,9 +581,6 @@ export function VehicleDetailClient({ vehicle, auction: initialAuction, similar 
                               Place Bid — min {formatPrice(auction.currentBid + auction.minimumBidIncrement)}
                             </Button>
                           )}
-                          <Button variant="outline" size="sm" className="w-full" onClick={() => setRoomOpen(true)}>
-                            Enter Live Auction Room
-                          </Button>
                         </div>
                       )}
 
@@ -686,16 +681,6 @@ export function VehicleDetailClient({ vehicle, auction: initialAuction, similar 
                           Place Bid — min {formatPrice(auction.currentBid + auction.minimumBidIncrement)}
                         </Button>
                       ) : null}
-                      {!isOwner && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => setRoomOpen(true)}
-                        >
-                          Enter Live Auction Room
-                        </Button>
-                      )}
                       {isOwner && (
                         <div className="space-y-2">
                           <Button variant="outline" className="w-full text-sm">Lift Reserve</Button>
@@ -842,15 +827,7 @@ export function VehicleDetailClient({ vehicle, auction: initialAuction, similar 
         auction={auction}
         vehicle={vehicle}
         onBidPlaced={handleBidPlaced}
-        onEnterLiveRoom={() => setRoomOpen(true)}
       />
-      {auction && (
-        <EnterAuctionRoomModal
-          open={roomOpen}
-          onOpenChange={setRoomOpen}
-          auction={auction}
-        />
-      )}
       {auction && (
         <AuctionWonModal
           open={wonOpen}

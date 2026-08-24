@@ -16,11 +16,9 @@ import Divider from "@mui/material/Divider";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import Badge from "@mui/material/Badge";
 import { CarastaLogo } from "@/components/brand/CarastaLogo";
 import { useAuth } from "@/lib/context/auth-context";
-import { useCart } from "@/lib/context/cart-context";
 import { brand } from "@/theme/carastaTheme";
 
 const NAV_LINKS = [
@@ -38,7 +36,6 @@ const LOGO_TAB = 94;
 export function TopNav() {
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
-  const { count: cartCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   if (pathname.startsWith("/mobile-listing")) {
@@ -212,23 +209,6 @@ export function TopNav() {
             >
               Sell Your Vehicle
             </Button>
-            <IconButton
-              component={Link}
-              href="/shop/cart"
-              aria-label="Cart"
-              sx={{
-                color: pathname.startsWith("/shop/cart") ? brand.primary : brand.ink,
-              }}
-            >
-              <Badge
-                badgeContent={cartCount > 0 ? cartCount : undefined}
-                color="error"
-                overlap="circular"
-                sx={{ "& .MuiBadge-badge": { fontSize: 10, minWidth: 16, height: 16 } }}
-              >
-                <ShoppingBagOutlinedIcon />
-              </Badge>
-            </IconButton>
             {isAuthenticated && user ? (
               <>
                 <IconButton
